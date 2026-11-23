@@ -1,0 +1,100 @@
+/* ============================================
+   AqiSummaryCard — Compact Style
+   ============================================ */
+.aqi-card {
+  padding: var(--space-md) var(--space-lg);
+}
+
+.aqi-main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.aqi-number {
+  font-family: var(--font-heading);
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 72px;
+}
+
+.aqi-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 2px;
+}
+
+.aqi-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.aqi-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 2px var(--space-sm);
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.aqi-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.aqi-sep {
+  color: var(--text-muted);
+}
+
+.aqi-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.aqi-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--aqi-good);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.aqi-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 480px) {
+  .aqi-number {
+    font-size: 2rem;
+    min-width: 56px;
+  }
+
+  .aqi-meta {
+    font-size: 0.75rem;
+  }
+}

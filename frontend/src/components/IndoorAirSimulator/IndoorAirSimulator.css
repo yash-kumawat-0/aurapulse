@@ -1,0 +1,335 @@
+/* ============================================
+   IndoorAirSimulator — Interactive + Auto-fetch
+   ============================================ */
+.indoor-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.indoor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.indoor-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: var(--font-heading);
+}
+
+.indoor-outdoor-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  padding: 3px 10px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-full);
+}
+.indoor-outdoor-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.indoor-loading-badge {
+  font-size: 0.72rem; color: var(--text-muted);
+}
+
+/* ── Controls Layout ── */
+.indoor-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.indoor-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.indoor-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Room Type Grid ── */
+.indoor-room-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.indoor-room-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.indoor-room-btn:hover { border-color: var(--text-muted); background: var(--bg-secondary); }
+.indoor-room-btn--on {
+  border-color: var(--color-primary);
+  background: #E8F5E9;
+  box-shadow: var(--shadow-sm);
+}
+.indoor-room-icon { font-size: 1.2rem; }
+.indoor-room-name { font-size: 0.62rem; font-weight: 600; color: var(--text-primary); }
+.indoor-room-size { font-size: 0.55rem; color: var(--text-muted); }
+
+/* ── Window Seal Grid ── */
+.indoor-seal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.indoor-seal-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.indoor-seal-btn:hover { border-color: var(--text-muted); }
+.indoor-seal-btn--on {
+  border-color: var(--color-primary);
+  background: #E8F5E9;
+  box-shadow: var(--shadow-sm);
+}
+.indoor-seal-icon { font-size: 1.1rem; }
+.indoor-seal-name { font-size: 0.65rem; font-weight: 600; color: var(--text-primary); }
+.indoor-seal-level { font-size: 0.52rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+.indoor-seal-level--bad { color: #C62828; }
+.indoor-seal-level--ok { color: #F9A825; }
+.indoor-seal-level--good { color: #2E7D32; }
+
+/* ── Pollution Source Grid ── */
+.indoor-source-grid {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.indoor-source-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  min-width: 65px;
+  border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.indoor-source-btn:hover { border-color: var(--text-muted); }
+.indoor-source-btn--on {
+  border-color: var(--color-primary);
+  background: #E8F5E9;
+  box-shadow: var(--shadow-sm);
+}
+.indoor-source-icon { font-size: 1.1rem; }
+.indoor-source-name { font-size: 0.6rem; font-weight: 600; color: var(--text-primary); }
+.indoor-source-pm { font-size: 0.5rem; font-weight: 700; color: #EF6C00; }
+
+/* ── Range Sliders ── */
+.indoor-range-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.indoor-range {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: #E0E0E0;
+  outline: none;
+}
+.indoor-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--color-secondary);
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  transition: transform 0.1s;
+}
+.indoor-range::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+.indoor-range--purifier::-webkit-slider-thumb {
+  background: #2E7D32;
+}
+.indoor-range::-moz-range-thumb {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--color-secondary);
+  cursor: pointer;
+  border: none;
+}
+.indoor-range--purifier::-moz-range-thumb {
+  background: #2E7D32;
+}
+
+.indoor-range-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 80px;
+}
+.indoor-range-val {
+  font-size: 0.85rem;
+  font-weight: 800;
+  font-family: var(--font-heading);
+  color: var(--color-primary);
+}
+.indoor-range-hint {
+  font-size: 0.55rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+/* ── Simulate Button ── */
+.indoor-sim-btn {
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--color-secondary);
+  color: white;
+  font-weight: 700;
+  font-size: 0.85rem;
+  border-radius: var(--radius-md);
+  align-self: flex-start;
+  transition: all 0.2s;
+  letter-spacing: 0.02em;
+}
+.indoor-sim-btn:hover { background: #0D47A1; transform: translateY(-1px); }
+.indoor-sim-btn:disabled { background: var(--text-muted); cursor: not-allowed; transform: none; }
+
+/* ── Results ── */
+.indoor-result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  animation: indoorFadeIn 0.3s ease;
+}
+@keyframes indoorFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.indoor-result-cards {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: var(--space-sm);
+}
+
+.indoor-result-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-md) var(--space-sm);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border-light);
+}
+.indoor-result-card--main {
+  border-width: 2px;
+}
+.indoor-result-label {
+  font-size: 0.6rem; font-weight: 600;
+  color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.indoor-result-num {
+  font-size: 1.5rem; font-weight: 800;
+  font-family: var(--font-heading);
+  line-height: 1;
+}
+.indoor-result-unit {
+  font-size: 0.58rem; color: var(--text-muted);
+}
+.indoor-result-badge {
+  font-size: 0.55rem; font-weight: 700;
+  padding: 2px 8px; border-radius: var(--radius-full);
+  text-transform: uppercase; letter-spacing: 0.03em;
+  margin-top: 2px;
+}
+
+/* ── Comparison Bar ── */
+.indoor-compare-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.indoor-compare-track {
+  height: 22px;
+  background: #F5F5F5;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.indoor-compare-outdoor,
+.indoor-compare-indoor {
+  height: 100%;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  min-width: 60px;
+  transition: width 0.4s ease;
+}
+.indoor-compare-outdoor span,
+.indoor-compare-indoor span {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* ── Banners ── */
+.indoor-banner {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-align: center;
+}
+.indoor-banner--safe {
+  background: #E8F5E9;
+  color: #1B5E20;
+  border: 1px solid #A5D6A7;
+}
+.indoor-banner--warn {
+  background: #FFF3E0;
+  color: #E65100;
+  border: 1px solid #FFCC80;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .indoor-room-grid { grid-template-columns: repeat(2, 1fr); }
+  .indoor-seal-grid { grid-template-columns: repeat(3, 1fr); }
+  .indoor-result-cards { grid-template-columns: 1fr; }
+  .indoor-header { flex-direction: column; align-items: flex-start; }
+}

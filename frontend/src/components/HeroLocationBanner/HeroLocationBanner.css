@@ -1,0 +1,150 @@
+/* ============================================
+   HeroLocationBanner — Minimal Search Bar
+   ============================================ */
+.hero {
+  background: var(--bg-primary);
+  padding: var(--space-xl) 0 var(--space-lg);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.hero-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--space-md);
+  text-align: center;
+}
+
+.hero-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--space-md);
+}
+
+/* --- Search Bar --- */
+.hero-search-wrapper {
+  position: relative;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.hero-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-secondary);
+  border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-full);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.hero-search:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+}
+
+.hero-search-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.hero-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  outline: none;
+  min-width: 0;
+}
+
+.hero-search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.hero-gps-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: white;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.hero-gps-btn:hover {
+  background: var(--color-primary-dark);
+}
+
+.hero-gps-btn:disabled {
+  background: var(--text-muted);
+}
+
+.hero-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* --- Autocomplete Suggestions --- */
+.hero-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  list-style: none;
+  z-index: 50;
+  overflow: hidden;
+}
+
+.hero-suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  background: transparent;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.hero-suggestion-item:hover {
+  background: var(--bg-secondary);
+}
+
+.hero-suggestion-pin {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* --- Current Location Label --- */
+.hero-current-loc {
+  margin-top: var(--space-sm);
+  font-size: 0.8rem;
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .hero-title {
+    font-size: 1.25rem;
+  }
+}

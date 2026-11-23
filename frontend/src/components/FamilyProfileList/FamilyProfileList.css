@@ -1,0 +1,102 @@
+/* ============================================
+   FamilyProfileList — Minimal
+   ============================================ */
+.family-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.family-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.family-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.family-add-toggle {
+  padding: 4px var(--space-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  background: #E8F5E9;
+  border-radius: var(--radius-full);
+}
+
+.family-add-toggle:hover {
+  background: #C8E6C9;
+}
+
+.family-tags {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.family-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px var(--space-sm) 4px 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+}
+
+.family-tag-name {
+  font-weight: 600;
+}
+
+.family-tag-meta {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.family-tag-x {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.family-tag-x:hover {
+  background: #FFEBEE;
+  color: #F44336;
+}
+
+.family-form {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.family-form input,
+.family-form select {
+  padding: 6px var(--space-sm);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+}
+
+.family-form-btn {
+  padding: 6px var(--space-md);
+  background: var(--color-primary);
+  color: white;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.8rem;
+}
