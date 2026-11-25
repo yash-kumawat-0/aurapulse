@@ -1,129 +1,114 @@
 // ============================================
-// IndoorAirSimulator — Redesigned with circular
-// gauges, 3D result panel, no DIY section.
+// IndoorAirSimulator — Redesigned v3
+// 3 simple inputs → Simulate →
+//   1) Outdoor/Indoor comparison (separate area)
+//   2) DIY Purifier with animated steps
 // ============================================
 import { useState, useEffect, useRef } from 'react';
 import { useUser } from '../../context/UserContext.jsx';
 import { useAqi } from '../../context/AqiContext.jsx';
 import './IndoorAirSimulator.css';
 
-// ── Room presets ──
-const ROOM_PRESETS = [
-  { key: 'small', label: 'Small Room', area: 100, icon: '🛏️' },
-  { key: 'bedroom', label: 'Bedroom', area: 150, icon: '🛌' },
-  { key: 'living', label: 'Living Room', area: 200, icon: '🛋️' },
-  { key: 'hall', label: 'Hall', area: 300, icon: '🏠' },
+// ── Room presets (combined type + size) ──
+const ROOMS = [
+  { key: 'small', label: 'Small Room', area: 100, height: 9, icon: '🛏️', desc: '~100 ft² · 900 ft³' },
+  { key: 'bedroom', label: 'Bedroom', area: 150, height: 10, icon: '🛌', desc: '~150 ft² · 1500 ft³' },
+  { key: 'living', label: 'Living Room', area: 200, height: 10, icon: '🛋️', desc: '~200 ft² · 2000 ft³' },
+  { key: 'hall', label: 'Hall', area: 300, height: 12, icon: '🏠', desc: '~300 ft² · 3600 ft³' },
 ];
 
-// ── Window types ──
-const WINDOW_TYPES = [
-  { key: 'leaky_wood', label: 'Old Wood', desc: 'High leak', icon: '🪟', level: 'bad' },
-  { key: 'standard_aluminum', label: 'Aluminum', desc: 'Standard', icon: '🔲', level: 'ok' },
-  { key: 'sealed_upvc', label: 'UPVC Sealed', desc: 'Tight seal', icon: '✨', level: 'good' },
+// ── Window seal types ──
+const SEALS = [
+  { key: 'leaky_wood', label: 'Old Wood', desc: 'Gaps & leaks', icon: '🪟', level: 'bad', color: '#EF4444' },
+  { key: 'standard_aluminum', label: 'Aluminum', desc: 'Standard fit', icon: '🔲', level: 'ok', color: '#F59E0B' },
+  { key: 'sealed_upvc', label: 'UPVC Sealed', desc: 'Airtight', icon: '✨', level: 'good', color: '#10B981' },
 ];
 
-// ── Indoor pollution sources ──
+// ── Pollution sources ──
 const SOURCES = [
-  { key: 'none', label: 'None', icon: '🚫', pm25: 0 },
+  { key: 'none', label: 'None', icon: '✅', pm25: 0 },
   { key: 'incense', label: 'Incense', icon: '🪔', pm25: 80 },
-  { key: 'mosquito_coil', label: 'Coil', icon: '🦟', pm25: 150 },
+  { key: 'mosquito_coil', label: 'Mosquito Coil', icon: '🦟', pm25: 150 },
   { key: 'cooking_frying', label: 'Cooking', icon: '🍳', pm25: 120 },
   { key: 'smoking', label: 'Smoking', icon: '🚬', pm25: 200 },
 ];
 
-// ── Circular Gauge SVG Component ──
-function CircularGauge({ value, maxValue, label, sublabel, color, size = 140 }) {
-  const radius = (size - 20) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const cappedRatio = Math.min(value / Math.max(maxValue, 1), 1);
-  const offset = circumference * (1 - cappedRatio);
-  const center = size / 2;
-
-  return (
-    <div className="indoor-gauge" style={{ width: size, height: size }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        {/* Background track */}
-        <circle cx={center} cy={center} r={radius}
-          fill="none" stroke="#e8ecef" strokeWidth="10"
-          transform={`rotate(-90 ${center} ${center})`} />
-        {/* Value arc */}
-        <circle cx={center} cy={center} r={radius}
-          fill="none" stroke={color} strokeWidth="10"
-          strokeDasharray={circumference} strokeDashoffset={offset}
-          strokeLinecap="round"
-          transform={`rotate(-90 ${center} ${center})`}
-          className="indoor-gauge-arc" />
-        {/* Glow filter */}
-        <defs>
-          <filter id={`glow-${label}`} x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
-        </defs>
-        <circle cx={center} cy={center} r={radius}
-          fill="none" stroke={color} strokeWidth="10" opacity="0.3"
-          strokeDasharray={circumference} strokeDashoffset={offset}
-          strokeLinecap="round"
-          transform={`rotate(-90 ${center} ${center})`}
-          filter={`url(#glow-${label})`} />
-      </svg>
-      <div className="indoor-gauge-center">
-        <span className="indoor-gauge-value" style={{ color }}>{Math.round(value)}</span>
-        <span className="indoor-gauge-unit">µg/m³</span>
-      </div>
-      <div className="indoor-gauge-label">{label}</div>
-      {sublabel && <div className="indoor-gauge-sublabel" style={{ color }}>{sublabel}</div>}
-    </div>
-  );
-}
+// ── DIY Purifier Steps ──
+const DIY_STEPS = [
+  {
+    num: 1,
+    title: 'Get Materials',
+    desc: 'A box fan (₹800-1500), a MERV-13 or HEPA furnace filter (₹500-1000), and duct tape.',
+    visual: 'materials',
+  },
+  {
+    num: 2,
+    title: 'Attach Filter to Fan',
+    desc: 'Place the filter flat against the back (intake side) of the box fan. The arrow on the filter should point toward the fan.',
+    visual: 'attach',
+  },
+  {
+    num: 3,
+    title: 'Seal the Edges',
+    desc: 'Use duct tape to seal all four edges where the filter meets the fan. No gaps = more clean air.',
+    visual: 'seal',
+  },
+  {
+    num: 4,
+    title: 'Power On & Place',
+    desc: 'Turn on the fan. Place it in the room you want to clean. Run it for 30-60 mins for best results.',
+    visual: 'run',
+  },
+];
 
 function IndoorAirSimulator() {
   const { homeProfile, setHomeProfile, location } = useUser();
   const { currentAqi, indoorData, loadIndoorSimulation, loadAqiData, loading } = useAqi();
 
-  const [roomArea, setRoomArea] = useState(homeProfile.room_area_sqft);
-  const [ceilingHeight, setCeilingHeight] = useState(homeProfile.ceiling_height_ft || 10);
-  const [sealType, setSealType] = useState(homeProfile.window_seal_type);
-  const [source, setSource] = useState(homeProfile.indoor_source);
-  const [cadr, setCadr] = useState(homeProfile.purifier_cadr);
+  const [selectedRoom, setSelectedRoom] = useState('bedroom');
+  const [sealType, setSealType] = useState(homeProfile.window_seal_type || 'standard_aluminum');
+  const [source, setSource] = useState(homeProfile.indoor_source || 'none');
   const [showResults, setShowResults] = useState(false);
+  const [activeStep, setActiveStep] = useState(0);
   const hasAutoRun = useRef(false);
 
-  // ── Auto-fetch AQI if location is detected but no AQI data yet ──
+  const room = ROOMS.find(r => r.key === selectedRoom) || ROOMS[1];
+
+  // Auto-fetch AQI
   useEffect(() => {
     if (location && !currentAqi && !loading) {
       loadAqiData(location.lat, location.lng);
     }
   }, [location, currentAqi, loading, loadAqiData]);
 
-  // ── Auto-run simulation once AQI data arrives ──
+  // Auto-run simulation once AQI arrives
   useEffect(() => {
     if (currentAqi && !hasAutoRun.current) {
       hasAutoRun.current = true;
-      runSimulation(currentAqi.pm25, true);
+      doSimulate(currentAqi.pm25, true);
     }
   }, [currentAqi]); // eslint-disable-line
 
-  const runSimulation = (pm25Override, isAutoRun = false) => {
+  const doSimulate = (pm25Override, isAuto = false) => {
     const params = {
       outdoor_pm25: pm25Override ?? currentAqi?.pm25 ?? 150,
-      room_area_sqft: roomArea,
-      ceiling_height_ft: ceilingHeight,
+      room_area_sqft: room.area,
+      ceiling_height_ft: room.height,
       window_seal_type: sealType,
-      purifier_cadr: cadr,
+      purifier_cadr: 0,
       indoor_source: source,
     };
     setHomeProfile({ ...homeProfile, ...params });
     loadIndoorSimulation(params);
-    if (!isAutoRun) setShowResults(true);
+    if (!isAuto) {
+      setShowResults(true);
+      setActiveStep(0);
+    }
   };
-
-  const handleSimulate = () => runSimulation();
 
   const sim = indoorData?.simulation;
   const outdoorPM = currentAqi?.pm25 || 150;
 
-  // Color helper for PM2.5
   const getColor = (pm) => {
     if (pm <= 12) return '#10B981';
     if (pm <= 35) return '#34D399';
@@ -131,227 +116,258 @@ function IndoorAirSimulator() {
     if (pm <= 150) return '#EF6C00';
     return '#DC2626';
   };
-
   const getLabel = (pm) => {
     if (pm <= 12) return 'Excellent';
-    if (pm <= 35) return 'Safe';
+    if (pm <= 35) return 'Good';
     if (pm <= 55) return 'Moderate';
     if (pm <= 150) return 'Unhealthy';
     return 'Hazardous';
   };
 
-  // Reduction percentage
-  const reductionPct = sim ? Math.round(((outdoorPM - sim.indoor_pm25) / outdoorPM) * 100) : 0;
-  const maxGauge = Math.max(outdoorPM, sim?.indoor_pm25 || 0, 100);
+  const maxBar = Math.max(outdoorPM, sim?.indoor_pm25 || 0, 50);
 
   return (
-    <div className="indoor-panel">
-      {/* ── Header ── */}
-      <div className="indoor-panel-header">
-        <div className="indoor-panel-title-row">
-          <div className="indoor-panel-icon">🏠</div>
-          <div>
-            <h3 className="indoor-panel-title">Indoor Air Simulator</h3>
-            <p className="indoor-panel-subtitle">Configure your room and see how indoor air quality compares</p>
-          </div>
-        </div>
+    <div className="ia-panel">
+      {/* ═══ HEADER ═══ */}
+      <div className="ia-header">
+        <h3 className="ia-title">
+          <span className="ia-title-icon">🏠</span>
+          Indoor Air Simulator
+        </h3>
         {currentAqi && (
-          <div className="indoor-aqi-chip" style={{ borderColor: getColor(outdoorPM) + '60' }}>
-            <span className="indoor-aqi-dot" style={{ background: getColor(outdoorPM) }} />
-            Outdoor AQI: <strong style={{ color: getColor(outdoorPM) }}>{Math.round(outdoorPM)} µg/m³</strong>
+          <div className="ia-outdoor-pill">
+            <span className="ia-pill-dot" style={{ background: getColor(outdoorPM) }} />
+            Outdoor: <strong>{Math.round(outdoorPM)}</strong> µg/m³
           </div>
         )}
         {!currentAqi && location && (
-          <div className="indoor-aqi-chip indoor-aqi-chip--loading">
-            <span className="indoor-aqi-spinner" /> Fetching air quality...
+          <div className="ia-outdoor-pill ia-outdoor-pill--loading">
+            <span className="ia-spinner" /> Fetching...
           </div>
         )}
       </div>
 
-      {/* ── Configuration Grid ── */}
-      <div className="indoor-config">
-        {/* Room Type */}
-        <div className="indoor-config-section">
-          <label className="indoor-config-label">🏠 Room Type</label>
-          <div className="indoor-room-grid">
-            {ROOM_PRESETS.map((r) => (
+      {/* ═══ 3 INPUT CARDS ═══ */}
+      <div className="ia-inputs">
+        {/* 1. Room Type & Size */}
+        <div className="ia-input-card">
+          <div className="ia-input-num">1</div>
+          <label className="ia-input-label">Room Type & Size</label>
+          <div className="ia-room-options">
+            {ROOMS.map(r => (
               <button key={r.key}
-                className={`indoor-room-chip ${roomArea === r.area ? 'indoor-room-chip--active' : ''}`}
-                onClick={() => setRoomArea(r.area)}>
-                <span className="indoor-chip-icon">{r.icon}</span>
-                <span className="indoor-chip-name">{r.label}</span>
-                <span className="indoor-chip-meta">{r.area} ft²</span>
+                className={`ia-room-btn ${selectedRoom === r.key ? 'ia-room-btn--active' : ''}`}
+                onClick={() => setSelectedRoom(r.key)}>
+                <span className="ia-room-emoji">{r.icon}</span>
+                <span className="ia-room-name">{r.label}</span>
+                <span className="ia-room-vol">{r.desc}</span>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Two-column: Ceiling + Purifier sliders */}
-        <div className="indoor-slider-row">
-          <div className="indoor-config-section indoor-config-section--half">
-            <label className="indoor-config-label">📐 Ceiling Height</label>
-            <div className="indoor-slider-wrap">
-              <input type="range" className="indoor-slider" min="8" max="14" step="1"
-                value={ceilingHeight} onChange={(e) => setCeilingHeight(Number(e.target.value))} />
-              <div className="indoor-slider-value">
-                <span className="indoor-slider-num">{ceilingHeight}</span>
-                <span className="indoor-slider-unit">ft</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="indoor-config-section indoor-config-section--half">
-            <label className="indoor-config-label">🌀 Purifier CADR</label>
-            <div className="indoor-slider-wrap">
-              <input type="range" className="indoor-slider indoor-slider--green" min="0" max="600" step="10"
-                value={cadr} onChange={(e) => setCadr(Number(e.target.value))} />
-              <div className="indoor-slider-value">
-                <span className="indoor-slider-num" style={{ color: cadr > 0 ? '#10B981' : '#9CA3AF' }}>
-                  {cadr > 0 ? cadr : '—'}
-                </span>
-                <span className="indoor-slider-unit">{cadr > 0 ? 'm³/h' : 'None'}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Window Seal */}
-        <div className="indoor-config-section">
-          <label className="indoor-config-label">🪟 Window Seal Quality</label>
-          <div className="indoor-seal-grid">
-            {WINDOW_TYPES.map((w) => (
-              <button key={w.key}
-                className={`indoor-seal-chip ${sealType === w.key ? 'indoor-seal-chip--active' : ''}`}
-                onClick={() => setSealType(w.key)}>
-                <span className="indoor-chip-icon">{w.icon}</span>
-                <span className="indoor-chip-name">{w.label}</span>
-                <span className={`indoor-seal-quality indoor-seal-quality--${w.level}`}>{w.desc}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Indoor Source */}
-        <div className="indoor-config-section">
-          <label className="indoor-config-label">🔥 Pollution Source</label>
-          <div className="indoor-source-grid">
-            {SOURCES.map((s) => (
+        {/* 2. Window Seal */}
+        <div className="ia-input-card">
+          <div className="ia-input-num">2</div>
+          <label className="ia-input-label">Window Seal Quality</label>
+          <div className="ia-seal-options">
+            {SEALS.map(s => (
               <button key={s.key}
-                className={`indoor-source-chip ${source === s.key ? 'indoor-source-chip--active' : ''}`}
-                onClick={() => setSource(s.key)}>
-                <span className="indoor-chip-icon">{s.icon}</span>
-                <span className="indoor-chip-name">{s.label}</span>
-                {s.pm25 > 0 && <span className="indoor-source-pm">+{s.pm25}</span>}
+                className={`ia-seal-btn ${sealType === s.key ? 'ia-seal-btn--active' : ''}`}
+                onClick={() => setSealType(s.key)}
+                style={sealType === s.key ? { borderColor: s.color, background: s.color + '10' } : {}}>
+                <span className="ia-seal-emoji">{s.icon}</span>
+                <span className="ia-seal-name">{s.label}</span>
+                <span className="ia-seal-desc" style={{ color: s.color }}>{s.desc}</span>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Simulate Button */}
-        <button className="indoor-simulate-btn" onClick={handleSimulate}
-          disabled={!currentAqi && !location}>
-          <span className="indoor-simulate-icon">🔬</span>
-          <span>{sim ? 'Re-simulate' : 'Simulate Indoor Air'}</span>
-        </button>
+        {/* 3. Pollution Source */}
+        <div className="ia-input-card">
+          <div className="ia-input-num">3</div>
+          <label className="ia-input-label">Indoor Pollution Source</label>
+          <div className="ia-source-options">
+            {SOURCES.map(s => (
+              <button key={s.key}
+                className={`ia-src-btn ${source === s.key ? 'ia-src-btn--active' : ''}`}
+                onClick={() => setSource(s.key)}>
+                <span className="ia-src-emoji">{s.icon}</span>
+                <span className="ia-src-name">{s.label}</span>
+                {s.pm25 > 0 && <span className="ia-src-pm">+{s.pm25} µg</span>}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* ── 3D Results Panel — appears on Simulate ── */}
+      {/* ═══ SIMULATE BUTTON ═══ */}
+      <button className="ia-simulate-btn" onClick={() => doSimulate()}
+        disabled={!currentAqi && !location}>
+        🔬 Simulate Indoor Air
+      </button>
+
+      {/* ═══ RESULTS — Separate sections ═══ */}
       {showResults && sim && (
-        <div className="indoor-results-3d">
-          {/* Gauges Row */}
-          <div className="indoor-gauges-row">
-            <CircularGauge
-              value={outdoorPM} maxValue={maxGauge}
-              label="Outdoor" sublabel={getLabel(outdoorPM)}
-              color={getColor(outdoorPM)} size={150}
-            />
-
-            <div className="indoor-gauges-arrow">
-              <div className="indoor-arrow-line" />
-              <div className="indoor-arrow-badge">
-                {reductionPct >= 0
-                  ? <><span className="indoor-arrow-down">↓</span> {Math.abs(reductionPct)}%</>
-                  : <><span className="indoor-arrow-up">↑</span> {Math.abs(reductionPct)}%</>
-                }
+        <>
+          {/* ── Section 1: Outdoor vs Indoor Comparison ── */}
+          <div className="ia-compare">
+            <h4 className="ia-compare-title">Air Quality Comparison</h4>
+            <div className="ia-compare-cols">
+              {/* Outdoor */}
+              <div className="ia-compare-col">
+                <div className="ia-compare-icon-wrap" style={{ background: getColor(outdoorPM) + '15' }}>
+                  <span className="ia-compare-icon">🌍</span>
+                </div>
+                <span className="ia-compare-label">Outdoor</span>
+                <span className="ia-compare-value" style={{ color: getColor(outdoorPM) }}>
+                  {Math.round(outdoorPM)}
+                </span>
+                <span className="ia-compare-unit">µg/m³</span>
+                <div className="ia-compare-bar-track">
+                  <div className="ia-compare-bar-fill" style={{
+                    width: `${(outdoorPM / maxBar) * 100}%`,
+                    background: `linear-gradient(90deg, ${getColor(outdoorPM)}80, ${getColor(outdoorPM)})`,
+                  }} />
+                </div>
+                <span className="ia-compare-tag" style={{ color: getColor(outdoorPM), background: getColor(outdoorPM) + '15' }}>
+                  {getLabel(outdoorPM)}
+                </span>
               </div>
-              <div className="indoor-arrow-line" />
+
+              {/* Arrow */}
+              <div className="ia-compare-arrow">
+                <div className="ia-compare-arrow-line" />
+                <div className="ia-compare-arrow-badge">
+                  {sim.indoor_pm25 <= outdoorPM
+                    ? <><span style={{ color: '#10B981' }}>↓</span> {Math.round(((outdoorPM - sim.indoor_pm25) / outdoorPM) * 100)}%</>
+                    : <><span style={{ color: '#DC2626' }}>↑</span> {Math.round(((sim.indoor_pm25 - outdoorPM) / outdoorPM) * 100)}%</>
+                  }
+                </div>
+                <div className="ia-compare-arrow-line" />
+              </div>
+
+              {/* Indoor */}
+              <div className="ia-compare-col">
+                <div className="ia-compare-icon-wrap" style={{ background: getColor(sim.indoor_pm25) + '15' }}>
+                  <span className="ia-compare-icon">🏠</span>
+                </div>
+                <span className="ia-compare-label">Indoor</span>
+                <span className="ia-compare-value" style={{ color: getColor(sim.indoor_pm25) }}>
+                  {sim.indoor_pm25}
+                </span>
+                <span className="ia-compare-unit">µg/m³</span>
+                <div className="ia-compare-bar-track">
+                  <div className="ia-compare-bar-fill" style={{
+                    width: `${(sim.indoor_pm25 / maxBar) * 100}%`,
+                    background: `linear-gradient(90deg, ${getColor(sim.indoor_pm25)}80, ${getColor(sim.indoor_pm25)})`,
+                  }} />
+                </div>
+                <span className="ia-compare-tag" style={{ color: getColor(sim.indoor_pm25), background: getColor(sim.indoor_pm25) + '15' }}>
+                  {getLabel(sim.indoor_pm25)}
+                </span>
+              </div>
             </div>
 
-            <CircularGauge
-              value={sim.indoor_pm25} maxValue={maxGauge}
-              label="Indoor" sublabel={getLabel(sim.indoor_pm25)}
-              color={getColor(sim.indoor_pm25)} size={150}
-            />
-          </div>
-
-          {/* Stats Row */}
-          <div className="indoor-stats-row">
-            <div className="indoor-stat-card">
-              <span className="indoor-stat-icon">📊</span>
-              <span className="indoor-stat-label">I/O Ratio</span>
-              <span className="indoor-stat-value">{sim.io_ratio_percent}%</span>
-            </div>
-            <div className="indoor-stat-card">
-              <span className="indoor-stat-icon">🏠</span>
-              <span className="indoor-stat-label">Indoor PM2.5</span>
-              <span className="indoor-stat-value" style={{ color: getColor(sim.indoor_pm25) }}>
-                {sim.indoor_pm25} µg/m³
-              </span>
-            </div>
-            <div className="indoor-stat-card">
-              <span className="indoor-stat-icon">🌍</span>
-              <span className="indoor-stat-label">Outdoor PM2.5</span>
-              <span className="indoor-stat-value" style={{ color: getColor(outdoorPM) }}>
-                {Math.round(outdoorPM)} µg/m³
-              </span>
-            </div>
-            {cadr > 0 && (
-              <div className="indoor-stat-card">
-                <span className="indoor-stat-icon">🌀</span>
-                <span className="indoor-stat-label">Purifier Active</span>
-                <span className="indoor-stat-value" style={{ color: '#10B981' }}>{cadr} m³/h</span>
+            {/* Safety note */}
+            {sim.is_safe ? (
+              <div className="ia-safety ia-safety--safe">
+                ✅ <strong>Safe</strong> — below WHO guideline (35 µg/m³)
+              </div>
+            ) : (
+              <div className="ia-safety ia-safety--warn">
+                ⚠️ <strong>Above safe levels</strong> — consider a DIY purifier below
               </div>
             )}
           </div>
 
-          {/* Safety Banner */}
-          {sim.is_safe && (
-            <div className="indoor-safety-banner indoor-safety-banner--safe">
-              <span className="indoor-safety-icon">✅</span>
-              <div>
-                <strong>Safe Air Quality</strong>
-                <p>Indoor PM2.5 is below the WHO guideline of 35 µg/m³</p>
-              </div>
+          {/* ── Section 2: DIY Purifier Builder ── */}
+          <div className="ia-diy">
+            <div className="ia-diy-header">
+              <h4 className="ia-diy-title">🛠️ Build a DIY Air Purifier</h4>
+              <p className="ia-diy-subtitle">A simple fan-filter combo that actually works. ~₹1500 total cost.</p>
             </div>
-          )}
-          {!sim.is_safe && sim.cadr_needed_for_safe > 0 && (
-            <div className="indoor-safety-banner indoor-safety-banner--warn">
-              <span className="indoor-safety-icon">⚠️</span>
-              <div>
-                <strong>Action Required</strong>
-                <p>You need a purifier with <strong>{sim.cadr_needed_for_safe} m³/h CADR</strong> to reach safe PM2.5 levels</p>
-              </div>
-            </div>
-          )}
-          {!sim.is_safe && (!sim.cadr_needed_for_safe || sim.cadr_needed_for_safe <= 0) && (
-            <div className="indoor-safety-banner indoor-safety-banner--warn">
-              <span className="indoor-safety-icon">⚠️</span>
-              <div>
-                <strong>Unhealthy Indoor Air</strong>
-                <p>Consider improving window seals and adding an air purifier</p>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
-      {/* Show auto-run results (before user clicks simulate) as a mini summary */}
-      {!showResults && sim && (
-        <div className="indoor-auto-hint" onClick={() => setShowResults(true)}>
-          <span className="indoor-auto-hint-dot" style={{ background: getColor(sim.indoor_pm25) }} />
-          Indoor PM2.5: <strong style={{ color: getColor(sim.indoor_pm25) }}>{sim.indoor_pm25} µg/m³</strong>
-          <span className="indoor-auto-hint-action">— Click Simulate for full analysis ↗</span>
-        </div>
+            {/* 3D Animated Visual */}
+            <div className="ia-diy-scene">
+              <div className={`ia-diy-model ia-diy-model--step${activeStep}`}>
+                {/* Fan body */}
+                <div className="ia-model-fan">
+                  <div className="ia-model-fan-face">
+                    <div className="ia-model-blade ia-model-blade--1" />
+                    <div className="ia-model-blade ia-model-blade--2" />
+                    <div className="ia-model-blade ia-model-blade--3" />
+                    <div className="ia-model-hub" />
+                  </div>
+                  <div className="ia-model-fan-side" />
+                </div>
+                {/* Filter */}
+                <div className={`ia-model-filter ${activeStep >= 1 ? 'ia-model-filter--attached' : ''}`}>
+                  <div className="ia-model-filter-face">
+                    <div className="ia-model-filter-grid" />
+                    <span className="ia-model-filter-label">HEPA</span>
+                  </div>
+                </div>
+                {/* Tape strips */}
+                <div className={`ia-model-tape ${activeStep >= 2 ? 'ia-model-tape--visible' : ''}`}>
+                  <div className="ia-model-tape-strip ia-model-tape-strip--top" />
+                  <div className="ia-model-tape-strip ia-model-tape-strip--bottom" />
+                  <div className="ia-model-tape-strip ia-model-tape-strip--left" />
+                  <div className="ia-model-tape-strip ia-model-tape-strip--right" />
+                </div>
+                {/* Air flow arrows */}
+                <div className={`ia-model-airflow ${activeStep >= 3 ? 'ia-model-airflow--active' : ''}`}>
+                  <span className="ia-model-air-arrow">→</span>
+                  <span className="ia-model-air-arrow">→</span>
+                  <span className="ia-model-air-arrow">→</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Step cards */}
+            <div className="ia-diy-steps">
+              {DIY_STEPS.map((step, i) => (
+                <button key={i}
+                  className={`ia-diy-step ${activeStep === i ? 'ia-diy-step--active' : ''} ${i < activeStep ? 'ia-diy-step--done' : ''}`}
+                  onClick={() => setActiveStep(i)}>
+                  <div className="ia-step-num-wrap">
+                    <span className={`ia-step-num ${i < activeStep ? 'ia-step-num--done' : ''}`}>
+                      {i < activeStep ? '✓' : step.num}
+                    </span>
+                    {i < DIY_STEPS.length - 1 && <div className={`ia-step-connector ${i < activeStep ? 'ia-step-connector--done' : ''}`} />}
+                  </div>
+                  <div className="ia-step-content">
+                    <span className="ia-step-title">{step.title}</span>
+                    {activeStep === i && (
+                      <p className="ia-step-desc">{step.desc}</p>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Nav buttons */}
+            <div className="ia-diy-nav">
+              <button className="ia-diy-nav-btn" disabled={activeStep === 0}
+                onClick={() => setActiveStep(p => p - 1)}>
+                ← Previous
+              </button>
+              <span className="ia-diy-nav-dots">
+                {DIY_STEPS.map((_, i) => (
+                  <span key={i}
+                    className={`ia-diy-dot ${activeStep === i ? 'ia-diy-dot--active' : ''}`}
+                    onClick={() => setActiveStep(i)} />
+                ))}
+              </span>
+              <button className="ia-diy-nav-btn ia-diy-nav-btn--next"
+                disabled={activeStep === DIY_STEPS.length - 1}
+                onClick={() => setActiveStep(p => p + 1)}>
+                Next →
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
