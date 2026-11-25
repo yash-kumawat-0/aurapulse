@@ -2,8 +2,8 @@
    Footer Component — Clean Minimal UI Styles
    ============================================ */
 .footer {
-  background: var(--bg-primary);
-  border-top: 1px solid var(--border-light);
+  background: linear-gradient(180deg, var(--bg-accent-soft) 0%, #F7FAFE 100%);
+  border-top: 1px solid var(--border-accent-soft);
   color: var(--text-secondary);
   padding: var(--space-xl) 0 calc(var(--space-xl) + 34px);
   margin-top: var(--space-xl);
@@ -124,10 +124,10 @@
 
 .footer-source-chip {
   font-size: 0.76rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
+  font-weight: 600;
+  color: #1E4D8C;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-accent-soft);
   border-radius: var(--radius-full);
   padding: 3px 10px;
 }
@@ -156,7 +156,7 @@
   gap: var(--space-md);
   margin-top: var(--space-lg);
   padding-top: var(--space-md);
-  border-top: 1px solid var(--border-light);
+  border-top: 1px solid var(--border-accent-soft);
   /* Reserve space on the right so the fixed Share FAB never obscures text */
   padding-right: 140px;
 }

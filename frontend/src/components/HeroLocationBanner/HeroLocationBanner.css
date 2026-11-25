@@ -3,9 +3,9 @@
    Right-Side Outdoor vs Indoor Live Graph
    ============================================ */
 .hero {
-  background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+  background: linear-gradient(135deg, #FFFFFF 0%, #EEF5FD 62%, #ECF7F0 100%);
   padding: var(--space-lg) 0;
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-accent-soft);
 }
 
 .hero-inner {

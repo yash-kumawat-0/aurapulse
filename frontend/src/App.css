@@ -29,12 +29,15 @@
 
   /* Neutrals — lighter, more airy */
   --bg-primary: #FFFFFF;
-  --bg-secondary: #F8FAFB;
+  --bg-secondary: #F4F8FC;
+  --bg-accent-soft: #EBF3FC;
+  --bg-accent-tint: #E2EEFB;
   --bg-card: #FFFFFF;
   --text-primary: #1A1A2E;
   --text-secondary: #64748B;
   --text-muted: #94A3B8;
-  --border-light: #E8ECF0;
+  --border-light: #E4ECF4;
+  --border-accent-soft: #D3E3F5;
 
   /* Typography */
   --font-heading: 'Plus Jakarta Sans', sans-serif;
@@ -116,6 +119,7 @@ button {
   border-radius: var(--radius-md);
   padding: var(--space-lg);
   border: 1px solid var(--border-light);
+  box-shadow: 0 2px 10px rgba(21, 101, 192, 0.04);
   transition: box-shadow 0.2s ease;
 }
 
@@ -138,9 +142,12 @@ button {
 /* --- Tab Navigation --- */
 .tab-nav {
   display: flex;
-  gap: var(--space-xs);
-  padding: var(--space-md) 0;
-  border-bottom: 1px solid var(--border-light);
+  gap: 6px;
+  padding: 6px;
+  margin-top: var(--space-md);
+  background: var(--bg-accent-soft);
+  border: 1px solid var(--border-accent-soft);
+  border-radius: var(--radius-md);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -149,7 +156,7 @@ button {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
+  padding: 9px var(--space-md);
   font-size: 0.96rem;
   font-weight: 600;
   color: var(--text-secondary);
@@ -160,14 +167,15 @@ button {
 }
 
 .tab-btn:hover {
-  color: var(--color-primary);
-  background: #E8F5E9;
+  color: var(--color-secondary);
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .tab-btn--active {
   color: var(--color-primary);
-  background: #E8F5E9;
-  font-weight: 600;
+  background: var(--bg-primary);
+  box-shadow: 0 2px 6px rgba(21, 101, 192, 0.1);
+  font-weight: 700;
 }
 
 .tab-icon {
