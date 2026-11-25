@@ -79,15 +79,16 @@ function App() {
               )}
             </div>
 
-            {/* Share Button — always visible */}
-            <div className="container share-section">
-              <button
-                className="share-btn"
-                onClick={() => setShowWhatsAppModal(true)}
-              >
-                📱 Share Air Quality Report
-              </button>
-            </div>
+            {/* Floating Compact Corner Share Button */}
+            <button
+              className="share-fab"
+              onClick={() => setShowWhatsAppModal(true)}
+              title="Share Air Quality Report"
+              aria-label="Share Air Quality Report"
+            >
+              <span>📱</span>
+              <span>Share Report</span>
+            </button>
 
             {showWhatsAppModal && (
               <WhatsAppShareModal onClose={() => setShowWhatsAppModal(false)} />

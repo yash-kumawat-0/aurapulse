@@ -1,7 +1,6 @@
 // ============================================
-// DiyPurifierGuide — Minimal & Clean 3D Animated
-// DIY Purifier Guide (All Ages Friendly)
-// 5 crisp steps, drag-to-rotate 3D model, Play movie
+// DiyPurifierGuide — Large 3D Animation Window
+// Auto-detects room volume & selects build tier.
 // ============================================
 import { useState, useEffect, useRef } from 'react';
 import './DiyPurifierGuide.css';
@@ -97,45 +96,56 @@ function getMinimalSteps(isSingleFilter, beforePm, afterPm) {
   ];
 }
 
-// Maps 5 minimal steps cleanly to our 3D assembly visual keyframes (0, 1, 3, 4, 6)
 const STEP_VISUAL_CLASS = [0, 1, 3, 4, 6];
 
-function DiyPurifierGuide({ sim, diySimulation, diyRec, purifierRec, isUrgent }) {
+function DiyPurifierGuide({
+  sim,
+  diySimulation,
+  diyRec,
+  purifierRec,
+  isUrgent,
+  roomVolumeM3,
+  roomVolumeCuFt,
+}) {
+  // Auto-detect live room volume & build tier automatically
+  const detectedVolM3 = roomVolumeM3 ?? sim?.room_volume_m3 ?? 42.5;
+  const detectedVolCuFt = roomVolumeCuFt ?? Math.round(detectedVolM3 * 35.3147);
+  const autoNeedCadr = Math.max(sim?.cadr_needed_for_safe || 0, Math.round(detectedVolM3 * 5));
+  const autoRecommendedStyle = (detectedVolM3 < 30 && autoNeedCadr <= 180) ? 'single' : 'cube';
+
   const [step, setStep] = useState(0);
   const [autoPlay, setAutoPlay] = useState(false);
-  const [buildStyle, setBuildStyle] = useState(
-    diyRec?.build_key === 'basic_single' ? 'single' : 'cube'
-  );
+  const [buildStyle, setBuildStyle] = useState(autoRecommendedStyle);
   const [rotX, setRotX] = useState(-18);
   const [rotY, setRotY] = useState(-32);
   const [autoSpin, setAutoSpin] = useState(false);
 
   const dragRef = useRef({ active: false, startX: 0, startY: 0, baseRotX: -18, baseRotY: -32 });
 
+  // Automatically switch DIY purifier style when detected room volume changes
   useEffect(() => {
-    if (diyRec?.build_key) {
-      setBuildStyle(diyRec.build_key === 'basic_single' ? 'single' : 'cube');
-    }
-  }, [diyRec?.build_key]);
+    setBuildStyle(autoRecommendedStyle);
+  }, [autoRecommendedStyle, detectedVolM3]);
 
   const isSingle = buildStyle === 'single';
   const beforePm = sim?.indoor_pm25 ?? 120;
-  const activeCadr = isSingle ? 180 : (diyRec?.estimated_cadr || 350) * (diyRec?.units_needed || 1);
-  const roomVol = sim?.room_volume_m3 || 42.5;
+  const unitCadr = isSingle ? 180 : (detectedVolM3 > 75 ? 450 : 350);
+  const autoUnits = Math.max(1, Math.ceil(autoNeedCadr / unitCadr));
+  const activeCadr = unitCadr * autoUnits;
+
   const backendAfter = diySimulation?.indoor_pm25;
-  const afterPm = (!isSingle && backendAfter !== undefined)
+  const afterPm = (!isSingle && backendAfter !== undefined && autoUnits === (diyRec?.units_needed || 1))
     ? backendAfter
     : Math.max(
         5,
         Math.round(
           (((sim?.indoor_pm25 || 120) * ((sim?.ach_rate || 1.5) + 0.3)) /
-            ((sim?.ach_rate || 1.5) + 0.3 + activeCadr / Math.max(roomVol, 10))) *
+            ((sim?.ach_rate || 1.5) + 0.3 + activeCadr / Math.max(detectedVolM3, 10))) *
             10
         ) / 10
       );
 
-  const units = diyRec?.units_needed || 1;
-  const estCost = isSingle ? 800 * units : (diyRec?.total_estimated_cost_inr || 1500);
+  const estCost = (isSingle ? 800 : (detectedVolM3 > 75 ? 2200 : 1500)) * autoUnits;
   const steps = getMinimalSteps(isSingle, beforePm, afterPm);
   const currentStep = steps[step] || steps[0];
   const visualStep = STEP_VISUAL_CLASS[step] ?? 0;
@@ -176,32 +186,30 @@ function DiyPurifierGuide({ sim, diySimulation, diyRec, purifierRec, isUrgent })
     setRotX(Math.max(-75, Math.min(25, dragRef.current.baseRotX - dy * 0.45)));
   };
 
-  const handlePointerUp = () => {
-    dragRef.current.active = false;
-  };
+  const handlePointerUp = () => { dragRef.current.active = false; };
 
   const togglePlayMovie = () => {
     if (!autoPlay && step >= steps.length - 1) setStep(0);
     setAutoPlay((p) => !p);
   };
 
-  const filterQty = isSingle ? units : (diyRec?.build_key === 'large_cube' ? 5 : 4) * units;
+  const filterQty = isSingle ? autoUnits : (detectedVolM3 > 75 ? 5 : 4) * autoUnits;
 
   return (
     <div className={`diy3d-wrap ${isUrgent ? 'diy3d-wrap--urgent' : 'diy3d-wrap--optional'}`}>
-      {/* ── Minimal Header ── */}
+      {/* ── Header with Auto-Detected Volume Pill ── */}
       <div className="diy3d-header">
         <div className="diy3d-header-left">
           <div className="diy3d-title-row">
-            <h4 className="diy3d-title">🛠️ DIY Purifier Maker (3D Guide)</h4>
+            <h4 className="diy3d-title">🛠️ DIY Purifier Maker (3D Animation)</h4>
             <span className="diy3d-impact-pill">
-              {Math.round(beforePm)} ➔ <strong>{Math.round(afterPm)} µg/m³</strong> · ~₹{estCost}
+              Auto: <strong>{detectedVolM3} m³</strong> ({detectedVolCuFt.toLocaleString()} ft³) → <strong>{autoUnits}× {isSingle ? '1-Filter Fan' : '4-Filter Cube'}</strong> ({activeCadr} m³/h · ~₹{estCost})
             </span>
           </div>
           <p className="diy3d-subtitle">
             {purifierRec?.diy_box_sufficient
-              ? `1 DIY unit (${activeCadr} m³/h) cleans your ${roomVol} m³ room easily.`
-              : `Room needs ${purifierRec?.recommended_cadr_m3h || Math.round(roomVol * 5)} m³/h CADR.`}
+              ? `1 unit drops room PM2.5 from ${Math.round(beforePm)} to ${Math.round(afterPm)} µg/m³.`
+              : `Auto-sized ${autoUnits} unit(s) to cover your ${detectedVolM3} m³ room (${Math.round(beforePm)} ➔ ${Math.round(afterPm)} µg/m³).`}
           </p>
         </div>
 
@@ -223,11 +231,11 @@ function DiyPurifierGuide({ sim, diySimulation, diyRec, purifierRec, isUrgent })
         </div>
       </div>
 
-      {/* ── Studio: 3D Stage Left + Clean 5 Steps Right ── */}
+      {/* ── Big 3D Window + Clean Step Controls ── */}
       <div className="diy3d-studio">
         <div className="diy3d-viewport-col">
           <div className="diy3d-stage-toolbar">
-            <span className="diy3d-drag-hint">✋ Drag to rotate 3D</span>
+            <span className="diy3d-drag-hint">✋ Drag model to inspect in 3D</span>
             <div className="diy3d-cam-btns">
               <button type="button" className="diy3d-cam-btn" onClick={() => applyPreset('iso')}>📐 3D</button>
               <button type="button" className="diy3d-cam-btn" onClick={() => applyPreset('front')}>👀 Front</button>
@@ -254,121 +262,123 @@ function DiyPurifierGuide({ sim, diySimulation, diyRec, purifierRec, isUrgent })
               <strong>Step {currentStep.num}:</strong> {currentStep.callout}
             </div>
 
-            <div
-              className={`diy3d-assembly diy3d-step-${visualStep} ${isSingle ? 'diy3d-mode-single' : 'diy3d-mode-cube'} ${autoSpin ? 'diy3d-autospin' : ''}`}
-              style={!autoSpin ? { transform: `rotateX(${rotX}deg) rotateY(${rotY}deg)` } : undefined}
-            >
-              <div className="diy3d-floor-shadow" />
+            <div className="diy3d-scale-wrap">
+              <div
+                className={`diy3d-assembly diy3d-step-${visualStep} ${isSingle ? 'diy3d-mode-single' : 'diy3d-mode-cube'} ${autoSpin ? 'diy3d-autospin' : ''}`}
+                style={!autoSpin ? { transform: `rotateX(${rotX}deg) rotateY(${rotY}deg)` } : undefined}
+              >
+                <div className="diy3d-floor-shadow" />
 
-              {isSingle ? (
-                <>
-                  <div className="d3-single-fan">
-                    <div className="d3-box-face d3-box-front">
-                      <div className="d3-grille">
-                        <div className="d3-blades">
-                          <span className="d3-blade d3-b1" />
-                          <span className="d3-blade d3-b2" />
-                          <span className="d3-blade d3-b3" />
-                          <span className="d3-hub" />
+                {isSingle ? (
+                  <>
+                    <div className="d3-single-fan">
+                      <div className="d3-box-face d3-box-front">
+                        <div className="d3-grille">
+                          <div className="d3-blades">
+                            <span className="d3-blade d3-b1" />
+                            <span className="d3-blade d3-b2" />
+                            <span className="d3-blade d3-b3" />
+                            <span className="d3-hub" />
+                          </div>
                         </div>
+                        <span className="d3-part-tag">FAN</span>
                       </div>
-                      <span className="d3-part-tag">FAN</span>
+                      <div className="d3-box-face d3-box-back" />
+                      <div className="d3-box-face d3-box-top" />
+                      <div className="d3-box-face d3-box-bottom" />
+                      <div className="d3-box-face d3-box-left" />
+                      <div className="d3-box-face d3-box-right" />
                     </div>
-                    <div className="d3-box-face d3-box-back" />
-                    <div className="d3-box-face d3-box-top" />
-                    <div className="d3-box-face d3-box-bottom" />
-                    <div className="d3-box-face d3-box-left" />
-                    <div className="d3-box-face d3-box-right" />
-                  </div>
 
-                  <div className="d3-single-filter">
-                    <div className="d3-filter-panel">
-                      <div className="d3-pleats" />
-                      <span className="d3-filter-badge">HEPA</span>
-                      <span className="d3-arrow-in">➔ IN</span>
+                    <div className="d3-single-filter">
+                      <div className="d3-filter-panel">
+                        <div className="d3-pleats" />
+                        <span className="d3-filter-badge">HEPA</span>
+                        <span className="d3-arrow-in">➔ IN</span>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="d3-single-tape">
-                    <span className="d3-tape-bar d3-tape-top" />
-                    <span className="d3-tape-bar d3-tape-bottom" />
-                    <span className="d3-tape-bar d3-tape-left" />
-                    <span className="d3-tape-bar d3-tape-right" />
-                  </div>
+                    <div className="d3-single-tape">
+                      <span className="d3-tape-bar d3-tape-top" />
+                      <span className="d3-tape-bar d3-tape-bottom" />
+                      <span className="d3-tape-bar d3-tape-left" />
+                      <span className="d3-tape-bar d3-tape-right" />
+                    </div>
 
-                  <div className="d3-airflow-single">
-                    <div className="d3-smog-in">
-                      <span className="d3-air-lbl d3-air-lbl--smog">Smog IN</span>
+                    <div className="d3-airflow-single">
+                      <div className="d3-smog-in">
+                        <span className="d3-air-lbl d3-air-lbl--smog">Smog IN</span>
+                      </div>
+                      <div className="d3-clean-out">
+                        <span className="d3-clean-wave">Clean Air ➔</span>
+                      </div>
                     </div>
-                    <div className="d3-clean-out">
-                      <span className="d3-clean-wave">Clean Air ➔</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="d3-wall d3-wall-front">
+                      <div className="d3-filter-panel">
+                        <div className="d3-pleats" />
+                        <span className="d3-filter-badge">FILTER 1</span>
+                        <span className="d3-arrow-in">➔ IN</span>
+                      </div>
                     </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="d3-wall d3-wall-front">
-                    <div className="d3-filter-panel">
-                      <div className="d3-pleats" />
-                      <span className="d3-filter-badge">FILTER 1</span>
-                      <span className="d3-arrow-in">➔ IN</span>
+                    <div className="d3-wall d3-wall-back">
+                      <div className="d3-filter-panel">
+                        <div className="d3-pleats" />
+                        <span className="d3-filter-badge">FILTER 2</span>
+                        <span className="d3-arrow-in">➔ IN</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="d3-wall d3-wall-back">
-                    <div className="d3-filter-panel">
-                      <div className="d3-pleats" />
-                      <span className="d3-filter-badge">FILTER 2</span>
-                      <span className="d3-arrow-in">➔ IN</span>
+                    <div className="d3-wall d3-wall-left">
+                      <div className="d3-filter-panel">
+                        <div className="d3-pleats" />
+                        <span className="d3-filter-badge">FILTER 3</span>
+                        <span className="d3-arrow-in">➔ IN</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="d3-wall d3-wall-left">
-                    <div className="d3-filter-panel">
-                      <div className="d3-pleats" />
-                      <span className="d3-filter-badge">FILTER 3</span>
-                      <span className="d3-arrow-in">➔ IN</span>
+                    <div className="d3-wall d3-wall-right">
+                      <div className="d3-filter-panel">
+                        <div className="d3-pleats" />
+                        <span className="d3-filter-badge">FILTER 4</span>
+                        <span className="d3-arrow-in">➔ IN</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="d3-wall d3-wall-right">
-                    <div className="d3-filter-panel">
-                      <div className="d3-pleats" />
-                      <span className="d3-filter-badge">FILTER 4</span>
-                      <span className="d3-arrow-in">➔ IN</span>
-                    </div>
-                  </div>
 
-                  <div className="d3-corner-tape d3-ct-fl" />
-                  <div className="d3-corner-tape d3-ct-fr" />
-                  <div className="d3-corner-tape d3-ct-bl" />
-                  <div className="d3-corner-tape d3-ct-br" />
+                    <div className="d3-corner-tape d3-ct-fl" />
+                    <div className="d3-corner-tape d3-ct-fr" />
+                    <div className="d3-corner-tape d3-ct-bl" />
+                    <div className="d3-corner-tape d3-ct-br" />
 
-                  <div className="d3-cardboard">
-                    <span className="d3-cardboard-lbl">CARDBOARD BASE</span>
-                  </div>
+                    <div className="d3-cardboard">
+                      <span className="d3-cardboard-lbl">CARDBOARD BASE</span>
+                    </div>
 
-                  <div className="d3-top-fan">
-                    <div className="d3-fan-frame">
-                      <div className="d3-fan-ring">
-                        <div className="d3-blades">
-                          <span className="d3-blade d3-b1" />
-                          <span className="d3-blade d3-b2" />
-                          <span className="d3-blade d3-b3" />
-                          <span className="d3-hub" />
+                    <div className="d3-top-fan">
+                      <div className="d3-fan-frame">
+                        <div className="d3-fan-ring">
+                          <div className="d3-blades">
+                            <span className="d3-blade d3-b1" />
+                            <span className="d3-blade d3-b2" />
+                            <span className="d3-blade d3-b3" />
+                            <span className="d3-hub" />
+                          </div>
                         </div>
+                        <span className="d3-fan-up-badge">BLOWS UP ⬆️</span>
                       </div>
-                      <span className="d3-fan-up-badge">BLOWS UP ⬆️</span>
+                      <div className="d3-fan-rim-tape" />
                     </div>
-                    <div className="d3-fan-rim-tape" />
-                  </div>
 
-                  <div className="d3-cube-airflow">
-                    <span className="d3-smog-stream d3-smog-l">💨 Smog ➔</span>
-                    <span className="d3-smog-stream d3-smog-r">⬅ Smog 💨</span>
-                    <div className="d3-clean-plume">
-                      <span className="d3-plume-arrow">⬆️ Clean Air</span>
+                    <div className="d3-cube-airflow">
+                      <span className="d3-smog-stream d3-smog-l">💨 Smog ➔</span>
+                      <span className="d3-smog-stream d3-smog-r">⬅ Smog 💨</span>
+                      <div className="d3-clean-plume">
+                        <span className="d3-plume-arrow">⬆️ Clean Air</span>
+                      </div>
                     </div>
-                  </div>
-                </>
-              )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
@@ -405,9 +415,8 @@ function DiyPurifierGuide({ sim, diySimulation, diyRec, purifierRec, isUrgent })
           </div>
         </div>
 
-        {/* RIGHT: Clean 5-Step Pills + Clear Single Card + Minimal Items Chips */}
+        {/* RIGHT: 5 Clean Step Pills + Clear Focus Card + Compact Materials */}
         <div className="diy3d-steps-col">
-          {/* 5 Step Stepper */}
           <div className="diy3d-stepper">
             {steps.map((s, idx) => (
               <button
@@ -422,7 +431,6 @@ function DiyPurifierGuide({ sim, diySimulation, diyRec, purifierRec, isUrgent })
             ))}
           </div>
 
-          {/* Focused Easy-to-Read Card */}
           <div className="diy3d-focus-card">
             <div className="diy3d-focus-head">
               <span className="diy3d-focus-num">Step {currentStep.num}</span>
@@ -434,13 +442,12 @@ function DiyPurifierGuide({ sim, diySimulation, diyRec, purifierRec, isUrgent })
             </div>
           </div>
 
-          {/* Minimal Items Chip Bar */}
           <div className="diy3d-items-bar">
             <span className="diy3d-items-label">Items Needed:</span>
             <div className="diy3d-items-chips">
-              <span className="diy3d-item-chip">💨 {units}× Box Fan</span>
+              <span className="diy3d-item-chip">💨 {autoUnits}× Box Fan</span>
               <span className="diy3d-item-chip">🧹 {filterQty}× HEPA Filter</span>
-              {!isSingle && <span className="diy3d-item-chip">📦 {units}× Cardboard</span>}
+              {!isSingle && <span className="diy3d-item-chip">📦 {autoUnits}× Cardboard</span>}
               <span className="diy3d-item-chip">🧻 Duct Tape</span>
             </div>
           </div>

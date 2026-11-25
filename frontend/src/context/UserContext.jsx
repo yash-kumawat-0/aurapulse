@@ -14,6 +14,7 @@ export function UserProvider({ children }) {
     { id: '2', name: 'Ananya', age: 7, health_condition: 'ASTHMA' },
     { id: '3', name: 'Dadi Ma', age: 68, health_condition: 'HEART_CONDITION' },
   ]);
+  const [selectedMemberId, setSelectedMemberId] = useState('1');
   const [homeProfile, setHomeProfile] = useState({
     room_area_sqft: 150,
     ceiling_height_ft: 10,
@@ -44,11 +45,17 @@ export function UserProvider({ children }) {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const addFamilyMember = useCallback((member) => {
-    setFamilyMembers((prev) => [...prev, { ...member, id: `${Date.now()}` }]);
+    const newId = `${Date.now()}`;
+    setFamilyMembers((prev) => [...prev, { ...member, id: newId }]);
+    setSelectedMemberId(newId);
   }, []);
 
   const removeFamilyMember = useCallback((id) => {
-    setFamilyMembers((prev) => prev.filter((m) => m.id !== id));
+    setFamilyMembers((prev) => {
+      const next = prev.filter((m) => m.id !== id);
+      setSelectedMemberId((cur) => (cur === id ? next[0]?.id || null : cur));
+      return next;
+    });
   }, []);
 
   return (
@@ -57,6 +64,7 @@ export function UserProvider({ children }) {
         location, setLocation,
         language, setLanguage,
         familyMembers, addFamilyMember, removeFamilyMember,
+        selectedMemberId, setSelectedMemberId,
         homeProfile, setHomeProfile,
         detectLocation,
       }}

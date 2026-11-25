@@ -1,21 +1,45 @@
 // ============================================
-// FamilyAdviceCard — Proper Action Plan Layout
+// FamilyAdviceCard — Separate Plan Per Person
+// Click any person tab (or card above) to view
+// ONLY their clear, uncluttered personal plan.
 // ============================================
+import { useEffect } from 'react';
 import { useUser } from '../../context/UserContext.jsx';
 import { useAqi } from '../../context/AqiContext.jsx';
 import { getRiskColor } from '../../utils/aqiColorMapper.js';
 import './FamilyAdviceCard.css';
 
 const RISK_INFO = {
-  LOW: { label: 'Low Risk', icon: '🟢', desc: 'Normal activities OK' },
-  MODERATE: { label: 'Moderate', icon: '🟡', desc: 'Sensitive groups take care' },
-  HIGH: { label: 'High Risk', icon: '🟠', desc: 'Limit outdoor exposure' },
-  SEVERE: { label: 'Severe', icon: '🔴', desc: 'Stay indoors' },
+  LOW: { label: 'Low Risk · Safe', icon: '🟢', tint: '#F0FDF4' },
+  MODERATE: { label: 'Moderate · Take Care', icon: '🟡', tint: '#FFFBEB' },
+  HIGH: { label: 'High Risk · Limit Outdoor', icon: '🟠', tint: '#FFF7ED' },
+  SEVERE: { label: 'Severe · Stay Indoors', icon: '🔴', tint: '#FEF2F2' },
 };
 
+function getMemberIcon(age) {
+  if (age <= 5) return '👶';
+  if (age <= 12) return '🧒';
+  if (age > 60) return '👴';
+  return '🧑';
+}
+
 function FamilyAdviceCard() {
-  const { location, familyMembers, homeProfile, language } = useUser();
+  const {
+    location,
+    familyMembers,
+    homeProfile,
+    language,
+    selectedMemberId,
+    setSelectedMemberId,
+  } = useUser();
   const { adviceData, currentAqi, loading, loadAdvice } = useAqi();
+
+  // Keep selectedMemberId valid if members list changes
+  useEffect(() => {
+    if (familyMembers.length > 0 && !familyMembers.some((m) => m.id === selectedMemberId)) {
+      setSelectedMemberId(familyMembers[0].id);
+    }
+  }, [familyMembers, selectedMemberId, setSelectedMemberId]);
 
   const handleGenerate = () => {
     if (!location) return;
@@ -29,20 +53,37 @@ function FamilyAdviceCard() {
   };
 
   const hasAdvice = adviceData?.advice;
+  const memberPlans = hasAdvice?.family_advice || [];
+  const selectedMember = familyMembers.find((m) => m.id === selectedMemberId) || familyMembers[0];
+
+  // Match advice entry by name (case-insensitive) or fallback index
+  const activePlan = selectedMember
+    ? memberPlans.find((c) => c.member_name?.toLowerCase() === selectedMember.name?.toLowerCase()) ||
+      memberPlans[familyMembers.findIndex((m) => m.id === selectedMember.id)] ||
+      memberPlans[0]
+    : memberPlans[0];
+
+  const tips = activePlan?.detailed_tips || activePlan?.secondary_actions || [];
+  const riskColor = activePlan ? getRiskColor(activePlan.risk_level) : '#64748B';
+  const riskInfo = activePlan ? (RISK_INFO[activePlan.risk_level] || RISK_INFO.MODERATE) : RISK_INFO.MODERATE;
+  const cleanestWindow = adviceData?.calculated_data?.cleanest_window;
+  const cleanestLabel = cleanestWindow?.start_label
+    ? `${cleanestWindow.start_label} – ${cleanestWindow.end_label}`
+    : activePlan?.safe_window || null;
 
   return (
     <div className="card advice-card">
       <div className="advice-header">
         <div className="advice-header-left">
-          <h3 className="advice-title">🤖 AI Action Plan</h3>
-          {hasAdvice && <span className="advice-ready-badge">✓ Generated</span>}
+          <h3 className="advice-title">🤖 Personal Action Plan</h3>
+          {hasAdvice && <span className="advice-ready-badge">✓ Ready</span>}
         </div>
         <button className="advice-gen-btn" onClick={handleGenerate}
           disabled={loading || !location || !currentAqi || familyMembers.length === 0}>
           {loading ? (
             <><span className="advice-spin" /> Generating...</>
           ) : hasAdvice ? (
-            '🔄 Regenerate'
+            '🔄 Update Plan'
           ) : (
             '⚡ Generate Plan'
           )}
@@ -53,11 +94,11 @@ function FamilyAdviceCard() {
       {!hasAdvice && !loading && (
         <div className="advice-empty">
           {!currentAqi ? (
-            <><span className="advice-empty-icon">📍</span><p>Detect your location first to get air quality data</p></>
+            <><span className="advice-empty-icon">📍</span><p>Detect your location first to load air quality data</p></>
           ) : familyMembers.length === 0 ? (
-            <><span className="advice-empty-icon">👨‍👩‍👧</span><p>Add family members above, then generate a personalized plan</p></>
+            <><span className="advice-empty-icon">👨‍👩‍👧</span><p>Add family members above to build personalized plans</p></>
           ) : (
-            <><span className="advice-empty-icon">🤖</span><p>Click <strong>Generate Plan</strong> to get personalized advice for each family member based on current air quality</p></>
+            <><span className="advice-empty-icon">🤖</span><p>Click <strong>Generate Plan</strong>, then tap any person to read their simple step-by-step plan.</p></>
           )}
         </div>
       )}
@@ -66,88 +107,116 @@ function FamilyAdviceCard() {
       {loading && (
         <div className="advice-loading">
           <span className="advice-loading-icon">🤖</span>
-          <p>Analyzing air quality and health profiles...</p>
+          <p>Preparing each person&apos;s plan...</p>
         </div>
       )}
 
-      {/* ── Results ── */}
+      {/* ── Focused Separate View Per Person ── */}
       {hasAdvice && !loading && (
         <div className="advice-results">
-          {/* Overall Summary */}
-          {adviceData.advice.overall_summary && (
+          {/* Concise Overall Line */}
+          {hasAdvice.overall_summary && (
             <div className="advice-summary">
-              <div className="advice-summary-icon">📋</div>
-              <div className="advice-summary-text">
-                <span className="advice-summary-label">Summary</span>
-                <p>{adviceData.advice.overall_summary}</p>
-              </div>
+              <span className="advice-summary-icon">📋</span>
+              <p>{hasAdvice.overall_summary}</p>
             </div>
           )}
 
-          {/* Per-Member Advice Cards */}
-          {adviceData.advice.family_advice && (
-            <div className="advice-members">
-              <span className="advice-section-title">Individual Action Plans</span>
-              <div className="advice-members-grid">
-                {adviceData.advice.family_advice.map((card, i) => {
-                  const riskColor = getRiskColor(card.risk_level);
-                  const riskInfo = RISK_INFO[card.risk_level] || RISK_INFO.MODERATE;
-                  return (
-                    <div key={i} className="advice-member-card"
-                      style={{ borderTopColor: riskColor }}>
-                      <div className="advice-member-top">
-                        <div className="advice-member-identity">
-                          <span className="advice-member-name">{card.member_name}</span>
-                          {card.member_age && (
-                            <span className="advice-member-age">{card.member_age} years</span>
-                          )}
-                        </div>
-                        <div className="advice-member-risk"
-                          style={{ background: `${riskColor}15`, color: riskColor, borderColor: `${riskColor}40` }}>
-                          <span>{riskInfo.icon}</span>
-                          <span>{riskInfo.label}</span>
-                        </div>
-                      </div>
-
-                      <div className="advice-member-action">
-                        <span className="advice-member-action-label">Primary Action</span>
-                        <p>{card.primary_action}</p>
-                      </div>
-
-                      {card.secondary_actions && card.secondary_actions.length > 0 && (
-                        <div className="advice-member-secondary">
-                          {card.secondary_actions.map((action, j) => (
-                            <div key={j} className="advice-member-tip">
-                              <span className="advice-tip-dot" style={{ background: riskColor }} />
-                              {action}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {card.safe_window && (
-                        <div className="advice-member-window">
-                          <span>🕐</span> Safe outdoor window: <strong>{card.safe_window}</strong>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+          {/* Clickable Person Selector Pills */}
+          {familyMembers.length > 0 && (
+            <div className="advice-person-tabs" role="tablist" aria-label="Select family member plan">
+              {familyMembers.map((m, idx) => {
+                const plan = memberPlans.find((c) => c.member_name?.toLowerCase() === m.name?.toLowerCase()) || memberPlans[idx];
+                const pColor = plan ? getRiskColor(plan.risk_level) : '#94A3B8';
+                const active = selectedMember?.id === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    className={`advice-person-tab ${active ? 'advice-person-tab--active' : ''}`}
+                    style={active ? { borderColor: pColor, background: `${pColor}14` } : undefined}
+                    onClick={() => setSelectedMemberId(m.id)}
+                  >
+                    <span className="advice-person-emoji">{getMemberIcon(m.age)}</span>
+                    <span className="advice-person-tab-name">{m.name}</span>
+                    <span className="advice-person-dot" style={{ background: pColor }} />
+                  </button>
+                );
+              })}
             </div>
           )}
 
-          {/* General Tips */}
-          {adviceData.advice.general_tips && adviceData.advice.general_tips.length > 0 && (
-            <div className="advice-tips">
-              <span className="advice-section-title">💡 General Tips</span>
-              <div className="advice-tips-list">
-                {adviceData.advice.general_tips.map((tip, i) => (
-                  <div key={i} className="advice-tip-item">
-                    <span className="advice-tip-num">{i + 1}</span>
-                    <span>{tip}</span>
+          {/* Selected Person's Dedicated Clear Plan */}
+          {activePlan && (
+            <div
+              className="advice-single-card"
+              style={{ borderColor: riskColor, borderTopColor: riskColor }}
+            >
+              <div className="advice-single-head">
+                <div className="advice-single-who">
+                  <span className="advice-single-avatar" style={{ background: `${riskColor}18` }}>
+                    {getMemberIcon(selectedMember?.age || 30)}
+                  </span>
+                  <div>
+                    <h4 className="advice-single-name">{activePlan.member_name || selectedMember?.name}</h4>
+                    <span className="advice-single-sub">
+                      {selectedMember ? `${selectedMember.age} years` : ''}
+                      {selectedMember?.health_condition && selectedMember.health_condition !== 'NONE'
+                        ? ` · ${selectedMember.health_condition.replace(/_/g, ' ')}`
+                        : ''}
+                    </span>
                   </div>
-                ))}
+                </div>
+
+                <div
+                  className="advice-single-risk"
+                  style={{ background: riskInfo.tint, color: riskColor, borderColor: `${riskColor}50` }}
+                >
+                  <span>{riskInfo.icon}</span>
+                  <span>{riskInfo.label}</span>
+                </div>
+              </div>
+
+              {/* Primary Action Callout */}
+              <div className="advice-single-main" style={{ background: riskInfo.tint }}>
+                <span className="advice-single-label">What To Do Today</span>
+                <p>{activePlan.primary_action}</p>
+              </div>
+
+              {/* Clear Bullet Steps */}
+              {tips.length > 0 && (
+                <div className="advice-single-tips">
+                  <span className="advice-single-label">Simple Steps</span>
+                  <ul className="advice-single-list">
+                    {tips.map((tip, idx) => (
+                      <li key={idx}>
+                        <span className="advice-single-num" style={{ background: riskColor }}>{idx + 1}</span>
+                        <span>{tip}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Bottom Concise Window + Home/Travel Note */}
+              <div className="advice-single-foot">
+                {cleanestLabel && (
+                  <div className="advice-foot-chip advice-foot-chip--time">
+                    🕒 Safe Outdoor Time: <strong>{cleanestLabel}</strong>
+                  </div>
+                )}
+                {hasAdvice.ventilation_advice && (
+                  <div className="advice-foot-chip">
+                    🪟 {hasAdvice.ventilation_advice}
+                  </div>
+                )}
+                {hasAdvice.commute_advice && (
+                  <div className="advice-foot-chip">
+                    🚗 {hasAdvice.commute_advice}
+                  </div>
+                )}
               </div>
             </div>
           )}

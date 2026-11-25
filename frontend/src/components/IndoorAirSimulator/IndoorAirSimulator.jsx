@@ -1,9 +1,9 @@
 // ============================================
 // IndoorAirSimulator — Minimal 3 Inputs → Simulate
 // On Simulate:
-//   1) Concise Verdict + 4-Metric Corner Card
-//   2) Short 1-Line Preventive Actions
-//   3) Clean 3D Animated DIY Purifier Builder
+//   1) ONE Big Clear Summary Line (auto-volume + action)
+//   2) Key Numbers Range Container with Safe 35 Marker
+//   3) Big Window 3D DIY Purifier Animation (auto volume)
 // ============================================
 import { useState, useEffect } from 'react';
 import { useUser } from '../../context/UserContext.jsx';
@@ -26,7 +26,7 @@ const SEALS = [
   { key: 'sealed_upvc', label: 'UPVC Sealed', desc: 'Airtight', icon: '✨', color: '#059669' },
 ];
 
-// ── 3. Indoor Pollution Sources (matches backend massBalanceModel.js) ──
+// ── 3. Indoor Pollution Sources ──
 const SOURCES = [
   { key: 'none', label: 'None', icon: '✅', rate: '0 µg/h' },
   { key: 'incense', label: 'Incense', icon: '🪔', rate: '+800 µg/h' },
@@ -51,6 +51,36 @@ function getPmLabel(pm) {
   return 'Hazardous';
 }
 
+// Reusable visual PM2.5 Range Bar with WHO Safe 35 µg/m³ Marker
+function PmRangeRow({ label, value, maxRange }) {
+  const safeVal = 35;
+  const pct = Math.min(Math.max((value / maxRange) * 100, 3), 100);
+  const safePct = Math.min((safeVal / maxRange) * 100, 92);
+  const color = getPmColor(value);
+
+  return (
+    <div className="ia-range-item">
+      <div className="ia-range-top">
+        <span className="ia-range-name">{label}</span>
+        <span className="ia-range-pill" style={{ color, background: `${color}16` }}>
+          <strong>{Math.round(value)}</strong> µg/m³ · {getPmLabel(value)}
+        </span>
+      </div>
+      <div className="ia-range-track">
+        <div className="ia-range-fill" style={{ width: `${pct}%`, background: color }} />
+        <div className="ia-range-thumb" style={{ left: `${pct}%`, borderColor: color }} />
+        <div
+          className="ia-range-safe-line"
+          style={{ left: `${safePct}%` }}
+          title="WHO Safe Limit: 35 µg/m³"
+        >
+          <span className="ia-range-safe-tag">Safe 35</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function IndoorAirSimulator() {
   const { homeProfile, setHomeProfile, location } = useUser();
   const { currentAqi, diurnalData, indoorData, loadIndoorSimulation, loadAqiData, loading } = useAqi();
@@ -66,7 +96,6 @@ function IndoorAirSimulator() {
   const [hasSimulated, setHasSimulated] = useState(false);
   const [needsRefresh, setNeedsRefresh] = useState(false);
   const [simulating, setSimulating] = useState(false);
-  const [checkedActions, setCheckedActions] = useState(new Set());
 
   useEffect(() => {
     if (location && !currentAqi && !loading) {
@@ -96,77 +125,47 @@ function IndoorAirSimulator() {
     setSimulating(false);
     setHasSimulated(true);
     setNeedsRefresh(false);
-    setCheckedActions(new Set());
   };
 
-  const toggleAction = (id) => {
-    setCheckedActions((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
+  // Auto-detected live volume & target CADR
   const volumeCuFt = roomArea * ceilingHeight;
   const volumeM3 = Math.round(roomArea * 0.0929 * ceilingHeight * 0.3048 * 10) / 10;
+  const autoTargetCadr = Math.round(volumeM3 * 5);
 
   const sim = indoorData?.simulation;
   const diySimulation = indoorData?.diy_simulation;
-  const sourceFreeSim = indoorData?.source_free_simulation;
   const purifierRec = indoorData?.purifier_recommendation;
   const diyRec = indoorData?.diy_purifier;
 
   const outdoorPM = sim?.outdoor_pm25 ?? currentAqi?.pm25 ?? 150;
   const excessAboveSafe = sim ? Math.max(0, Math.round((sim.indoor_pm25 - 35) * 10) / 10) : 0;
   const isUrgent = sim ? !sim.is_safe || sim.cadr_needed_for_safe > 0 : true;
+  const effectiveCadrNeed = sim ? Math.max(sim.cadr_needed_for_safe, autoTargetCadr) : autoTargetCadr;
+  const maxRange = Math.max(outdoorPM, sim?.indoor_pm25 || 0, 120);
 
-  // Concise 1-line preventive steps (only essential tips)
-  const actions = [];
-  if (sim) {
-    if (isUrgent) {
-      actions.push({
-        id: 'purify',
-        icon: '🌀',
-        text: `Clean −${excessAboveSafe} µg/m³ using a ${sim.cadr_needed_for_safe} m³/h purifier (or DIY build below)`,
-      });
-    } else {
-      actions.push({
-        id: 'safe',
-        icon: '✅',
-        text: `Indoor air is safe (${sim.indoor_pm25} µg/m³). Keep windows closed during peak smog.`,
-      });
-    }
-
+  // Build ONE crisp readable big summary line
+  const oneBigLine = (() => {
+    if (!sim) return '';
+    const extraTips = [];
     if (source !== 'none') {
-      const saved = sourceFreeSim
-        ? Math.max(0, Math.round((sim.indoor_pm25 - sourceFreeSim.indoor_pm25) * 10) / 10)
-        : 0;
-      const srcName = SOURCES.find((s) => s.key === source)?.label || 'smoke';
-      actions.push({
-        id: 'source',
-        icon: '🚫',
-        text: `Stop indoor ${srcName.toLowerCase()} for an instant −${saved} µg/m³ drop`,
-      });
+      const srcLabel = SOURCES.find((s) => s.key === source)?.label || 'smoke';
+      extraTips.push(`turn off ${srcLabel.toLowerCase()}`);
+    }
+    if (sealType === 'leaky_wood') {
+      extraTips.push('seal window cracks');
+    } else if (diurnalData?.diurnal?.cleanest_window?.start_label) {
+      extraTips.push(`air out ${diurnalData.diurnal.cleanest_window.start_label}–${diurnalData.diurnal.cleanest_window.end_label}`);
     }
 
-    if (sealType === 'leaky_wood') {
-      actions.push({
-        id: 'seal',
-        icon: '🩹',
-        text: 'Seal wooden window cracks with ₹150 foam tape to cut smog drafts',
-      });
-    } else {
-      const bestWindow = diurnalData?.diurnal?.cleanest_window;
-      actions.push({
-        id: 'vent',
-        icon: '🕒',
-        text: bestWindow
-          ? `Open windows only during cleanest hours: ${bestWindow.start_label} – ${bestWindow.end_label}`
-          : 'Avoid opening windows between 6 AM – 9 AM',
-      });
+    if (isUrgent) {
+      const tipTail = extraTips.length ? ` • Also ${extraTips.join(' & ')}` : '';
+      return `${volumeM3} m³ room needs a ${sim.cadr_needed_for_safe} m³/h purifier (−${excessAboveSafe} µg/m³ to reach safe 35)${tipTail}`;
     }
-  }
+    return `${volumeM3} m³ room is Safe at ${sim.indoor_pm25} µg/m³ (below 35 limit)${extraTips.length ? ` • Tip: ${extraTips.join(' & ')}` : ''}`;
+  })();
+
+  const diyAfterPm = diySimulation?.indoor_pm25 ?? Math.max(12, Math.round((sim?.indoor_pm25 || 120) * 0.25));
+  const cadrMax = Math.max(effectiveCadrNeed, diyRec?.estimated_cadr || 350, 450);
 
   return (
     <div className="ia-shell">
@@ -179,11 +178,11 @@ function IndoorAirSimulator() {
             <span className="ia-setup-icon">🏠</span>
             <div>
               <h3 className="ia-setup-title">Indoor Air Planner</h3>
-              <p className="ia-setup-sub">Choose your room setup and tap Simulate for a clear plan.</p>
+              <p className="ia-setup-sub">Pick 3 room details — volume &amp; purifier size are detected automatically.</p>
             </div>
           </div>
           <div className="ia-volume-pill">
-            Volume: <strong>{volumeCuFt.toLocaleString()} ft³</strong> ({volumeM3} m³)
+            Auto Volume: <strong>{volumeCuFt.toLocaleString()} ft³ ({volumeM3} m³)</strong> · Target: <strong>{autoTargetCadr} m³/h</strong>
           </div>
         </div>
 
@@ -192,7 +191,7 @@ function IndoorAirSimulator() {
           <div className="ia-input-box">
             <div className="ia-box-top">
               <span className="ia-step-badge">1</span>
-              <span className="ia-box-label">Room Type &amp; Size (Volume)</span>
+              <span className="ia-box-label">Room Type &amp; Size (Auto Volume)</span>
               <button
                 type="button"
                 className="ia-size-toggle"
@@ -325,101 +324,71 @@ function IndoorAirSimulator() {
                 : '🔬 Simulate Indoor Air'}
           </button>
           {needsRefresh && (
-            <span className="ia-stale-hint">Click Simulate to refresh results</span>
+            <span className="ia-stale-hint">Inputs changed — click Simulate to refresh</span>
           )}
         </div>
       </div>
 
       {/* ══════════════════════════════════════════
-          PART 2: MINIMAL RESULTS CONTAINER
+          PART 2: CLEAN SIMULATE CONTAINER
+          1 Big Line + Range Chart + Big 3D DIY Window
           ══════════════════════════════════════════ */}
       {hasSimulated && sim && (
         <div className="ia-results-container">
-          <div className="ia-results-top">
-            {/* LEFT: Clean Verdict + Short What-To-Do List */}
-            <div className="ia-action-main">
-              <div className={`ia-verdict-banner ${isUrgent ? 'ia-verdict-banner--warn' : 'ia-verdict-banner--safe'}`}>
-                <span className="ia-verdict-icon">{isUrgent ? '⚠️' : '✅'}</span>
-                <div className="ia-verdict-copy">
-                  <h4>
-                    {isUrgent
-                      ? `Need −${excessAboveSafe} µg/m³ reduction (${sim.cadr_needed_for_safe} m³/h CADR)`
-                      : `Room Air Is Safe (${sim.indoor_pm25} µg/m³)`}
-                  </h4>
-                  <p>
-                    {isUrgent
-                      ? `Indoor air reaches ${sim.indoor_pm25} µg/m³ (${getPmLabel(sim.indoor_pm25)}). Safe WHO limit is 35 µg/m³.`
-                      : 'Safely under the 35 µg/m³ limit. Keep following the checklist below.'}
-                  </p>
-                </div>
-              </div>
+          {/* ONE BIG LINE Summary */}
+          <div className={`ia-one-line ${isUrgent ? 'ia-one-line--warn' : 'ia-one-line--safe'}`}>
+            <span className="ia-one-line-icon">{isUrgent ? '⚠️' : '✅'}</span>
+            <span className="ia-one-line-text">{oneBigLine}</span>
+          </div>
 
-              <div className="ia-prevent-section">
-                <h4 className="ia-prevent-title">🛡️ What To Do</h4>
-                <div className="ia-prevent-list">
-                  {actions.map((act) => {
-                    const done = checkedActions.has(act.id);
-                    return (
-                      <button
-                        key={act.id}
-                        type="button"
-                        className={`ia-prevent-item ${done ? 'ia-prevent-item--done' : ''}`}
-                        onClick={() => toggleAction(act.id)}
-                      >
-                        <span className="ia-prevent-check">{done ? '☑' : '☐'}</span>
-                        <span className="ia-prevent-icon">{act.icon}</span>
-                        <span className="ia-prevent-text">{act.text}</span>
-                      </button>
-                    );
-                  })}
+          {/* Key Numbers Container — Ranges with Safe Marker (35 µg/m³) */}
+          <div className="ia-ranges-panel" aria-label="Air Quality Ranges and Safe Limit Marker">
+            <div className="ia-ranges-head">
+              <span>📊 Key Numbers &amp; Safe Range (Safe ≤ 35 µg/m³)</span>
+              <span className="ia-ranges-vol">Detected Volume: <strong>{volumeM3} m³</strong></span>
+            </div>
+
+            <div className="ia-ranges-grid">
+              <PmRangeRow label="🌍 Outdoor Air" value={outdoorPM} maxRange={maxRange} />
+              <PmRangeRow label="🏠 Current Indoor Air" value={sim.indoor_pm25} maxRange={maxRange} />
+              <PmRangeRow label="✨ With DIY Purifier" value={diyAfterPm} maxRange={maxRange} />
+
+              <div className="ia-range-item">
+                <div className="ia-range-top">
+                  <span className="ia-range-name">🌀 Purifier CADR (Room: {volumeM3} m³)</span>
+                  <span className="ia-range-pill" style={{ color: '#1D4ED8', background: '#EFF6FF' }}>
+                    Need <strong>{sim.cadr_needed_for_safe}</strong> / DIY <strong>{(diyRec?.estimated_cadr || 350) * (diyRec?.units_needed || 1)} m³/h</strong>
+                  </span>
+                </div>
+                <div className="ia-range-track">
+                  <div
+                    className="ia-range-fill"
+                    style={{
+                      width: `${Math.min(((diyRec?.estimated_cadr || 350) * (diyRec?.units_needed || 1) / cadrMax) * 100, 100)}%`,
+                      background: '#2563EB',
+                    }}
+                  />
+                  <div
+                    className="ia-range-safe-line"
+                    style={{ left: `${Math.min((sim.cadr_needed_for_safe / cadrMax) * 100, 94)}%` }}
+                    title={`Needed CADR: ${sim.cadr_needed_for_safe} m³/h`}
+                  >
+                    <span className="ia-range-safe-tag ia-range-safe-tag--blue">Need {sim.cadr_needed_for_safe}</span>
+                  </div>
                 </div>
               </div>
             </div>
-
-            {/* SMALL CORNER: Strictly 4 Important Outdoor & Indoor Numbers */}
-            <aside className="ia-corner-stats" aria-label="Key Outdoor and Indoor Metrics">
-              <div className="ia-corner-head">
-                <span>📋 Key Numbers</span>
-                <span
-                  className="ia-corner-pill"
-                  style={{ color: getPmColor(sim.indoor_pm25), background: `${getPmColor(sim.indoor_pm25)}18` }}
-                >
-                  {getPmLabel(sim.indoor_pm25)}
-                </span>
-              </div>
-
-              <div className="ia-corner-grid">
-                <div className="ia-metric">
-                  <span>Outdoor</span>
-                  <strong style={{ color: getPmColor(outdoorPM) }}>{Math.round(outdoorPM)} µg/m³</strong>
-                </div>
-                <div className="ia-metric">
-                  <span>Indoor</span>
-                  <strong style={{ color: getPmColor(sim.indoor_pm25) }}>{sim.indoor_pm25} µg/m³</strong>
-                </div>
-                <div className="ia-metric">
-                  <span>Need To Drop</span>
-                  <strong style={{ color: excessAboveSafe > 0 ? '#DC2626' : '#059669' }}>
-                    {excessAboveSafe > 0 ? `−${excessAboveSafe} µg/m³` : 'Safe ✓'}
-                  </strong>
-                </div>
-                <div className="ia-metric">
-                  <span>Purifier Needed</span>
-                  <strong style={{ color: '#2563EB' }}>
-                    {sim.cadr_needed_for_safe} m³/h
-                  </strong>
-                </div>
-              </div>
-            </aside>
           </div>
 
-          {/* ── Minimal Interactive 3D DIY Purifier Builder ── */}
+          {/* Big Interactive 3D DIY Purifier Window (auto-detects room volume) */}
           <DiyPurifierGuide
             sim={sim}
             diySimulation={diySimulation}
             diyRec={diyRec}
             purifierRec={purifierRec}
             isUrgent={isUrgent}
+            roomVolumeM3={volumeM3}
+            roomVolumeCuFt={volumeCuFt}
           />
         </div>
       )}

@@ -1,5 +1,5 @@
 /* ============================================
-   FamilyProfileList — Visual Cards
+   FamilyProfileList — Clickable Visual Cards
    ============================================ */
 .family-card {
   display: flex;
@@ -11,23 +11,26 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
 }
 .family-header-left {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--space-sm);
 }
 .family-title {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 800;
   font-family: var(--font-heading);
 }
 .family-count {
-  font-size: 0.8rem;
-  font-weight: 700;
+  font-size: 0.84rem;
+  font-weight: 600;
   color: var(--text-secondary);
   background: var(--bg-secondary);
-  padding: 3px 10px;
+  padding: 3px 12px;
   border-radius: var(--radius-full);
 }
 
@@ -45,7 +48,7 @@
 /* ── Member Cards Grid ── */
 .family-members-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
   gap: var(--space-sm);
 }
 
@@ -57,27 +60,33 @@
   gap: 6px;
   padding: var(--space-md) var(--space-sm);
   background: var(--bg-primary);
-  border: 1.5px solid var(--border-light);
-  border-left: 4px solid var(--border-light);
+  border: 2px solid var(--border-light);
+  border-left: 5px solid var(--border-light);
   border-radius: var(--radius-md);
-  transition: all 0.15s;
+  cursor: pointer;
+  transition: all 0.16s ease;
 }
 .family-member-card:hover {
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 .family-member-card--vulnerable {
-  background: #FFFDE7;
+  background: #FFFDF2;
+}
+.family-member-card--selected {
+  border-color: var(--color-primary);
+  background: #F0FDF4;
+  box-shadow: 0 4px 16px rgba(46, 125, 50, 0.14);
 }
 
 .family-member-remove {
   position: absolute;
   top: 6px; right: 6px;
-  width: 20px; height: 20px;
+  width: 24px; height: 24px;
   border-radius: 50%;
   background: transparent;
   color: var(--text-muted);
-  font-size: 0.6rem;
+  font-size: 0.72rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -88,32 +97,32 @@
 .family-member-remove:hover { background: #FFEBEE; color: #F44336; }
 
 .family-member-avatar {
-  width: 44px; height: 44px;
+  width: 48px; height: 48px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.3rem;
+  font-size: 1.45rem;
 }
 
 .family-member-info {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1px;
+  gap: 2px;
 }
 .family-member-name {
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 800;
   color: var(--text-primary);
 }
 .family-member-age {
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   color: var(--text-secondary);
 }
 
 .family-member-cond {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 700;
   padding: 3px 12px;
   border-radius: var(--radius-full);
@@ -122,9 +131,15 @@
 }
 
 .family-member-vuln {
-  font-size: 0.76rem;
+  font-size: 0.78rem;
   font-weight: 700;
   color: #E65100;
+}
+
+.family-member-selected {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #15803D;
 }
 
 /* ── Empty State ── */
@@ -137,7 +152,7 @@
   color: var(--text-muted);
 }
 .family-empty-icon { font-size: 2rem; }
-.family-empty p { font-size: 0.92rem; text-align: center; }
+.family-empty p { font-size: 0.94rem; text-align: center; }
 
 /* ── Add Member Form ── */
 .family-form {
@@ -155,21 +170,12 @@
   to { opacity: 1; transform: none; }
 }
 
-.family-form-row {
-  display: flex;
-  gap: var(--space-sm);
-}
-
-.family-form-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
-}
-.family-form-field--small { max-width: 90px; }
+.family-form-row { display: flex; gap: var(--space-sm); }
+.family-form-field { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.family-form-field--small { max-width: 100px; }
 
 .family-form-label {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
@@ -179,19 +185,14 @@
 .family-form input {
   padding: 9px var(--space-sm);
   font-family: var(--font-body);
-  font-size: 0.94rem;
+  font-size: 0.95rem;
   border: 1.5px solid var(--border-light);
   border-radius: var(--radius-sm);
   background: var(--bg-primary);
-  transition: border-color 0.15s;
 }
 .family-form input:focus { outline: none; border-color: var(--color-primary); }
 
-.family-cond-grid {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
+.family-cond-grid { display: flex; gap: 6px; flex-wrap: wrap; }
 .family-cond-btn {
   display: flex;
   align-items: center;
@@ -200,16 +201,11 @@
   border: 1.5px solid var(--border-light);
   border-radius: var(--radius-full);
   background: var(--bg-primary);
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.15s;
 }
-.family-cond-btn:hover { border-color: var(--text-muted); }
-.family-cond-btn--on {
-  font-weight: 700;
-  box-shadow: var(--shadow-sm);
-}
+.family-cond-btn--on { font-weight: 700; box-shadow: var(--shadow-sm); }
 .family-cond-name { font-weight: 600; }
 
 .family-form-submit {
@@ -218,15 +214,13 @@
   color: white;
   border-radius: var(--radius-md);
   font-weight: 700;
-  font-size: 0.92rem;
+  font-size: 0.94rem;
   align-self: flex-start;
-  transition: all 0.15s;
 }
-.family-form-submit:hover { background: var(--color-primary-dark); transform: translateY(-1px); }
+.family-form-submit:hover { background: var(--color-primary-dark); }
 
 @media (max-width: 640px) {
   .family-members-grid { grid-template-columns: repeat(2, 1fr); }
   .family-form-row { flex-direction: column; }
   .family-form-field--small { max-width: unset; }
-  .family-header { flex-direction: column; align-items: flex-start; gap: var(--space-sm); }
 }

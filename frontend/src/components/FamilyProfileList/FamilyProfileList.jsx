@@ -1,5 +1,6 @@
 // ============================================
-// FamilyProfileList — Visual Member Cards
+// FamilyProfileList — Clickable Member Cards
+// Clicking a member opens/focuses their personal plan.
 // ============================================
 import { useState } from 'react';
 import { useUser } from '../../context/UserContext.jsx';
@@ -23,7 +24,13 @@ function getAgeGroup(age) {
 }
 
 function FamilyProfileList() {
-  const { familyMembers, addFamilyMember, removeFamilyMember } = useUser();
+  const {
+    familyMembers,
+    addFamilyMember,
+    removeFamilyMember,
+    selectedMemberId,
+    setSelectedMemberId,
+  } = useUser();
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
@@ -32,7 +39,7 @@ function FamilyProfileList() {
   const handleAdd = (e) => {
     e.preventDefault();
     if (!name.trim() || !age) return;
-    addFamilyMember({ name: name.trim(), age: parseInt(age), health_condition: condition });
+    addFamilyMember({ name: name.trim(), age: parseInt(age, 10), health_condition: condition });
     setName('');
     setAge('');
     setCondition('NONE');
@@ -46,7 +53,7 @@ function FamilyProfileList() {
       <div className="family-header">
         <div className="family-header-left">
           <h3 className="family-title">👨‍👩‍👧 Family Members</h3>
-          <span className="family-count">{familyMembers.length} member{familyMembers.length !== 1 ? 's' : ''}</span>
+          <span className="family-count">{familyMembers.length} member{familyMembers.length !== 1 ? 's' : ''} · click any person for their plan</span>
         </div>
         <button className="family-add-toggle" onClick={() => setAdding(!adding)}>
           {adding ? '✕ Cancel' : '+ Add Member'}
@@ -86,17 +93,31 @@ function FamilyProfileList() {
         </form>
       )}
 
-      {/* ── Member Cards Grid ── */}
+      {/* ── Clickable Member Cards Grid ── */}
       <div className="family-members-grid">
         {familyMembers.map((m) => {
           const cond = getCondInfo(m.health_condition);
           const ageGroup = getAgeGroup(m.age);
           const isVulnerable = m.health_condition !== 'NONE' || m.age < 6 || m.age > 65;
+          const isSelected = selectedMemberId === m.id;
           return (
-            <div key={m.id} className={`family-member-card ${isVulnerable ? 'family-member-card--vulnerable' : ''}`}
-              style={{ borderLeftColor: cond.color }}>
-              <button className="family-member-remove" onClick={() => removeFamilyMember(m.id)}
-                title="Remove member">✕</button>
+            <div
+              key={m.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => setSelectedMemberId(m.id)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedMemberId(m.id); }}
+              className={`family-member-card ${isVulnerable ? 'family-member-card--vulnerable' : ''} ${isSelected ? 'family-member-card--selected' : ''}`}
+              style={{ borderLeftColor: cond.color }}
+            >
+              <button
+                type="button"
+                className="family-member-remove"
+                onClick={(e) => { e.stopPropagation(); removeFamilyMember(m.id); }}
+                title="Remove member"
+              >
+                ✕
+              </button>
               <div className="family-member-avatar" style={{ background: cond.bg }}>
                 <span>{ageGroup.icon}</span>
               </div>
@@ -107,9 +128,11 @@ function FamilyProfileList() {
               <div className="family-member-cond" style={{ background: cond.bg, color: cond.color }}>
                 {cond.emoji} {cond.label}
               </div>
-              {isVulnerable && (
-                <span className="family-member-vuln">⚠️ Vulnerable</span>
-              )}
+              {isSelected ? (
+                <span className="family-member-selected">✓ Viewing Plan</span>
+              ) : isVulnerable ? (
+                <span className="family-member-vuln">⚠️ Sensitive</span>
+              ) : null}
             </div>
           );
         })}

@@ -192,25 +192,29 @@ button {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- Share Button --- */
-.share-section {
-  padding: var(--space-lg) 0;
-}
-
-.share-btn {
-  width: 100%;
-  padding: var(--space-md);
+/* --- Compact Floating Corner Share Button --- */
+.share-fab {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 95;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 16px;
   background: var(--color-primary);
-  color: white;
+  color: #FFFFFF;
   font-weight: 700;
-  font-size: 1rem;
-  border-radius: var(--radius-md);
-  transition: background 0.2s;
-  text-align: center;
+  font-size: 0.88rem;
+  border-radius: var(--radius-full);
+  box-shadow: 0 6px 20px rgba(27, 94, 32, 0.32);
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
-.share-btn:hover {
+.share-fab:hover {
   background: var(--color-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(27, 94, 32, 0.4);
 }
 
 /* --- Responsive --- */
