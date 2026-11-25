@@ -1,21 +1,28 @@
 // ============================================
 // CommuteDoseCalculator — Full Multi-Route Map
 //   • 6 modes: Car, Two-Wheeler, Metro, Bus, Walk, Bicycle
-//   • Metro keeps ALL city lines in official colors:
-//       - Traveling A -> B line highlighted BOLD + THICK
-//       - Rest of metro network stays visible in THIN lines
+//   • Metro:
+//       - When 1 line is selected: highlight ONLY that line bold in original color; rest are thin light original color
+//       - When none selected: ALL lines shown thin in light original colors
+//       - Click any metro line on map or pill above map to toggle selection
+//   • Toggleable colored AQI zones right on the map
 //   • Bold Safe/Danger color-coded transport cards
-//   • Clickable road route alternatives on map
 // ============================================
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Polyline, Tooltip, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Polyline, Circle, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useUser } from '../../context/UserContext.jsx';
 import { useAqi } from '../../context/AqiContext.jsx';
 import { searchPlace, reverseGeocode } from '../../utils/geocoder.js';
 import { fetchAllModesRoutes, MODE_CONFIG } from '../../utils/routingService.js';
-import { colorizeRoute, getColorLegend, calcRouteAvgPM25 } from '../../utils/aqiRouteColorizer.js';
+import { fetchMetroLines, lightenHex } from '../../utils/transitService.js';
+import {
+  colorizeRoute,
+  getColorLegend,
+  calcRouteAvgPM25,
+  generateMapAqiZones,
+} from '../../utils/aqiRouteColorizer.js';
 import { fetchMultiCommuteComparison } from '../../services/api.js';
 import './CommuteDoseCalculator.css';
 
@@ -91,7 +98,7 @@ function PlaceInput({ label, value, onChange, placeholder }) {
   );
 }
 
-// ── Colored Route Segments on Map ──
+// ── Colored Road Route Segments on Map ──
 function ColoredRoute({ segments, weight, opacity, onClick, tooltip }) {
   return segments.map((seg, si) => (
     <Polyline key={si} positions={seg.points} color={seg.color}
@@ -104,36 +111,49 @@ function ColoredRoute({ segments, weight, opacity, onClick, tooltip }) {
   ));
 }
 
-// ── Transit Lines Renderer: Inactive Thin Official Lines + Active Thick Route Highlight ──
-function TransitNetworkLayers({ lines, origin, destination, boardPoint, alightPoint }) {
+// ── Metro Lines Renderer:
+//    • selectedIndex === null  -> ALL lines visible thin in light original color
+//    • selectedIndex !== null -> ONLY selectedIndex highlighted bold original color; rest thin light original color
+function TransitNetworkLayers({
+  lines,
+  selectedIndex,
+  onSelectLine,
+  origin,
+  destination,
+}) {
   if (!lines?.length) return null;
 
-  const hasActiveFlag = lines.some((l) => l.isActive !== undefined);
-  const inactiveLines = hasActiveFlag ? lines.filter((l) => !l.isActive) : [];
-  const activeLines = hasActiveFlag ? lines.filter((l) => l.isActive) : lines;
+  const hasSelection = selectedIndex !== null && selectedIndex !== undefined && lines[selectedIndex];
+  const selectedLine = hasSelection ? lines[selectedIndex] : null;
 
-  const renderLinePolylines = (line, idx, keyPrefix, weight, opacity, useActiveSlice = false) => {
-    const segList = (useActiveSlice && line.activeSegments?.length)
+  const renderPolylines = (line, lineIdx, weight, colorOverride, opacity, useSlice = false) => {
+    const segList = (useSlice && line.activeSegments?.length)
       ? line.activeSegments
       : (line.segments?.length ? line.segments : [line.coordinates]);
-    const color = line.color || '#7B1FA2';
+    const color = colorOverride || line.color || '#7B1FA2';
 
     return segList.map((coords, sIdx) => {
       const valid = (coords || []).filter((c) => c && !isNaN(c[0]) && !isNaN(c[1]));
       if (valid.length < 2) return null;
       return (
         <Polyline
-          key={`${keyPrefix}-${idx}-${sIdx}`}
+          key={`tl-${lineIdx}-${sIdx}-${useSlice ? 'hi' : 'thin'}`}
           positions={valid}
           color={color}
           weight={weight}
           opacity={opacity}
+          eventHandlers={onSelectLine ? {
+            click: (e) => {
+              L.DomEvent?.stopPropagation?.(e);
+              onSelectLine(selectedIndex === lineIdx ? null : lineIdx);
+            },
+          } : {}}
         >
           {sIdx === 0 && (
             <Tooltip sticky>
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
-                <span style={{ width: 10, height: 10, borderRadius: 3, background: color, display: 'inline-block' }} />
-                {line.name} {line.isActive ? ' (Your Route)' : ''}
+                <span style={{ width: 10, height: 10, borderRadius: 3, background: line.color, display: 'inline-block' }} />
+                {line.name} {selectedIndex === lineIdx ? '★ Selected' : '(Click to highlight)'}
               </span>
             </Tooltip>
           )}
@@ -144,52 +164,60 @@ function TransitNetworkLayers({ lines, origin, destination, boardPoint, alightPo
 
   return (
     <>
-      {/* 1) Remaining city metro lines — visible as thin colored lines */}
-      {inactiveLines.map((line, i) => renderLinePolylines(line, i, 'thin', 3.5, 0.55, false))}
-
-      {/* 2) Full path of active line faintly if active slice is shorter */}
-      {activeLines.map((line, i) =>
-        line.activeSegments?.length ? renderLinePolylines(line, i, 'active-base', 3.5, 0.45, false) : null
-      )}
-
-      {/* 3) Subtle dotted first/last-mile connectors to boarding & alighting points */}
-      {origin && boardPoint && (
-        <Polyline
-          positions={[[origin.lat, origin.lng], boardPoint]}
-          color="#475569"
-          weight={3}
-          opacity={0.75}
-          dashArray="6 8"
-        />
-      )}
-      {destination && alightPoint && (
-        <Polyline
-          positions={[alightPoint, [destination.lat, destination.lng]]}
-          color="#475569"
-          weight={3}
-          opacity={0.75}
-          dashArray="6 8"
-        />
-      )}
-
-      {/* 4) Active Point A -> Point B corridor — crisp white halo + bold thick official color */}
-      {activeLines.map((line, i) => {
-        const segList = (line.activeSegments?.length ? line.activeSegments : line.segments) || [line.coordinates];
-        return segList.map((coords, sIdx) => {
-          const valid = (coords || []).filter((c) => c && !isNaN(c[0]) && !isNaN(c[1]));
-          if (valid.length < 2) return null;
-          return (
-            <Polyline
-              key={`halo-${i}-${sIdx}`}
-              positions={valid}
-              color="#FFFFFF"
-              weight={13}
-              opacity={0.92}
-            />
-          );
-        });
+      {/* 1) Unselected lines (OR all lines when nothing selected): Thin + Light Original Color */}
+      {lines.map((line, idx) => {
+        if (hasSelection && idx === selectedIndex) {
+          // If selected line only highlights an A->B slice, keep rest of that line thin & light too
+          if (line.activeSegments?.length) {
+            return renderPolylines(line, idx, 3, line.lightColor || lightenHex(line.color, 0.52), 0.72, false);
+          }
+          return null;
+        }
+        return renderPolylines(line, idx, 3.2, line.lightColor || lightenHex(line.color, 0.52), 0.72, false);
       })}
-      {activeLines.map((line, i) => renderLinePolylines(line, i, 'active-top', 8, 1.0, true))}
+
+      {/* 2) Subtle dotted first/last mile walk lines to the single selected line */}
+      {selectedLine && origin && selectedLine.boardPoint && (
+        <Polyline
+          positions={[[origin.lat, origin.lng], selectedLine.boardPoint]}
+          color="#475569"
+          weight={3}
+          opacity={0.75}
+          dashArray="6 8"
+        />
+      )}
+      {selectedLine && destination && selectedLine.alightPoint && (
+        <Polyline
+          positions={[selectedLine.alightPoint, [destination.lat, destination.lng]]}
+          color="#475569"
+          weight={3}
+          opacity={0.75}
+          dashArray="6 8"
+        />
+      )}
+
+      {/* 3) Highlight STRICTLY ONE selected line in vivid original color + crisp white halo */}
+      {selectedLine && (() => {
+        const segList = (selectedLine.activeSegments?.length ? selectedLine.activeSegments : selectedLine.segments) || [selectedLine.coordinates];
+        return (
+          <>
+            {segList.map((coords, sIdx) => {
+              const valid = (coords || []).filter((c) => c && !isNaN(c[0]) && !isNaN(c[1]));
+              if (valid.length < 2) return null;
+              return (
+                <Polyline
+                  key={`halo-${selectedIndex}-${sIdx}`}
+                  positions={valid}
+                  color="#FFFFFF"
+                  weight={13}
+                  opacity={0.94}
+                />
+              );
+            })}
+            {renderPolylines(selectedLine, selectedIndex, 8, selectedLine.color, 1.0, true)}
+          </>
+        );
+      })()}
     </>
   );
 }
@@ -204,6 +232,9 @@ function CommuteDoseCalculator() {
   const [allModes, setAllModes] = useState([]);
   const [selectedMode, setSelectedMode] = useState('DRIVE');
   const [selectedAlt, setSelectedAlt] = useState(0);
+  const [selectedMetroLineIdx, setSelectedMetroLineIdx] = useState(null);
+  const [previewMetroLines, setPreviewMetroLines] = useState([]);
+  const [showAqiZones, setShowAqiZones] = useState(true);
   const [doseByMode, setDoseByMode] = useState({});
   const [safestMode, setSafestMode] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -223,6 +254,18 @@ function CommuteDoseCalculator() {
       }
     }
   }, [location, origin]);
+
+  // Also preview city metro lines in light thin official colors before Destination is entered
+  useEffect(() => {
+    if (!origin || destination) return;
+    fetchMetroLines(origin.lat, origin.lng, origin.lat, origin.lng)
+      .then((lines) => {
+        setPreviewMetroLines(
+          lines.map((l) => ({ ...l, lightColor: lightenHex(l.color, 0.52) }))
+        );
+      })
+      .catch(() => setPreviewMetroLines([]));
+  }, [origin, destination]);
 
   const handleDetectSource = useCallback(() => {
     if (!navigator.geolocation) return;
@@ -249,11 +292,20 @@ function CommuteDoseCalculator() {
     if (!origin || !destination) return;
     setLoading(true); setError(null);
     setAllModes([]); setDoseByMode({}); setSafestMode(null); setSelectedAlt(0);
+    setSelectedMetroLineIdx(null);
 
     try {
       const modes = await fetchAllModesRoutes(origin.lat, origin.lng, destination.lat, destination.lng);
       if (!modes.length) { setError('No routes found.'); setLoading(false); return; }
       setAllModes(modes);
+
+      // Set single recommended metro line index from A->B route
+      const metroMode = modes.find((m) => m.mode === 'METRO');
+      const defLineIdx = metroMode?.routes?.[0]?.defaultActiveLineIndex;
+      if (defLineIdx !== undefined && defLineIdx !== null) {
+        setSelectedMetroLineIdx(defLineIdx);
+      }
+
       if (!modes.find((m) => m.mode === selectedMode)) setSelectedMode(modes[0].mode);
 
       try {
@@ -301,23 +353,31 @@ function CommuteDoseCalculator() {
   }));
 
   const selectedColored = coloredAlts[selectedAlt] || coloredAlts[0];
-  const transitLines = curRoute?.transitLines || [];
+  const isMetroMode = curMode?.mode === 'METRO';
   const isTransitMode = curMode?.type === 'transit';
+  const metroLinesToRender = isMetroMode && curRoute?.transitLines?.length
+    ? curRoute.transitLines
+    : (!destination ? previewMetroLines : []);
+  const busLines = curMode?.mode === 'BUS' ? (curRoute?.transitLines || []) : [];
 
-  // Fit bounds neatly to active route + start/end markers (keeps A->B focused while rest of metro stays visible)
+  // Colored AQI level zones overlaid softly across the map
+  const aqiZones = showAqiZones ? generateMapAqiZones(origin, destination, basePM25) : [];
+
+  // Keep map camera neatly framed around origin/destination & selected line
   const mapCoords = (() => {
-    if (isTransitMode && origin && destination) {
-      const activeCoords = transitLines
-        .filter((l) => l.isActive)
-        .flatMap((l) => (l.activeSegments?.length ? l.activeSegments.flat() : l.coordinates || []))
+    if (isMetroMode && origin && destination) {
+      const selLine = selectedMetroLineIdx !== null ? metroLinesToRender[selectedMetroLineIdx] : null;
+      const selCoords = selLine
+        ? (selLine.activeSegments?.length ? selLine.activeSegments.flat() : selLine.coordinates || [])
+        : [];
+      return [[origin.lat, origin.lng], [destination.lat, destination.lng], ...selCoords]
         .filter((c) => c && !isNaN(c[0]));
-      return [[origin.lat, origin.lng], [destination.lat, destination.lng], ...activeCoords];
     }
     const allRouteCoords = curRoutes.flatMap((r) => (r.coordinates || []).filter((c) => !isNaN(c[0])));
     return allRouteCoords.length > 1 ? allRouteCoords : curRoute?.coordinates?.filter((c) => !isNaN(c[0]));
   })();
 
-  // ── Safety tier styling (bold SAFE -> MODERATE -> HIGH -> DANGER colors) ──
+  // ── Safety tier helper ──
   const allDoses = Object.values(doseByMode).map((d) => d.dose_ug).filter((v) => v != null);
   const minDose = Math.min(...allDoses, 999);
   const maxDose = Math.max(...allDoses, 1);
@@ -327,15 +387,9 @@ function CommuteDoseCalculator() {
       return { color: '#334155', bg: '#F8FAFC', border: '#CBD5E1', pillBg: '#E2E8F0', label: 'ESTIMATE', icon: '📊' };
     }
     const ratio = (dose - minDose) / (maxDose - minDose || 1);
-    if (ratio <= 0.25) {
-      return { color: '#15803D', bg: '#F0FDF4', border: '#22C55E', pillBg: '#DCFCE7', label: 'SAFE', icon: '🛡️' };
-    }
-    if (ratio <= 0.5) {
-      return { color: '#B45309', bg: '#FFFBEB', border: '#F59E0B', pillBg: '#FEF3C7', label: 'MODERATE', icon: '⚡' };
-    }
-    if (ratio <= 0.75) {
-      return { color: '#C2410C', bg: '#FFF7ED', border: '#F97316', pillBg: '#FFEDD5', label: 'HIGH RISK', icon: '⚠️' };
-    }
+    if (ratio <= 0.25) return { color: '#15803D', bg: '#F0FDF4', border: '#22C55E', pillBg: '#DCFCE7', label: 'SAFE', icon: '🛡️' };
+    if (ratio <= 0.5) return { color: '#B45309', bg: '#FFFBEB', border: '#F59E0B', pillBg: '#FEF3C7', label: 'MODERATE', icon: '⚡' };
+    if (ratio <= 0.75) return { color: '#C2410C', bg: '#FFF7ED', border: '#F97316', pillBg: '#FFEDD5', label: 'HIGH RISK', icon: '⚠️' };
     return { color: '#B91C1C', bg: '#FEF2F2', border: '#EF4444', pillBg: '#FEE2E2', label: 'DANGER', icon: '🚨' };
   }
 
@@ -423,8 +477,45 @@ function CommuteDoseCalculator() {
         </div>
       )}
 
-      {/* ── Route Alternatives Panel ── */}
-      {curRoutes.length > 1 && (
+      {/* ── Metro Line Switcher (Select 1 line or Show All Thin) ── */}
+      {(isMetroMode || !destination) && metroLinesToRender.length > 0 && (
+        <div className="cdc-alts">
+          <span className="cdc-alts-title">🚇 Metro Lines — click one to highlight (or Show All Thin):</span>
+          <div className="cdc-alts-row">
+            <button
+              type="button"
+              className={`cdc-metro-chip ${selectedMetroLineIdx === null ? 'cdc-metro-chip--on' : ''}`}
+              onClick={() => setSelectedMetroLineIdx(null)}
+            >
+              All Lines (Thin)
+            </button>
+            {metroLinesToRender.map((line, i) => {
+              const isSel = selectedMetroLineIdx === i;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  className={`cdc-metro-chip ${isSel ? 'cdc-metro-chip--on' : ''}`}
+                  style={{
+                    borderColor: isSel ? line.color : (line.lightColor || line.color),
+                    background: isSel ? `${line.color}16` : '#FFFFFF',
+                  }}
+                  onClick={() => setSelectedMetroLineIdx(isSel ? null : i)}
+                >
+                  <span
+                    className="cdc-metro-swatch"
+                    style={{ background: isSel ? line.color : (line.lightColor || line.color) }}
+                  />
+                  <span>{line.name.split('(')[0].trim()}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Road Route Alternatives Panel ── */}
+      {!isMetroMode && curRoutes.length > 1 && (
         <div className="cdc-alts">
           <span className="cdc-alts-title">📍 Route Options — click to select (or tap on map):</span>
           <div className="cdc-alts-row">
@@ -449,13 +540,43 @@ function CommuteDoseCalculator() {
       {/* ── MAP ── */}
       {(allModes.length > 0 || origin) && (
         <div className="card cdc-map-wrap">
+          {/* Top-right Map Overlay Toggle for AQI Colors */}
+          <button
+            type="button"
+            className={`cdc-aqi-toggle ${showAqiZones ? 'cdc-aqi-toggle--on' : ''}`}
+            onClick={() => setShowAqiZones((s) => !s)}
+            title="Show or hide colored AQI zones on map"
+          >
+            🎨 AQI Map Colors: <strong>{showAqiZones ? 'ON' : 'OFF'}</strong>
+          </button>
+
           <MapContainer center={origin ? [origin.lat, origin.lng] : [20.59, 78.96]} zoom={12}
             className="cdc-map" scrollWheelZoom={true}>
             <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org">OSM</a>'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             {mapCoords?.length > 1 && <FitBounds coords={mapCoords} />}
 
-            {/* ── Non-selected road/bus alternatives faded behind ── */}
+            {/* ── Colored AQI Level Zones across map ── */}
+            {aqiZones.map((zone) => (
+              <Circle
+                key={zone.id}
+                center={[zone.lat, zone.lng]}
+                radius={zone.radius}
+                pathOptions={{
+                  color: zone.color,
+                  weight: 1.2,
+                  opacity: 0.4,
+                  fillColor: zone.color,
+                  fillOpacity: 0.2,
+                }}
+              >
+                <Tooltip sticky>
+                  <strong>{zone.area}</strong> · PM2.5: ~{zone.pm25} µg/m³ ({zone.label})
+                </Tooltip>
+              </Circle>
+            ))}
+
+            {/* ── Road Alternatives (faded behind) ── */}
             {!isTransitMode && coloredAlts.map((r, idx) => {
               if (idx === selectedAlt || !r.segments?.length) return null;
               return (
@@ -470,34 +591,43 @@ function CommuteDoseCalculator() {
               );
             })}
 
-            {isTransitMode && curMode?.mode === 'BUS' && coloredAlts.map((r, idx) => {
-              if (idx === selectedAlt) return null;
-              return (
-                <TransitNetworkLayers
-                  key={r.id + '-fade'}
-                  lines={r.transitLines}
-                />
-              );
-            })}
-
-            {/* ── METRO: Highlight traveling A -> B line thick + rest of city metro lines thin with official colors ── */}
-            {isTransitMode && transitLines.length > 0 && (
+            {/* ── METRO: All light-thin lines OR 1 bold selected line + light-thin others ── */}
+            {metroLinesToRender.length > 0 && (
               <TransitNetworkLayers
-                lines={transitLines}
+                lines={metroLinesToRender}
+                selectedIndex={isMetroMode ? selectedMetroLineIdx : (destination ? null : selectedMetroLineIdx)}
+                onSelectLine={(idx) => setSelectedMetroLineIdx(idx)}
                 origin={origin}
                 destination={destination}
-                boardPoint={curRoute?.boardPoint}
-                alightPoint={curRoute?.alightPoint}
               />
             )}
 
-            {isTransitMode && transitLines.length === 0 && selectedColored?.coordinates && (
+            {/* Fallback Metro poly when city has no rail geometry */}
+            {isMetroMode && metroLinesToRender.length === 0 && selectedColored?.coordinates && (
               <Polyline positions={selectedColored.coordinates.filter((c) => !isNaN(c[0]))}
                 color={curMode?.color || '#7B1FA2'} weight={7} opacity={1.0}>
                 <Tooltip sticky>{curMode?.icon} {curMode?.label}</Tooltip>
               </Polyline>
             )}
 
+            {/* ── BUS Lines ── */}
+            {curMode?.mode === 'BUS' && coloredAlts.map((r, idx) => {
+              if (idx === selectedAlt) return null;
+              return r.transitLines?.length ? (
+                <TransitNetworkLayers key={r.id + '-bfade'} lines={r.transitLines} selectedIndex={null} />
+              ) : null;
+            })}
+            {curMode?.mode === 'BUS' && busLines.length > 0 && (
+              <TransitNetworkLayers lines={busLines} selectedIndex={0} />
+            )}
+            {curMode?.mode === 'BUS' && busLines.length === 0 && selectedColored?.coordinates && (
+              <Polyline positions={selectedColored.coordinates.filter((c) => !isNaN(c[0]))}
+                color={curMode?.color || '#0288D1'} weight={7} opacity={1.0}>
+                <Tooltip sticky>🚌 Bus Route</Tooltip>
+              </Polyline>
+            )}
+
+            {/* ── Selected Road Route ON TOP ── */}
             {!isTransitMode && selectedColored?.segments?.length > 0 && (
               <ColoredRoute segments={selectedColored.segments} weight={7.5} opacity={1.0}
                 tooltip={`${selectedColored.altLabel} (selected) · ${selectedColored.distanceKm} km`} />
@@ -507,47 +637,43 @@ function CommuteDoseCalculator() {
             {destination && <Marker position={[destination.lat, destination.lng]} icon={endIcon} />}
           </MapContainer>
 
-          {/* Legend */}
+          {/* Combined Legend: AQI Colors + Metro Lines */}
           <div className="cdc-legend">
-            {isTransitMode ? (
-              <>
-                <span className="cdc-legend-title">{curMode?.icon} {curMode?.label} Network:</span>
-                {transitLines.length > 0 ? (
-                  [...transitLines]
-                    .sort((a, b) => (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0))
-                    .slice(0, 8)
-                    .map((l, i) => (
-                      <span
-                        key={i}
-                        className={`cdc-legend-item ${l.isActive ? 'cdc-legend-item--active' : 'cdc-legend-item--thin'}`}
-                      >
-                        <span
-                          className="cdc-legend-dot"
-                          style={{
-                            background: l.color || curMode?.color,
-                            height: l.isActive ? 10 : 4,
-                            width: l.isActive ? 18 : 14,
-                          }}
-                        />
-                        {l.name} {l.isActive ? '★ Active' : '(Thin)'}
-                      </span>
-                    ))
-                ) : (
-                  <span className="cdc-legend-item" style={{ color: 'var(--text-muted)' }}>
-                    Estimated corridor for this area
-                  </span>
-                )}
-              </>
-            ) : (
-              <>
-                <span className="cdc-legend-title">Air Quality:</span>
+            {(showAqiZones || !isTransitMode) && (
+              <div className="cdc-legend-group">
+                <span className="cdc-legend-title">AQI Map Levels:</span>
                 {getColorLegend().map((item) => (
                   <span key={item.color} className="cdc-legend-item">
                     <span className="cdc-legend-dot" style={{ background: item.color }} />
                     {item.label}
                   </span>
                 ))}
-              </>
+              </div>
+            )}
+
+            {metroLinesToRender.length > 0 && (
+              <div className="cdc-legend-group">
+                <span className="cdc-legend-title">🚇 Metro:</span>
+                {metroLinesToRender.map((l, i) => {
+                  const isSel = selectedMetroLineIdx === i;
+                  return (
+                    <span
+                      key={i}
+                      className={`cdc-legend-item ${isSel ? 'cdc-legend-item--active' : 'cdc-legend-item--thin'}`}
+                    >
+                      <span
+                        className="cdc-legend-dot"
+                        style={{
+                          background: isSel ? l.color : (l.lightColor || l.color),
+                          height: isSel ? 9 : 4,
+                          width: isSel ? 18 : 14,
+                        }}
+                      />
+                      {l.name.split('(')[0].trim()}
+                    </span>
+                  );
+                })}
+              </div>
             )}
           </div>
         </div>

@@ -208,25 +208,25 @@ export async function fetchRoutesForMode(originLat, originLng, destLat, destLng,
       const metroLines = await fetchMetroLines(originLat, originLng, destLat, destLng);
 
       if (metroLines.length > 0) {
-        const { annotatedLines, activeLines, boardPoint, alightPoint } = selectActiveMetroCorridor(
+        const { annotatedLines, activeIndex, activeLine, boardPoint, alightPoint } = selectActiveMetroCorridor(
           metroLines,
           originLat,
           originLng,
           destLat,
           destLng
         );
-        const primaryNames = activeLines.map((l) => l.name.split('(')[0].trim()).join(' → ');
 
         const mainRoute = {
           id: 'METRO-0',
           altIndex: 0,
-          altLabel: primaryNames || 'Metro',
+          altLabel: activeLine ? activeLine.name.split('(')[0].trim() : 'Metro',
           coordinates: metroLines.flatMap((l) => [...l.coordinates, [NaN, NaN]]).filter((c) => !isNaN(c[0])),
           distanceKm: routeKm,
           durationMin: duration,
           estimatedDose: Math.round(dose * 10) / 10,
           isTransit: true,
           transitLines: annotatedLines,
+          defaultActiveLineIndex: activeIndex,
           boardPoint,
           alightPoint,
         };

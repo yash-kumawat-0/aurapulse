@@ -185,16 +185,71 @@
   text-transform: uppercase; letter-spacing: 0.03em;
 }
 
+/* ── Metro Line Chips & Map AQI Overlay Toggle ── */
+.cdc-metro-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  background: #FFFFFF;
+  border: 2px solid #CBD5E1;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+.cdc-metro-chip:hover { transform: translateY(-1px); }
+.cdc-metro-chip--on {
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.1);
+}
+.cdc-metro-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
 /* ── Map ── */
 .cdc-map-wrap { padding: 0; overflow: hidden; position: relative; }
 .cdc-map { width: 100%; height: 480px; border-radius: var(--radius-md); z-index: 1; }
 
+.cdc-aqi-toggle {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 450;
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1.5px solid #CBD5E1;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.15);
+  backdrop-filter: blur(4px);
+}
+.cdc-aqi-toggle--on {
+  border-color: #10B981;
+  background: #ECFDF5;
+  color: #065F46;
+}
+
 /* ── Legend ── */
 .cdc-legend {
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px var(--space-md); background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px var(--space-md);
+  background: var(--bg-primary);
   border-top: 1px solid var(--border-light);
-  overflow-x: auto; flex-wrap: wrap;
+}
+.cdc-legend-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 .cdc-legend-title {
   font-size: 0.82rem; font-weight: 800; color: var(--text-secondary);

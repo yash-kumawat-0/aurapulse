@@ -452,12 +452,29 @@ out body geom;`;
 }
 
 /**
- * Determine WHICH metro line(s) connect Point A (Origin) and Point B (Destination).
- * Highlights the matching A -> B corridor thick while marking remaining lines thin.
+ * Lighten a hex color cleanly toward white for unselected thin metro lines.
+ */
+export function lightenHex(hex, factor = 0.55) {
+  if (!hex || !hex.startsWith('#') || (hex.length !== 7 && hex.length !== 4)) return hex || '#B39DDB';
+  let full = hex;
+  if (hex.length === 4) {
+    full = `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`;
+  }
+  const r = parseInt(full.slice(1, 3), 16);
+  const g = parseInt(full.slice(3, 5), 16);
+  const b = parseInt(full.slice(5, 7), 16);
+  const mix = (c) => Math.round(c + (255 - c) * factor);
+  const toHex = (v) => v.toString(16).padStart(2, '0');
+  return `#${toHex(mix(r))}${toHex(mix(g))}${toHex(mix(b))}`;
+}
+
+/**
+ * Determine STRICTLY ONE best metro line connecting Point A (Origin) and Point B (Destination).
+ * Marks only that one line as active (`isActive: true`); rest remain thin & light original color.
  */
 export function selectActiveMetroCorridor(metroLines, originLat, originLng, destLat, destLng) {
   if (!metroLines?.length) {
-    return { annotatedLines: [], activeLines: [], boardPoint: null, alightPoint: null };
+    return { annotatedLines: [], activeIndex: null, activeLine: null, boardPoint: null, alightPoint: null };
   }
 
   const scored = metroLines.map((line, index) => {
@@ -476,64 +493,43 @@ export function selectActiveMetroCorridor(metroLines, originLat, originLng, dest
       if (dB < minB) { minB = dB; ptB = pt; idxB = i; }
     });
 
-    return {
-      index,
-      line,
-      minA,
-      minB,
-      totalDist: minA + minB,
-      ptA,
-      ptB,
-      idxA,
-      idxB,
-      coords,
-    };
+    return { index, line, minA, minB, totalDist: minA + minB, ptA, ptB, idxA, idxB, coords };
   });
 
-  // Sort to find best single line serving both A and B
-  const byCombined = [...scored].sort((a, b) => a.totalDist - b.totalDist);
-  const bestSingle = byCombined[0];
-
-  const byOrigin = [...scored].sort((a, b) => a.minA - b.minA)[0];
-  const byDest = [...scored].sort((a, b) => a.minB - b.minB)[0];
-
-  // Decide if 2-line transfer is clearly better than single direct line
-  const useTransfer =
-    byOrigin &&
-    byDest &&
-    byOrigin.index !== byDest.index &&
-    byOrigin.minA + byDest.minB + 1.5 < bestSingle.totalDist;
-
-  const activeIndices = new Set(
-    useTransfer ? [byOrigin.index, byDest.index] : [bestSingle.index]
-  );
+  // Strictly choose ONE best single line (lowest combined distance to A and B)
+  const bestSingle = [...scored].sort((a, b) => a.totalDist - b.totalDist)[0];
+  const activeIndex = bestSingle ? bestSingle.index : 0;
 
   const annotatedLines = scored.map((item) => {
-    const isActive = activeIndices.has(item.index);
+    const isActive = item.index === activeIndex;
     let activeSegments = null;
 
-    if (isActive && item.line.type === 'network' && item.coords.length >= 2) {
-      // Slice exact A->B corridor along the curated network line
+    if (item.line.type === 'network' && item.coords.length >= 2) {
       const lo = Math.min(item.idxA, item.idxB);
       const hi = Math.max(item.idxA, item.idxB);
       const sub = item.coords.slice(lo, hi + 1);
       if (sub.length >= 2) activeSegments = [sub];
-    } else if (isActive && item.line.segments?.length) {
+    } else if (item.line.segments?.length) {
       activeSegments = item.line.segments;
     }
 
     return {
       ...item.line,
       isActive,
+      lightColor: lightenHex(item.line.color, 0.48),
       activeSegments,
+      boardPoint: item.ptA,
+      alightPoint: item.ptB,
     };
   });
 
-  const activeLines = annotatedLines.filter((l) => l.isActive);
-  const boardPoint = useTransfer ? byOrigin.ptA : bestSingle.ptA;
-  const alightPoint = useTransfer ? byDest.ptB : bestSingle.ptB;
-
-  return { annotatedLines, activeLines, boardPoint, alightPoint };
+  return {
+    annotatedLines,
+    activeIndex,
+    activeLine: annotatedLines[activeIndex] || null,
+    boardPoint: bestSingle?.ptA || null,
+    alightPoint: bestSingle?.ptB || null,
+  };
 }
 
 /**
