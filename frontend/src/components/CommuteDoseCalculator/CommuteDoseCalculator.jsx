@@ -9,7 +9,7 @@
 //   • Bold Safe/Danger color-coded transport cards
 // ============================================
 import { Fragment, useState, useEffect, useRef, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Polyline, Rectangle, Tooltip, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Polyline, Rectangle, CircleMarker, Tooltip, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useUser } from '../../context/UserContext.jsx';
@@ -158,8 +158,9 @@ function estimateLegDoseUg(leg, basePm25 = 100) {
 }
 
 // ── Metro Lines Renderer:
-//    • selectedIndex === null  -> ALL lines visible thin in light original color
-//    • selectedIndex !== null -> ONLY selectedIndex highlighted bold original color; rest thin light original color
+//    • selectedIndex === null          -> ALL lines visible thin in light original color
+//    • selectedIndex === 'interchange' -> Highlights BOTH traveled interchange slices + transfer hub; rest thin
+//    • selectedIndex === number        -> ONLY selectedIndex highlighted bold original color; rest thin
 function TransitNetworkLayers({
   lines,
   selectedIndex,
@@ -168,13 +169,18 @@ function TransitNetworkLayers({
   destination,
   firstMilePath,
   lastMilePath,
+  interchangePlan = null,
   basePM25 = 100,
   evaluatedLegs = null,
 }) {
   if (!lines?.length) return null;
 
-  const hasSelection = selectedIndex !== null && selectedIndex !== undefined && lines[selectedIndex];
-  const selectedLine = hasSelection ? lines[selectedIndex] : null;
+  const isInterchange = selectedIndex === 'interchange' && interchangePlan?.segments?.length;
+  const hasSingleSel = typeof selectedIndex === 'number' && lines[selectedIndex];
+  const selectedLine = hasSingleSel ? lines[selectedIndex] : null;
+  const activeBoardPoint = isInterchange ? interchangePlan.boardPoint : selectedLine?.boardPoint;
+  const activeAlightPoint = isInterchange ? interchangePlan.alightPoint : selectedLine?.alightPoint;
+  const activeLegsSource = isInterchange ? interchangePlan.legs : selectedLine?.autoPlan?.legs;
 
   const renderPolylines = (line, lineIdx, weight, colorOverride, opacity, useSlice = false, interactive = true) => {
     const segList = (useSlice && line.activeSegments?.length)
@@ -225,10 +231,9 @@ function TransitNetworkLayers({
 
   return (
     <>
-      {/* 1) All unselected lines (OR all lines when nothing selected):
-             White contrast rim + noticeable thin official color track */}
+      {/* 1) All unselected lines / non-active sections stay visible thin with crisp white rim */}
       {lines.map((line, idx) => {
-        if (hasSelection && idx === selectedIndex && !line.activeSegments?.length) {
+        if (hasSingleSel && idx === selectedIndex && !line.activeSegments?.length) {
           return null;
         }
         const thinColor = line.lightColor || lightenHex(line.color, 0.22);
@@ -241,13 +246,13 @@ function TransitNetworkLayers({
       })}
 
       {/* 2) Automated First-Mile & Last-Mile Feeder Paths (hover shows ONLY that leg's µg) */}
-      {selectedLine && origin && selectedLine.boardPoint && (() => {
+      {(selectedLine || isInterchange) && origin && activeBoardPoint && (() => {
         const firstLeg = evaluatedLegs?.find((l) => l.role === 'first')
-          || selectedLine.autoPlan?.legs?.find((l) => l.role === 'first');
+          || activeLegsSource?.find((l) => l.role === 'first');
         if (!firstLeg) return null;
-        const pts = (selectedLine.isActive && firstMilePath?.length > 1)
+        const pts = ((selectedLine?.isActive || isInterchange) && firstMilePath?.length > 1)
           ? firstMilePath
-          : [[origin.lat, origin.lng], selectedLine.boardPoint];
+          : [[origin.lat, origin.lng], activeBoardPoint];
         const isWalk = firstLeg.mode === 'WALK';
         const legDose = estimateLegDoseUg(firstLeg, basePM25);
         return (
@@ -264,13 +269,13 @@ function TransitNetworkLayers({
           </Polyline>
         );
       })()}
-      {selectedLine && destination && selectedLine.alightPoint && (() => {
+      {(selectedLine || isInterchange) && destination && activeAlightPoint && (() => {
         const lastLeg = evaluatedLegs?.find((l) => l.role === 'last')
-          || selectedLine.autoPlan?.legs?.find((l) => l.role === 'last');
+          || activeLegsSource?.find((l) => l.role === 'last');
         if (!lastLeg) return null;
-        const pts = (selectedLine.isActive && lastMilePath?.length > 1)
+        const pts = ((selectedLine?.isActive || isInterchange) && lastMilePath?.length > 1)
           ? lastMilePath
-          : [selectedLine.alightPoint, [destination.lat, destination.lng]];
+          : [activeAlightPoint, [destination.lat, destination.lng]];
         const isWalk = lastLeg.mode === 'WALK';
         const legDose = estimateLegDoseUg(lastLeg, basePM25);
         return (
@@ -288,7 +293,57 @@ function TransitNetworkLayers({
         );
       })()}
 
-      {/* 3) Highlight STRICTLY ONE selected line in vivid original color + crisp white halo */}
+      {/* 3A) Interchange Highlight: BOTH traveled slices bold in official colors + Transfer Hub marker */}
+      {isInterchange && (
+        <>
+          {interchangePlan.segments.map((seg, sIdx) => (
+            <Polyline
+              key={`xfer-halo-${sIdx}`}
+              positions={seg.coords}
+              color="#FFFFFF"
+              weight={13}
+              opacity={0.94}
+            />
+          ))}
+          {interchangePlan.segments.map((seg, sIdx) => {
+            const matchedLeg = (evaluatedLegs || []).filter((l) => l.mode === 'METRO')[sIdx]
+              || (interchangePlan.legs || []).filter((l) => l.mode === 'METRO')[sIdx];
+            const metroDoseUg = matchedLeg ? estimateLegDoseUg(matchedLeg, basePM25) : null;
+            return (
+              <Polyline
+                key={`xfer-top-${sIdx}`}
+                positions={seg.coords}
+                color={seg.color}
+                weight={8}
+                opacity={1.0}
+              >
+                <Tooltip sticky>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
+                    <span style={{ width: 10, height: 10, borderRadius: 3, background: seg.color, display: 'inline-block' }} />
+                    {seg.name} · {seg.distance_km} km
+                    {metroDoseUg != null && (
+                      <span style={{ color: '#15803D' }}> · {metroDoseUg} µg inhaled</span>
+                    )}
+                  </span>
+                </Tooltip>
+              </Polyline>
+            );
+          })}
+          {interchangePlan.transferPoint && (
+            <CircleMarker
+              center={interchangePlan.transferPoint}
+              radius={8}
+              pathOptions={{ color: '#1E293B', weight: 3, fillColor: '#FFFFFF', fillOpacity: 1 }}
+            >
+              <Tooltip sticky>
+                🔄 <strong>Metro Interchange:</strong> {interchangePlan.lineAName} ➔ {interchangePlan.lineBName}
+              </Tooltip>
+            </CircleMarker>
+          )}
+        </>
+      )}
+
+      {/* 3B) Single Selected Line Highlight */}
       {selectedLine && (() => {
         const segList = (selectedLine.activeSegments?.length ? selectedLine.activeSegments : selectedLine.segments) || [selectedLine.coordinates];
         return (
@@ -454,10 +509,15 @@ function CommuteDoseCalculator() {
     : (!destination ? previewMetroLines : []);
   const busLines = curMode?.mode === 'BUS' ? (curRoute?.transitLines || []) : [];
 
-  // Keep map camera neatly framed around origin/destination & selected line
+  // Keep map camera neatly framed around origin/destination & selected line or interchange
   const mapCoords = (() => {
     if (isMetroMode && origin && destination) {
-      const selLine = selectedMetroLineIdx !== null ? metroLinesToRender[selectedMetroLineIdx] : null;
+      if (selectedMetroLineIdx === 'interchange' && curRoute?.interchangePlan?.segments?.length) {
+        const xCoords = curRoute.interchangePlan.segments.flatMap((s) => s.coords || []);
+        return [[origin.lat, origin.lng], [destination.lat, destination.lng], ...xCoords]
+          .filter((c) => c && !isNaN(c[0]));
+      }
+      const selLine = typeof selectedMetroLineIdx === 'number' ? metroLinesToRender[selectedMetroLineIdx] : null;
       const selCoords = selLine
         ? (selLine.activeSegments?.length ? selLine.activeSegments.flat() : selLine.coordinates || [])
         : [];
@@ -579,11 +639,21 @@ function CommuteDoseCalculator() {
         </div>
       )}
 
-      {/* ── Metro Line Switcher (Select 1 line or Show All Thin) ── */}
+      {/* ── Metro Line Switcher (Smart Interchange, Single Line, or Show All Thin) ── */}
       {(isMetroMode || !destination) && metroLinesToRender.length > 0 && (
         <div className="cdc-alts">
-          <span className="cdc-alts-title">🚇 Metro Lines — click one to highlight (or Show All Thin):</span>
+          <span className="cdc-alts-title">🚇 Metro Route — pick Interchange, Single Line, or All Thin:</span>
           <div className="cdc-alts-row">
+            {isMetroMode && curRoute?.interchangePlan && (
+              <button
+                type="button"
+                className={`cdc-metro-chip ${selectedMetroLineIdx === 'interchange' ? 'cdc-metro-chip--on' : ''}`}
+                style={selectedMetroLineIdx === 'interchange' ? { borderColor: '#2563EB', background: '#EFF6FF' } : undefined}
+                onClick={() => setSelectedMetroLineIdx('interchange')}
+              >
+                🔄 {curRoute.interchangePlan.lineAName} ⇄ {curRoute.interchangePlan.lineBName}
+              </button>
+            )}
             <button
               type="button"
               className={`cdc-metro-chip ${selectedMetroLineIdx === null ? 'cdc-metro-chip--on' : ''}`}
@@ -677,7 +747,7 @@ function CommuteDoseCalculator() {
               );
             })}
 
-            {/* ── METRO: All light-thin lines OR 1 bold selected line + feeder connectors ── */}
+            {/* ── METRO: All light-thin lines OR 1 bold line OR Smart Interchange + feeder connectors ── */}
             {metroLinesToRender.length > 0 && (
               <TransitNetworkLayers
                 lines={metroLinesToRender}
@@ -687,6 +757,7 @@ function CommuteDoseCalculator() {
                 destination={destination}
                 firstMilePath={curRoute?.firstMilePath}
                 lastMilePath={curRoute?.lastMilePath}
+                interchangePlan={isMetroMode ? curRoute?.interchangePlan : null}
                 basePM25={basePM25}
                 evaluatedLegs={
                   isMetroMode && selectedMetroLineIdx === curRoute?.defaultActiveLineIndex
@@ -752,7 +823,9 @@ function CommuteDoseCalculator() {
               <div className="cdc-legend-group">
                 <span className="cdc-legend-title">🚇 Metro:</span>
                 {metroLinesToRender.map((l, i) => {
-                  const isSel = selectedMetroLineIdx === i;
+                  const isSel = selectedMetroLineIdx === i ||
+                    (selectedMetroLineIdx === 'interchange' &&
+                      (curRoute?.interchangePlan?.lineAIndex === i || curRoute?.interchangePlan?.lineBIndex === i));
                   return (
                     <span
                       key={i}
@@ -779,28 +852,40 @@ function CommuteDoseCalculator() {
       {/* ── Route Stats (compact, no Exposure Comparison) + Highlighted Per-Leg Estimation ── */}
       {curRoute && (() => {
         const modeEval = doseByMode[selectedMode];
-        const selectedLineObj = isMetroMode && selectedMetroLineIdx !== null
+        const isInterchangeSel = isMetroMode && selectedMetroLineIdx === 'interchange' && curRoute?.interchangePlan;
+        const selectedLineObj = isMetroMode && typeof selectedMetroLineIdx === 'number'
           ? metroLinesToRender[selectedMetroLineIdx]
           : null;
-        const isDefaultLine = selectedMetroLineIdx === curRoute?.defaultActiveLineIndex;
-        const activeLegs = (isDefaultLine && modeEval?.legs?.length)
-          ? modeEval.legs
-          : (selectedLineObj?.autoPlan?.legs || curRoute?.autoPlan?.legs);
+        const isDefaultPlan = selectedMetroLineIdx === curRoute?.defaultActiveLineIndex;
+        const activeLegs = isInterchangeSel
+          ? ((isDefaultPlan && modeEval?.legs?.length) ? modeEval.legs : curRoute.interchangePlan.legs)
+          : ((isDefaultPlan && modeEval?.legs?.length)
+              ? modeEval.legs
+              : (selectedLineObj?.autoPlan?.legs || curRoute?.autoPlan?.legs));
 
-        const computedLineDose = (!isDefaultLine && activeLegs?.length)
+        const computedLineDose = (!isDefaultPlan && activeLegs?.length)
           ? Math.round(activeLegs.reduce((sum, leg) => sum + estimateLegDoseUg(leg, basePM25), 0) * 100) / 100
           : null;
         const curDose = computedLineDose ?? modeEval?.dose_ug ?? curRoute.estimatedDose;
         const curRisk = getRiskTier(curDose);
 
-        // Automated safe path suggestion
+        // Automated safe path suggestion (including Metro Interchange comparison!)
         let safeTip = null;
         if (isMetroMode && activeLegs?.length > 1) {
           const walkGapDose = modeEval?.walk_gap_dose_ug;
           const n95Dose = modeEval?.n95_feeder_dose_ug;
           const usesBusFeeder = activeLegs.some((l) => l.role !== 'main' && l.mode === 'BUS');
 
-          if (safestMode && safestMode !== 'METRO' && doseByMode[safestMode]?.dose_ug < curDose - 0.5) {
+          if (isInterchangeSel) {
+            const singleBest = metroLinesToRender.find((l) => l.isActive);
+            const singleBusKm = singleBest ? Math.round((singleBest.autoPlan.firstMileKm + singleBest.autoPlan.lastMileKm) * 10) / 10 : null;
+            const xferBusKm = Math.round((curRoute.interchangePlan.firstMileKm + curRoute.interchangePlan.lastMileKm) * 10) / 10;
+            safeTip = singleBusKm && singleBusKm > xferBusKm + 1
+              ? `Metro Interchange (${curRoute.interchangePlan.lineAName} ⇄ ${curRoute.interchangePlan.lineBName}) cuts road gaps from ${singleBusKm} km to ${xferBusKm} km before final feeder.`
+              : `Metro Interchange (${curRoute.interchangePlan.lineAName} ⇄ ${curRoute.interchangePlan.lineBName}) maximizes enclosed rail coverage across town.`;
+          } else if (curRoute?.interchangePlan && typeof selectedMetroLineIdx === 'number') {
+            safeTip = `Tip: Select 🔄 ${curRoute.interchangePlan.lineAName} ⇄ ${curRoute.interchangePlan.lineBName} above to avoid a longer final Bus leg across town.`;
+          } else if (safestMode && safestMode !== 'METRO' && doseByMode[safestMode]?.dose_ug < curDose - 0.5) {
             const alt = doseByMode[safestMode];
             const saved = Math.round((curDose - alt.dose_ug) * 10) / 10;
             safeTip = `Nearest metro station is far — direct ${MODE_CONFIG[safestMode]?.icon} ${MODE_CONFIG[safestMode]?.label} (${alt.dose_ug} µg) saves −${saved} µg total.`;
@@ -816,11 +901,19 @@ function CommuteDoseCalculator() {
           safeTip = `Switch to ${MODE_CONFIG[safestMode]?.icon} ${MODE_CONFIG[safestMode]?.label} (${alt.dose_ug} µg) to inhale −${saved} µg less pollution.`;
         }
 
+        const headerTitle = isInterchangeSel
+          ? `${curRoute.interchangePlan.lineAName} ⇄ ${curRoute.interchangePlan.lineBName}`
+          : (selectedLineObj ? selectedLineObj.name.split('(')[0].trim() : curRoute.altLabel);
+
+        const activePlanMeta = isInterchangeSel
+          ? curRoute.interchangePlan
+          : selectedLineObj?.autoPlan;
+
         return (
           <div className="card cdc-stats cdc-stats--compact">
             <div className="cdc-stats-header">
               <span style={{ color: curMode?.color, fontSize: '1.2rem' }}>{curMode?.icon}</span>
-              <h3>{curMode?.label} — {selectedLineObj ? selectedLineObj.name.split('(')[0].trim() : curRoute.altLabel}</h3>
+              <h3>{curMode?.label} — {headerTitle}</h3>
               {modeEval?.health_status && (
                 <span className="cdc-health-chip" style={{ color: curRisk.color }}>
                   {modeEval.health_status.label}
@@ -831,7 +924,7 @@ function CommuteDoseCalculator() {
               </span>
             </div>
 
-            {/* Highlighted Per-Leg Pollution Estimation Strip (Walk X km · Y µg -> Metro Z km · W µg -> ...) */}
+            {/* Highlighted Per-Leg Pollution Estimation Strip (supports Interchange legs!) */}
             {isMetroMode && activeLegs?.length > 0 && (
               <div className="cdc-est-highlight">
                 <div className="cdc-est-top">
@@ -842,14 +935,17 @@ function CommuteDoseCalculator() {
                 </div>
                 <div className="cdc-chain-pills">
                   {activeLegs.map((leg, i) => {
-                    const icon = MODE_CONFIG[leg.mode]?.icon || '🚆';
-                    const name = MODE_CONFIG[leg.mode]?.label || leg.mode;
+                    const isXfer = leg.mode === 'TRANSFER';
+                    const icon = isXfer ? '🔄' : (MODE_CONFIG[leg.mode]?.icon || '🚆');
+                    const name = isXfer
+                      ? 'Interchange'
+                      : (leg.line_name ? leg.line_name.split('(')[0].trim() : (MODE_CONFIG[leg.mode]?.label || leg.mode));
                     const legDose = estimateLegDoseUg(leg, basePM25);
                     return (
                       <Fragment key={i}>
                         {i > 0 && <span className="cdc-chain-arrow">➔</span>}
-                        <span className={`cdc-chain-pill ${leg.mode === 'METRO' ? 'cdc-chain-pill--metro' : ''}`}>
-                          <span>{icon} {name} {leg.distance_km} km</span>
+                        <span className={`cdc-chain-pill ${leg.mode === 'METRO' ? 'cdc-chain-pill--metro' : ''} ${isXfer ? 'cdc-chain-pill--xfer' : ''}`}>
+                          <span>{icon} {name}{!isXfer ? ` ${leg.distance_km} km` : ` ${leg.duration_min}m`}</span>
                           {leg.coverage_pct && <span className="cdc-chain-cov">({leg.coverage_pct}%)</span>}
                           <strong className="cdc-chain-ug">{legDose} µg</strong>
                         </span>
@@ -872,11 +968,11 @@ function CommuteDoseCalculator() {
                 <span className="cdc-stat-unit">est. trip AQI</span>
               </div>
               <div className="cdc-stat-box">
-                <span className="cdc-stat-num">{selectedLineObj?.autoPlan?.totalDurationMin || curRoute.durationMin} <small>min</small></span>
+                <span className="cdc-stat-num">{activePlanMeta?.totalDurationMin || curRoute.durationMin} <small>min</small></span>
                 <span className="cdc-stat-unit">time</span>
               </div>
               <div className="cdc-stat-box">
-                <span className="cdc-stat-num">{selectedLineObj?.autoPlan?.totalKm || curRoute.distanceKm} <small>km</small></span>
+                <span className="cdc-stat-num">{activePlanMeta?.totalKm || curRoute.distanceKm} <small>km</small></span>
                 <span className="cdc-stat-unit">distance</span>
               </div>
             </div>

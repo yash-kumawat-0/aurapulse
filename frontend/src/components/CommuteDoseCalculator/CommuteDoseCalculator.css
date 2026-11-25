@@ -354,6 +354,12 @@
   color: #9D174D;
   font-weight: 700;
 }
+.cdc-chain-pill--xfer {
+  background: #EFF6FF;
+  border-color: #93C5FD;
+  color: #1E40AF;
+  font-weight: 700;
+}
 .cdc-chain-cov {
   font-size: 0.78rem;
   opacity: 0.85;

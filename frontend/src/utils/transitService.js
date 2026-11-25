@@ -468,13 +468,53 @@ export function lightenHex(hex, factor = 0.55) {
   return `#${toHex(mix(r))}${toHex(mix(g))}${toHex(mix(b))}`;
 }
 
+function measurePathKm(coords) {
+  let km = 0;
+  for (let i = 1; i < coords.length; i++) {
+    km += distKm(coords[i - 1][0], coords[i - 1][1], coords[i][0], coords[i][1]);
+  }
+  return km;
+}
+
+function sliceLineCoords(coords, idx1, idx2) {
+  if (!coords?.length) return [];
+  const lo = Math.min(idx1, idx2);
+  const hi = Math.max(idx1, idx2);
+  const seg = coords.slice(lo, hi + 1);
+  return idx1 <= idx2 ? seg : [...seg].reverse();
+}
+
+function buildFeederLeg(role, gapKm) {
+  if (gapKm < 0.25) return null;
+  const mode = gapKm > 0.7 ? 'BUS' : 'WALK';
+  const dur = mode === 'WALK'
+    ? Math.max(3, Math.round((gapKm / 4.8) * 60))
+    : Math.max(4, Math.round((gapKm / 18) * 60) + 3);
+  return {
+    role,
+    mode,
+    distance_km: gapKm,
+    duration_min: dur,
+    activity_mode: mode === 'WALK' ? 'walking_brisk' : 'resting_in_vehicle',
+  };
+}
+
 /**
- * Determine STRICTLY ONE best metro line connecting Point A (Origin) and Point B (Destination).
- * Marks only that one line as active (`isActive: true`); rest remain thin & light original color.
+ * Determine best metro route connecting Point A (Origin) and Point B (Destination):
+ *   - Supports direct single line when one line covers both ends
+ *   - Automatically detects 2-line Metro Interchange (Line A -> Transfer -> Line B)
+ *     when cross-city travel gets closer to both Origin and Destination
  */
 export function selectActiveMetroCorridor(metroLines, originLat, originLng, destLat, destLng) {
   if (!metroLines?.length) {
-    return { annotatedLines: [], activeIndex: null, activeLine: null, boardPoint: null, alightPoint: null };
+    return {
+      annotatedLines: [],
+      activeIndex: null,
+      activeLine: null,
+      interchangePlan: null,
+      boardPoint: null,
+      alightPoint: null,
+    };
   }
 
   const scored = metroLines.map((line, index) => {
@@ -496,7 +536,7 @@ export function selectActiveMetroCorridor(metroLines, originLat, originLng, dest
     return { index, line, minA, minB, totalDist: minA + minB, ptA, ptB, idxA, idxB, coords };
   });
 
-  // Strictly choose ONE best single line (lowest combined distance to A and B)
+  // 1) Evaluate Best Single Direct Line
   const bestSingle = [...scored].sort((a, b) => a.totalDist - b.totalDist)[0];
   const activeIndex = bestSingle ? bestSingle.index : 0;
 
@@ -506,14 +546,10 @@ export function selectActiveMetroCorridor(metroLines, originLat, originLng, dest
     let metroTrackKm = 0;
 
     if (item.line.type === 'network' && item.coords.length >= 2) {
-      const lo = Math.min(item.idxA, item.idxB);
-      const hi = Math.max(item.idxA, item.idxB);
-      const sub = item.coords.slice(lo, hi + 1);
+      const sub = sliceLineCoords(item.coords, item.idxA, item.idxB);
       if (sub.length >= 2) {
         activeSegments = [sub];
-        for (let i = 1; i < sub.length; i++) {
-          metroTrackKm += distKm(sub[i - 1][0], sub[i - 1][1], sub[i][0], sub[i][1]);
-        }
+        metroTrackKm = measurePathKm(sub);
       }
     } else if (item.line.segments?.length) {
       activeSegments = item.line.segments;
@@ -523,7 +559,6 @@ export function selectActiveMetroCorridor(metroLines, originLat, originLng, dest
       metroTrackKm = distKm(item.ptA[0], item.ptA[1], item.ptB[0], item.ptB[1]) * 1.15;
     }
 
-    // Automatic Door-to-Door First-Mile + Metro + Last-Mile Plan
     const firstMileKm = Math.round(item.minA * 1.25 * 10) / 10;
     const lastMileKm = Math.round(item.minB * 1.25 * 10) / 10;
     const metroKm = Math.max(0.5, Math.round(metroTrackKm * 10) / 10);
@@ -531,20 +566,8 @@ export function selectActiveMetroCorridor(metroLines, originLat, originLng, dest
     const coveragePct = totalKm > 0 ? Math.min(100, Math.round((metroKm / totalKm) * 100)) : 100;
 
     const autoLegs = [];
-    if (firstMileKm >= 0.25) {
-      const firstMode = firstMileKm > 0.7 ? 'BUS' : 'WALK';
-      const firstDur = firstMode === 'WALK'
-        ? Math.max(3, Math.round((firstMileKm / 4.8) * 60))
-        : Math.max(4, Math.round((firstMileKm / 18) * 60) + 3);
-      autoLegs.push({
-        role: 'first',
-        mode: firstMode,
-        distance_km: firstMileKm,
-        duration_min: firstDur,
-        activity_mode: firstMode === 'WALK' ? 'walking_brisk' : 'resting_in_vehicle',
-      });
-    }
-
+    const fLeg = buildFeederLeg('first', firstMileKm);
+    if (fLeg) autoLegs.push(fLeg);
     autoLegs.push({
       role: 'main',
       mode: 'METRO',
@@ -554,22 +577,8 @@ export function selectActiveMetroCorridor(metroLines, originLat, originLng, dest
       coverage_pct: coveragePct,
       line_name: item.line.name,
     });
-
-    if (lastMileKm >= 0.25) {
-      const lastMode = lastMileKm > 0.7 ? 'BUS' : 'WALK';
-      const lastDur = lastMode === 'WALK'
-        ? Math.max(3, Math.round((lastMileKm / 4.8) * 60))
-        : Math.max(4, Math.round((lastMileKm / 18) * 60) + 3);
-      autoLegs.push({
-        role: 'last',
-        mode: lastMode,
-        distance_km: lastMileKm,
-        duration_min: lastDur,
-        activity_mode: lastMode === 'WALK' ? 'walking_brisk' : 'resting_in_vehicle',
-      });
-    }
-
-    const totalAutoDuration = autoLegs.reduce((sum, l) => sum + l.duration_min, 0);
+    const lLeg = buildFeederLeg('last', lastMileKm);
+    if (lLeg) autoLegs.push(lLeg);
 
     return {
       ...item.line,
@@ -583,19 +592,149 @@ export function selectActiveMetroCorridor(metroLines, originLat, originLng, dest
         metroKm,
         lastMileKm,
         totalKm,
-        totalDurationMin: totalAutoDuration,
+        totalDurationMin: autoLegs.reduce((sum, l) => sum + l.duration_min, 0),
         coveragePct,
         legs: autoLegs,
       },
     };
   });
 
+  // 2) Evaluate Smart 2-Line Metro Interchange (Line A -> Transfer Station -> Line B)
+  let bestInterchange = null;
+  for (let i = 0; i < scored.length; i++) {
+    for (let j = 0; j < scored.length; j++) {
+      if (i === j) continue;
+      const a = scored[i];
+      const b = scored[j];
+      if (!a.coords.length || !b.coords.length) continue;
+
+      // Find closest station pair where Line A intersects/transfers to Line B
+      let minXferDist = Infinity;
+      let xferIdxA = 0;
+      let xferIdxB = 0;
+      a.coords.forEach((pa, ia) => {
+        b.coords.forEach((pb, ib) => {
+          const d = distKm(pa[0], pa[1], pb[0], pb[1]);
+          if (d < minXferDist) {
+            minXferDist = d;
+            xferIdxA = ia;
+            xferIdxB = ib;
+          }
+        });
+      });
+
+      if (minXferDist > 1.6) continue; // Not connected at a practical interchange hub
+
+      const subA = sliceLineCoords(a.coords, a.idxA, xferIdxA);
+      const subB = sliceLineCoords(b.coords, xferIdxB, b.idxB);
+      const kmA = subA.length >= 2 ? measurePathKm(subA) : distKm(a.ptA[0], a.ptA[1], a.coords[xferIdxA][0], a.coords[xferIdxA][1]);
+      const kmB = subB.length >= 2 ? measurePathKm(subB) : distKm(b.coords[xferIdxB][0], b.coords[xferIdxB][1], b.ptB[0], b.ptB[1]);
+
+      // Must meaningfully travel on BOTH lines (avoids pointless transfers for 200m)
+      if (kmA < 0.7 || kmB < 0.7) continue;
+
+      const feederTotal = a.minA + b.minB;
+      // Trigger interchange if feeder gaps shrink significantly (>= 1.2 km closer) vs best single line
+      if (feederTotal + 1.2 < bestSingle.totalDist) {
+        if (!bestInterchange || feederTotal < bestInterchange.feederTotal) {
+          bestInterchange = {
+            feederTotal,
+            a,
+            b,
+            subA: subA.length >= 2 ? subA : [a.ptA, a.coords[xferIdxA]],
+            subB: subB.length >= 2 ? subB : [b.coords[xferIdxB], b.ptB],
+            kmA: Math.round(kmA * 10) / 10,
+            kmB: Math.round(kmB * 10) / 10,
+            xferPoint: a.coords[xferIdxA],
+            boardPoint: a.ptA,
+            alightPoint: b.ptB,
+          };
+        }
+      }
+    }
+  }
+
+  let interchangePlan = null;
+  if (bestInterchange) {
+    const { a, b, subA, subB, kmA, kmB, xferPoint, boardPoint, alightPoint } = bestInterchange;
+    const firstMileKm = Math.round(a.minA * 1.25 * 10) / 10;
+    const lastMileKm = Math.round(b.minB * 1.25 * 10) / 10;
+    const totalMetroKm = Math.round((kmA + kmB) * 10) / 10;
+    const totalKm = Math.round((firstMileKm + totalMetroKm + lastMileKm) * 10) / 10;
+    const coveragePct = totalKm > 0 ? Math.min(100, Math.round((totalMetroKm / totalKm) * 100)) : 100;
+
+    const legs = [];
+    const fLeg = buildFeederLeg('first', firstMileKm);
+    if (fLeg) legs.push(fLeg);
+
+    const durA = Math.max(4, Math.round((kmA / 34) * 60) + 3);
+    const durB = Math.max(4, Math.round((kmB / 34) * 60) + 3);
+
+    legs.push({
+      role: 'main',
+      mode: 'METRO',
+      distance_km: kmA,
+      duration_min: durA,
+      activity_mode: 'resting_in_vehicle',
+      line_name: a.line.name,
+      color: a.line.color,
+      coverage_pct: Math.round((kmA / totalKm) * 100),
+    });
+
+    legs.push({
+      role: 'transfer',
+      mode: 'TRANSFER',
+      distance_km: 0.1,
+      duration_min: 4,
+      activity_mode: 'walking_slow',
+      line_name: 'Station Interchange',
+    });
+
+    legs.push({
+      role: 'main',
+      mode: 'METRO',
+      distance_km: kmB,
+      duration_min: durB,
+      activity_mode: 'resting_in_vehicle',
+      line_name: b.line.name,
+      color: b.line.color,
+      coverage_pct: Math.round((kmB / totalKm) * 100),
+    });
+
+    const lLeg = buildFeederLeg('last', lastMileKm);
+    if (lLeg) legs.push(lLeg);
+
+    interchangePlan = {
+      lineAIndex: a.index,
+      lineBIndex: b.index,
+      lineAName: a.line.name.split('(')[0].trim(),
+      lineBName: b.line.name.split('(')[0].trim(),
+      lineAColor: a.line.color,
+      lineBColor: b.line.color,
+      segments: [
+        { lineIndex: a.index, name: a.line.name, color: a.line.color, coords: subA, distance_km: kmA, duration_min: durA },
+        { lineIndex: b.index, name: b.line.name, color: b.line.color, coords: subB, distance_km: kmB, duration_min: durB },
+      ],
+      transferPoint: xferPoint,
+      boardPoint,
+      alightPoint,
+      firstMileKm,
+      lastMileKm,
+      metroKm: totalMetroKm,
+      totalKm,
+      totalDurationMin: legs.reduce((s, l) => s + l.duration_min, 0),
+      coveragePct,
+      legs,
+    };
+  }
+
   return {
     annotatedLines,
     activeIndex,
     activeLine: annotatedLines[activeIndex] || null,
-    boardPoint: bestSingle?.ptA || null,
-    alightPoint: bestSingle?.ptB || null,
+    interchangePlan,
+    boardPoint: interchangePlan ? interchangePlan.boardPoint : (bestSingle?.ptA || null),
+    alightPoint: interchangePlan ? interchangePlan.alightPoint : (bestSingle?.ptB || null),
   };
 }
 

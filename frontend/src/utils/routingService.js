@@ -208,7 +208,7 @@ export async function fetchRoutesForMode(originLat, originLng, destLat, destLng,
       const metroLines = await fetchMetroLines(originLat, originLng, destLat, destLng);
 
       if (metroLines.length > 0) {
-        const { annotatedLines, activeIndex, activeLine, boardPoint, alightPoint } = selectActiveMetroCorridor(
+        const { annotatedLines, activeIndex, activeLine, interchangePlan, boardPoint, alightPoint } = selectActiveMetroCorridor(
           metroLines,
           originLat,
           originLng,
@@ -216,7 +216,7 @@ export async function fetchRoutesForMode(originLat, originLng, destLat, destLng,
           destLng
         );
 
-        const autoPlan = activeLine?.autoPlan || {
+        const activePlan = interchangePlan || activeLine?.autoPlan || {
           firstMileKm: 0,
           metroKm: routeKm,
           lastMileKm: 0,
@@ -227,8 +227,8 @@ export async function fetchRoutesForMode(originLat, originLng, destLat, destLng,
         };
 
         // Fetch street-following OSRM paths for first & last mile gaps (if >= 0.25 km)
-        const firstLeg = autoPlan.legs.find((l) => l.role === 'first');
-        const lastLeg = autoPlan.legs.find((l) => l.role === 'last');
+        const firstLeg = activePlan.legs.find((l) => l.role === 'first');
+        const lastLeg = activePlan.legs.find((l) => l.role === 'last');
 
         const fetchFeederPath = async (p1Lat, p1Lng, p2Lat, p2Lng, modeKey) => {
           const prof = modeKey === 'WALK' ? 'foot' : 'car';
@@ -249,27 +249,32 @@ export async function fetchRoutesForMode(originLat, originLng, destLat, destLng,
             : Promise.resolve(null),
         ]);
 
-        // Accurate fallback dose summing across all legs
-        const autoDose = autoPlan.legs.reduce((sum, leg) => {
-          const legCfg = MODE_CONFIG[leg.mode] || config;
-          const legVe = veRates[leg.activity_mode] || ve;
-          return sum + (100 * legCfg.pm25Multiplier * legVe * leg.duration_min) / 1000;
+        // Accurate fallback dose summing across all legs (including transfer)
+        const autoDose = activePlan.legs.reduce((sum, leg) => {
+          const mult = leg.mode === 'TRANSFER' ? 0.35 : (MODE_CONFIG[leg.mode]?.pm25Multiplier || 1.0);
+          const legVe = leg.mode === 'TRANSFER' ? 18 : (veRates[leg.activity_mode] || ve);
+          return sum + (100 * mult * legVe * leg.duration_min) / 1000;
         }, 0);
+
+        const routeTitle = interchangePlan
+          ? `${interchangePlan.lineAName} ⇄ ${interchangePlan.lineBName}`
+          : (activeLine ? activeLine.name.split('(')[0].trim() : 'Metro');
 
         const mainRoute = {
           id: 'METRO-0',
           altIndex: 0,
-          altLabel: activeLine ? activeLine.name.split('(')[0].trim() : 'Metro',
+          altLabel: routeTitle,
           coordinates: metroLines.flatMap((l) => [...l.coordinates, [NaN, NaN]]).filter((c) => !isNaN(c[0])),
-          distanceKm: autoPlan.totalKm,
-          durationMin: autoPlan.totalDurationMin,
+          distanceKm: activePlan.totalKm,
+          durationMin: activePlan.totalDurationMin,
           estimatedDose: Math.round(autoDose * 10) / 10,
           isTransit: true,
           transitLines: annotatedLines,
-          defaultActiveLineIndex: activeIndex,
+          interchangePlan,
+          defaultActiveLineIndex: interchangePlan ? 'interchange' : activeIndex,
           boardPoint,
           alightPoint,
-          autoPlan,
+          autoPlan: activePlan,
           firstMilePath: firstPathRes,
           lastMilePath: lastPathRes,
         };

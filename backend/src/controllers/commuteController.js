@@ -15,6 +15,7 @@ const PM25_MULTIPLIERS = {
   TWO_WHEELER: 1.4,
   TRANSIT: 0.4,
   METRO: 0.3,       // Underground + filtered cabin air
+  TRANSFER: 0.35,   // Indoor station platform interchange walk
   BUS: 0.6,         // Cabin filtration but road-level intake
   WALK: 1.0,
   BICYCLE: 1.3,
@@ -25,6 +26,7 @@ const ACTIVITY_BY_MODE = {
   TWO_WHEELER: 'two_wheeler',
   TRANSIT: 'resting_in_vehicle',
   METRO: 'resting_in_vehicle',
+  TRANSFER: 'walking_slow',
   BUS: 'resting_in_vehicle',
   WALK: 'walking_brisk',
   BICYCLE: 'cycling',
@@ -222,7 +224,7 @@ export async function multiCompare(req, res, next) {
 
         // Compare vs walking those feeder gaps directly (and vs adding N95 on exposed gaps)
         const walkGapDose = Math.round(evalLegs.reduce((s, l) => {
-          if (l.mode === 'METRO') return s + l.dose_ug;
+          if (l.mode === 'METRO' || l.mode === 'TRANSFER') return s + l.dose_ug;
           const wPm = basePM25 * PM25_MULTIPLIERS.WALK;
           const wDur = Math.max(3, Math.round((l.distance_km / 4.8) * 60));
           return s + calculateSegmentDose({
@@ -234,7 +236,7 @@ export async function multiCompare(req, res, next) {
         }, 0) * 100) / 100;
 
         const n95FeederDose = Math.round(evalLegs.reduce((s, l) => {
-          if (l.mode === 'METRO') return s + l.dose_ug;
+          if (l.mode === 'METRO' || l.mode === 'TRANSFER') return s + l.dose_ug;
           return s + calculateSegmentDose({
             pm25Concentration: l.effective_pm25,
             durationMinutes: l.duration_min,
