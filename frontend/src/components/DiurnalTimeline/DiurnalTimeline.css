@@ -16,14 +16,15 @@
 }
 
 .diurnal-title {
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 1.08rem;
+  font-weight: 800;
 }
 
 .diurnal-legend {
   display: flex;
   gap: var(--space-md);
-  font-size: 0.7rem;
+  font-size: 0.84rem;
+  font-weight: 600;
   color: var(--text-secondary);
 }
 
@@ -74,16 +75,16 @@
 }
 
 .diurnal-hour {
-  font-size: 0.55rem;
+  font-size: 0.74rem;
   color: var(--text-muted);
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 .diurnal-rec {
-  padding: var(--space-sm) var(--space-md);
+  padding: 10px var(--space-md);
   border-radius: var(--radius-sm);
-  font-size: 0.8rem;
-  font-weight: 500;
+  font-size: 0.92rem;
+  font-weight: 600;
 }
 
 .diurnal-rec--good {

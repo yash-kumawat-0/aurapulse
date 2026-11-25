@@ -23,8 +23,8 @@
 }
 
 .aqi-label {
-  font-size: 0.65rem;
-  font-weight: 600;
+  font-size: 0.78rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-top: 2px;
@@ -40,10 +40,10 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-xs);
-  padding: 2px var(--space-sm);
+  padding: 4px 12px;
   border-radius: var(--radius-full);
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.88rem;
+  font-weight: 700;
   width: fit-content;
 }
 
@@ -51,7 +51,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  font-size: 0.8rem;
+  font-size: 0.94rem;
   color: var(--text-secondary);
   flex-wrap: wrap;
 }

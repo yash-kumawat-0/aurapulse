@@ -1,32 +1,30 @@
 /* ============================================
-   DiyPurifierGuide — Interactive 3D Animated
-   Corsi-Rosenthal Assembly Studio (All Ages)
+   DiyPurifierGuide — Minimal Clean 3D Purifier
+   Animated Stepper + Readable Typography
    ============================================ */
 
 .diy3d-wrap {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding: 24px;
-  border-radius: 20px;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 18px;
   border: 1.5px solid #FED7AA;
   background: linear-gradient(155deg, #FFFDF9 0%, #FFF7ED 100%);
-  box-shadow: 0 8px 28px rgba(234, 88, 12, 0.08);
 }
 
 .diy3d-wrap--optional {
   border-color: #CBD5E1;
   background: linear-gradient(155deg, #FFFFFF 0%, #F8FAFC 100%);
-  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
 }
 
-/* ── Header ── */
+/* ── Minimal Header ── */
 .diy3d-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: 12px;
 }
 
 .diy3d-header-left {
@@ -34,40 +32,32 @@
   min-width: 240px;
 }
 
-.diy3d-badge {
-  display: inline-flex;
+.diy3d-title-row {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: 8px;
-}
-
-.diy3d-badge--urgent {
-  background: #FFEDD5;
-  color: #C2410C;
-  border: 1px solid #FDBA74;
-}
-
-.diy3d-badge--safe {
-  background: #E0F2FE;
-  color: #0369A1;
-  border: 1px solid #BAE6FD;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .diy3d-title {
-  font-size: 1.15rem;
+  font-size: 1.12rem;
   font-weight: 800;
   color: var(--text-primary);
   margin: 0;
 }
 
+.diy3d-impact-pill {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #ECFDF5;
+  color: #065F46;
+  border: 1px solid #86EFAC;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
 .diy3d-subtitle {
-  font-size: 0.82rem;
+  font-size: 0.88rem;
   color: var(--text-secondary);
   margin: 4px 0 0 0;
 }
@@ -75,16 +65,16 @@
 .diy3d-mode-switch {
   display: flex;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.85);
+  background: #FFFFFF;
   padding: 4px;
   border-radius: 12px;
   border: 1px solid #E2E8F0;
 }
 
 .diy3d-mode-btn {
-  padding: 7px 12px;
+  padding: 7px 14px;
   border-radius: 9px;
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: var(--text-secondary);
   background: transparent;
@@ -97,54 +87,12 @@
   box-shadow: 0 2px 8px rgba(234, 88, 12, 0.28);
 }
 
-/* ── Room Impact Numbers Strip ── */
-.diy3d-impact-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-
-.diy3d-impact-card {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 14px 16px;
-  background: #FFFFFF;
-  border-radius: 14px;
-  border: 1px solid #E2E8F0;
-}
-
-.diy3d-impact-card--highlight {
-  border-color: #86EFAC;
-  background: linear-gradient(135deg, #FFFFFF, #ECFDF5);
-}
-
-.diy3d-impact-lbl {
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.diy3d-impact-val {
-  font-size: 1.15rem;
-  font-weight: 800;
-  font-family: var(--font-heading);
-  color: var(--text-primary);
-}
-
-.diy3d-impact-sub {
-  font-size: 0.74rem;
-  color: var(--text-secondary);
-}
-
 /* ══════════════════════════════════════════
-   STUDIO: 3D VIEWPORT + STEP GUIDE
+   STUDIO: 3D VIEWPORT + 5 STEPS RIGHT
    ══════════════════════════════════════════ */
 .diy3d-studio {
   display: grid;
-  grid-template-columns: minmax(290px, 1.05fr) minmax(290px, 1fr);
+  grid-template-columns: minmax(280px, 1.05fr) minmax(280px, 1fr);
   gap: 20px;
   align-items: start;
 }
@@ -152,7 +100,7 @@
 .diy3d-viewport-col {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .diy3d-stage-toolbar {
@@ -164,7 +112,7 @@
 }
 
 .diy3d-drag-hint {
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--text-secondary);
 }
@@ -175,8 +123,8 @@
 }
 
 .diy3d-cam-btn {
-  padding: 4px 9px;
-  font-size: 0.7rem;
+  padding: 5px 10px;
+  font-size: 0.78rem;
   font-weight: 700;
   border-radius: 8px;
   background: #FFFFFF;
@@ -185,20 +133,13 @@
   transition: all 0.15s;
 }
 
-.diy3d-cam-btn:hover {
-  background: #F1F5F9;
-}
-
-.diy3d-cam-btn--on {
-  background: #2563EB;
-  color: #FFFFFF;
-  border-color: #2563EB;
-}
+.diy3d-cam-btn:hover { background: #F1F5F9; }
+.diy3d-cam-btn--on { background: #2563EB; color: #FFFFFF; border-color: #2563EB; }
 
 /* ── 3D Stage ── */
 .diy3d-stage {
   position: relative;
-  height: 330px;
+  height: 310px;
   border-radius: 18px;
   background: radial-gradient(circle at 50% 42%, #EFF6FF 0%, #DBEAFE 52%, #E2E8F0 100%);
   border: 1.5px solid #BFDBFE;
@@ -210,12 +151,9 @@
   cursor: grab;
   user-select: none;
   touch-action: none;
-  box-shadow: inset 0 2px 14px rgba(37, 99, 235, 0.08);
 }
 
-.diy3d-stage:active {
-  cursor: grabbing;
-}
+.diy3d-stage:active { cursor: grabbing; }
 
 .diy3d-stage-callout {
   position: absolute;
@@ -227,30 +165,24 @@
   justify-content: center;
   gap: 6px;
   padding: 7px 14px;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(6px);
+  background: rgba(255, 255, 255, 0.94);
   border-radius: 999px;
   border: 1px solid #CBD5E1;
-  font-size: 0.78rem;
+  font-size: 0.84rem;
   color: var(--text-primary);
   z-index: 20;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
 }
 
-/* ── 3D Assembly Root ── */
 .diy3d-assembly {
   position: relative;
   width: 140px;
   height: 140px;
   transform-style: preserve-3d;
   transition: transform 0.35s ease;
-  margin-top: 26px;
+  margin-top: 24px;
 }
 
-.diy3d-autospin {
-  animation: diy3dSpin 10s linear infinite;
-}
-
+.diy3d-autospin { animation: diy3dSpin 10s linear infinite; }
 @keyframes diy3dSpin {
   from { transform: rotateX(-20deg) rotateY(0deg); }
   to { transform: rotateX(-20deg) rotateY(360deg); }
@@ -267,10 +199,7 @@
   pointer-events: none;
 }
 
-/* ══════════════════════════════════════════
-   4-FILTER CORSI-ROSENTHAL CUBE GEOMETRY
-   Cube side = 124px -> half = 62px
-   ══════════════════════════════════════════ */
+/* 4-Filter Cube */
 .d3-wall {
   position: absolute;
   width: 124px;
@@ -287,7 +216,6 @@
   border-radius: 6px;
   background: linear-gradient(145deg, #FEF9C3, #FDE68A);
   border: 4px solid #F59E0B;
-  box-shadow: inset 0 0 12px rgba(217, 119, 6, 0.2);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -308,26 +236,24 @@
     rgba(255, 255, 255, 0.55) 3px,
     rgba(255, 255, 255, 0.55) 7px
   );
-  border-radius: 3px;
 }
 
 .d3-filter-badge {
   position: relative;
   z-index: 2;
   padding: 2px 7px;
-  font-size: 0.56rem;
+  font-size: 0.6rem;
   font-weight: 800;
   color: #92400E;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.92);
   border-radius: 4px;
-  letter-spacing: 0.04em;
 }
 
 .d3-arrow-in {
   position: relative;
   z-index: 2;
   padding: 2px 8px;
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   font-weight: 800;
   color: #065F46;
   background: #A7F3D0;
@@ -338,50 +264,22 @@
   transition: all 0.4s ease;
 }
 
-/* Step 0: Exploded Floating Parts */
 .diy3d-step-0 .d3-wall-front { transform: translateZ(105px) translateY(-6px); }
 .diy3d-step-0 .d3-wall-back { transform: rotateY(180deg) translateZ(105px) translateY(-6px); }
 .diy3d-step-0 .d3-wall-left { transform: rotateY(-90deg) translateZ(105px) translateY(-6px); }
 .diy3d-step-0 .d3-wall-right { transform: rotateY(90deg) translateZ(105px) translateY(-6px); }
 
-/* Step 1: Arrows INWARD Focus (angled slightly open) */
 .diy3d-step-1 .d3-wall-front { transform: translateZ(84px); }
 .diy3d-step-1 .d3-wall-back { transform: rotateY(180deg) translateZ(84px); }
 .diy3d-step-1 .d3-wall-left { transform: rotateY(-90deg) translateZ(84px); }
 .diy3d-step-1 .d3-wall-right { transform: rotateY(90deg) translateZ(84px); }
-.diy3d-step-1 .d3-arrow-in,
-.diy3d-step-2 .d3-arrow-in {
-  opacity: 1;
-  transform: scale(1.08);
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
-}
+.diy3d-step-1 .d3-arrow-in { opacity: 1; transform: scale(1.08); }
 
-/* Steps 2..6: Closed Cube Square */
-.diy3d-step-2 .d3-wall-front,
-.diy3d-step-3 .d3-wall-front,
-.diy3d-step-4 .d3-wall-front,
-.diy3d-step-5 .d3-wall-front,
-.diy3d-step-6 .d3-wall-front { transform: translateZ(62px); }
+.diy3d-step-3 .d3-wall-front, .diy3d-step-4 .d3-wall-front, .diy3d-step-6 .d3-wall-front { transform: translateZ(62px); }
+.diy3d-step-3 .d3-wall-back, .diy3d-step-4 .d3-wall-back, .diy3d-step-6 .d3-wall-back { transform: rotateY(180deg) translateZ(62px); }
+.diy3d-step-3 .d3-wall-left, .diy3d-step-4 .d3-wall-left, .diy3d-step-6 .d3-wall-left { transform: rotateY(-90deg) translateZ(62px); }
+.diy3d-step-3 .d3-wall-right, .diy3d-step-4 .d3-wall-right, .diy3d-step-6 .d3-wall-right { transform: rotateY(90deg) translateZ(62px); }
 
-.diy3d-step-2 .d3-wall-back,
-.diy3d-step-3 .d3-wall-back,
-.diy3d-step-4 .d3-wall-back,
-.diy3d-step-5 .d3-wall-back,
-.diy3d-step-6 .d3-wall-back { transform: rotateY(180deg) translateZ(62px); }
-
-.diy3d-step-2 .d3-wall-left,
-.diy3d-step-3 .d3-wall-left,
-.diy3d-step-4 .d3-wall-left,
-.diy3d-step-5 .d3-wall-left,
-.diy3d-step-6 .d3-wall-left { transform: rotateY(-90deg) translateZ(62px); }
-
-.diy3d-step-2 .d3-wall-right,
-.diy3d-step-3 .d3-wall-right,
-.diy3d-step-4 .d3-wall-right,
-.diy3d-step-5 .d3-wall-right,
-.diy3d-step-6 .d3-wall-right { transform: rotateY(90deg) translateZ(62px); }
-
-/* 4 Vertical Corner Duct Tape Seals */
 .d3-corner-tape {
   position: absolute;
   width: 10px;
@@ -395,32 +293,17 @@
   transition: opacity 0.45s ease, transform 0.6s ease;
   pointer-events: none;
 }
-
 .d3-ct-fl { transform: translateX(-62px) translateZ(63px) rotateY(-45deg) scaleY(0); }
 .d3-ct-fr { transform: translateX(62px) translateZ(63px) rotateY(45deg) scaleY(0); }
 .d3-ct-bl { transform: translateX(-62px) translateZ(-63px) rotateY(45deg) scaleY(0); }
 .d3-ct-br { transform: translateX(62px) translateZ(-63px) rotateY(-45deg) scaleY(0); }
 
-.diy3d-step-3 .d3-corner-tape,
-.diy3d-step-4 .d3-corner-tape,
-.diy3d-step-5 .d3-corner-tape,
-.diy3d-step-6 .d3-corner-tape {
-  opacity: 0.95;
-}
-.diy3d-step-3 .d3-ct-fl, .diy3d-step-4 .d3-ct-fl, .diy3d-step-5 .d3-ct-fl, .diy3d-step-6 .d3-ct-fl {
-  transform: translateX(-62px) translateZ(63px) rotateY(-45deg) scaleY(1);
-}
-.diy3d-step-3 .d3-ct-fr, .diy3d-step-4 .d3-ct-fr, .diy3d-step-5 .d3-ct-fr, .diy3d-step-6 .d3-ct-fr {
-  transform: translateX(62px) translateZ(63px) rotateY(45deg) scaleY(1);
-}
-.diy3d-step-3 .d3-ct-bl, .diy3d-step-4 .d3-ct-bl, .diy3d-step-5 .d3-ct-bl, .diy3d-step-6 .d3-ct-bl {
-  transform: translateX(-62px) translateZ(-63px) rotateY(45deg) scaleY(1);
-}
-.diy3d-step-3 .d3-ct-br, .diy3d-step-4 .d3-ct-br, .diy3d-step-5 .d3-ct-br, .diy3d-step-6 .d3-ct-br {
-  transform: translateX(62px) translateZ(-63px) rotateY(-45deg) scaleY(1);
-}
+.diy3d-step-3 .d3-corner-tape, .diy3d-step-4 .d3-corner-tape, .diy3d-step-6 .d3-corner-tape { opacity: 0.95; }
+.diy3d-step-3 .d3-ct-fl, .diy3d-step-4 .d3-ct-fl, .diy3d-step-6 .d3-ct-fl { transform: translateX(-62px) translateZ(63px) rotateY(-45deg) scaleY(1); }
+.diy3d-step-3 .d3-ct-fr, .diy3d-step-4 .d3-ct-fr, .diy3d-step-6 .d3-ct-fr { transform: translateX(62px) translateZ(63px) rotateY(45deg) scaleY(1); }
+.diy3d-step-3 .d3-ct-bl, .diy3d-step-4 .d3-ct-bl, .diy3d-step-6 .d3-ct-bl { transform: translateX(-62px) translateZ(-63px) rotateY(45deg) scaleY(1); }
+.diy3d-step-3 .d3-ct-br, .diy3d-step-4 .d3-ct-br, .diy3d-step-6 .d3-ct-br { transform: translateX(62px) translateZ(-63px) rotateY(-45deg) scaleY(1); }
 
-/* Cardboard Base */
 .d3-cardboard {
   position: absolute;
   width: 126px;
@@ -437,29 +320,10 @@
   transform: translateY(88px) rotateX(90deg);
   opacity: 0.35;
 }
+.d3-cardboard-lbl { font-size: 0.56rem; font-weight: 800; color: #FEF3C7; background: rgba(69,26,3,0.75); padding: 2px 7px; border-radius: 4px; }
+.diy3d-step-0 .d3-cardboard { transform: translateY(92px) rotateX(90deg); opacity: 0.9; }
+.diy3d-step-4 .d3-cardboard, .diy3d-step-6 .d3-cardboard { transform: translateY(63px) rotateX(90deg); opacity: 1; }
 
-.d3-cardboard-lbl {
-  font-size: 0.55rem;
-  font-weight: 800;
-  color: #FEF3C7;
-  background: rgba(69, 26, 3, 0.75);
-  padding: 2px 7px;
-  border-radius: 4px;
-}
-
-.diy3d-step-0 .d3-cardboard {
-  transform: translateY(92px) rotateX(90deg);
-  opacity: 0.9;
-}
-
-.diy3d-step-4 .d3-cardboard,
-.diy3d-step-5 .d3-cardboard,
-.diy3d-step-6 .d3-cardboard {
-  transform: translateY(63px) rotateX(90deg);
-  opacity: 1;
-}
-
-/* Top Box Fan Assembly */
 .d3-top-fan {
   position: absolute;
   width: 128px;
@@ -471,210 +335,48 @@
   transform: translateY(-102px) rotateX(90deg);
   opacity: 0.25;
 }
-
-.diy3d-step-0 .d3-top-fan {
-  transform: translateY(-105px) rotateX(90deg);
-  opacity: 0.95;
-}
-
-.diy3d-step-5 .d3-top-fan,
-.diy3d-step-6 .d3-top-fan {
-  transform: translateY(-64px) rotateX(90deg);
-  opacity: 1;
-}
+.diy3d-step-0 .d3-top-fan { transform: translateY(-105px) rotateX(90deg); opacity: 0.95; }
+.diy3d-step-6 .d3-top-fan { transform: translateY(-64px) rotateX(90deg); opacity: 1; }
 
 .d3-fan-frame {
-  width: 100%;
-  height: 100%;
-  border-radius: 10px;
+  width: 100%; height: 100%; border-radius: 10px;
   background: linear-gradient(145deg, #F1F5F9, #CBD5E1);
   border: 4px solid #64748B;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+  display: flex; align-items: center; justify-content: center; position: relative;
 }
-
 .d3-fan-ring {
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
+  width: 96px; height: 96px; border-radius: 50%;
   background: radial-gradient(circle, #E2E8F0, #94A3B8);
-  border: 2px solid #475569;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
+  border: 2px solid #475569; display: flex; align-items: center; justify-content: center;
 }
-
-.d3-blades {
-  position: relative;
-  width: 82px;
-  height: 82px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.diy3d-step-6 .d3-blades {
-  animation: fanSpinFast 0.45s linear infinite;
-}
-
-@keyframes fanSpinFast {
-  to { transform: rotate(360deg); }
-}
-
-.d3-blade {
-  position: absolute;
-  width: 74px;
-  height: 12px;
-  background: linear-gradient(90deg, #334155, #475569, #334155);
-  border-radius: 999px;
-}
+.d3-blades { position: relative; width: 82px; height: 82px; display: flex; align-items: center; justify-content: center; }
+.diy3d-step-6 .d3-blades { animation: fanSpinFast 0.45s linear infinite; }
+@keyframes fanSpinFast { to { transform: rotate(360deg); } }
+.d3-blade { position: absolute; width: 74px; height: 12px; background: #334155; border-radius: 999px; }
 .d3-b1 { transform: rotate(0deg); }
 .d3-b2 { transform: rotate(60deg); }
 .d3-b3 { transform: rotate(120deg); }
+.d3-hub { width: 20px; height: 20px; border-radius: 50%; background: #1E293B; border: 2px solid #94A3B8; z-index: 2; }
+.d3-fan-up-badge { position: absolute; bottom: 4px; font-size: 0.56rem; font-weight: 800; color: #1D4ED8; background: rgba(255,255,255,0.92); padding: 2px 6px; border-radius: 4px; }
+.d3-fan-rim-tape { position: absolute; inset: -4px; border: 5px dashed #64748B; border-radius: 12px; opacity: 0; transition: opacity 0.4s ease; }
+.diy3d-step-6 .d3-fan-rim-tape { opacity: 0.85; }
 
-.d3-hub {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #1E293B;
-  border: 2px solid #94A3B8;
-  z-index: 2;
-}
+.d3-cube-airflow { position: absolute; inset: -50px; pointer-events: none; opacity: 0; transition: opacity 0.5s ease; transform-style: preserve-3d; }
+.diy3d-step-6 .d3-cube-airflow { opacity: 1; }
+.d3-smog-stream { position: absolute; top: 46%; font-size: 0.72rem; font-weight: 800; color: #C2410C; background: rgba(255,237,213,0.92); padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.d3-smog-l { left: -34px; animation: smogPullLeft 1.6s ease-in-out infinite; }
+.d3-smog-r { right: -34px; animation: smogPullRight 1.6s ease-in-out infinite; }
+@keyframes smogPullLeft { 0% { transform: translateX(-16px); opacity: 0.35; } 65% { transform: translateX(18px); opacity: 1; } 100% { transform: translateX(28px); opacity: 0; } }
+@keyframes smogPullRight { 0% { transform: translateX(16px); opacity: 0.35; } 65% { transform: translateX(-18px); opacity: 1; } 100% { transform: translateX(-28px); opacity: 0; } }
+.d3-clean-plume { position: absolute; top: -38px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
+.d3-plume-arrow { font-size: 0.75rem; font-weight: 800; color: #047857; background: rgba(209,250,229,0.95); padding: 2px 10px; border-radius: 999px; border: 1px solid #6EE7B7; white-space: nowrap; animation: cleanRise 1.4s ease-out infinite; }
+@keyframes cleanRise { 0% { transform: translateY(10px); opacity: 0.25; } 50% { transform: translateY(-6px); opacity: 1; } 100% { transform: translateY(-22px); opacity: 0; } }
 
-.d3-fan-up-badge {
-  position: absolute;
-  bottom: 4px;
-  font-size: 0.54rem;
-  font-weight: 800;
-  color: #1D4ED8;
-  background: rgba(255, 255, 255, 0.92);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.d3-fan-rim-tape {
-  position: absolute;
-  inset: -4px;
-  border: 5px dashed #64748B;
-  border-radius: 12px;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-}
-
-.diy3d-step-5 .d3-fan-rim-tape,
-.diy3d-step-6 .d3-fan-rim-tape {
-  opacity: 0.85;
-}
-
-/* Airflow Streams on Cube (Step 6 = Step 7 UI) */
-.d3-cube-airflow {
-  position: absolute;
-  inset: -50px;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.5s ease;
-  transform-style: preserve-3d;
-}
-
-.diy3d-step-6 .d3-cube-airflow {
-  opacity: 1;
-}
-
-.d3-smog-stream {
-  position: absolute;
-  top: 46%;
-  font-size: 0.7rem;
-  font-weight: 800;
-  color: #C2410C;
-  background: rgba(255, 237, 213, 0.92);
-  padding: 2px 7px;
-  border-radius: 999px;
-  white-space: nowrap;
-}
-
-.d3-smog-l {
-  left: -34px;
-  animation: smogPullLeft 1.6s ease-in-out infinite;
-}
-
-.d3-smog-r {
-  right: -34px;
-  animation: smogPullRight 1.6s ease-in-out infinite;
-}
-
-@keyframes smogPullLeft {
-  0% { transform: translateX(-16px); opacity: 0.35; }
-  65% { transform: translateX(18px); opacity: 1; }
-  100% { transform: translateX(28px); opacity: 0; }
-}
-
-@keyframes smogPullRight {
-  0% { transform: translateX(16px); opacity: 0.35; }
-  65% { transform: translateX(-18px); opacity: 1; }
-  100% { transform: translateX(-28px); opacity: 0; }
-}
-
-.d3-clean-plume {
-  position: absolute;
-  top: -38px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.d3-plume-arrow {
-  font-size: 0.72rem;
-  font-weight: 800;
-  color: #047857;
-  background: rgba(209, 250, 229, 0.94);
-  padding: 2px 9px;
-  border-radius: 999px;
-  border: 1px solid #6EE7B7;
-  white-space: nowrap;
-  animation: cleanRise 1.4s ease-out infinite;
-}
-
-.d3-plume-arrow:nth-child(2) {
-  animation-delay: 0.65s;
-}
-
-@keyframes cleanRise {
-  0% { transform: translateY(10px); opacity: 0.25; }
-  50% { transform: translateY(-6px); opacity: 1; }
-  100% { transform: translateY(-22px); opacity: 0; }
-}
-
-/* ══════════════════════════════════════════
-   1-FILTER FAN 3D ASSEMBLY
-   ══════════════════════════════════════════ */
-.d3-single-fan {
-  position: absolute;
-  width: 120px;
-  height: 120px;
-  left: 10px;
-  top: 10px;
-  transform-style: preserve-3d;
-  transform: translateZ(18px);
-}
-
-.d3-box-face {
-  position: absolute;
-  background: linear-gradient(145deg, #E2E8F0, #CBD5E1);
-  border: 2px solid #94A3B8;
-}
-
+/* 1-Filter Mode */
+.d3-single-fan { position: absolute; width: 120px; height: 120px; left: 10px; top: 10px; transform-style: preserve-3d; transform: translateZ(18px); }
+.d3-box-face { position: absolute; background: linear-gradient(145deg, #E2E8F0, #CBD5E1); border: 2px solid #94A3B8; }
 .d3-box-front, .d3-box-back { width: 120px; height: 120px; border-radius: 10px; }
-.d3-box-front {
-  transform: translateZ(18px);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-}
+.d3-box-front { transform: translateZ(18px); display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .d3-box-back { transform: rotateY(180deg) translateZ(18px); }
 .d3-box-left, .d3-box-right { width: 36px; height: 120px; left: 42px; }
 .d3-box-left { transform: rotateY(-90deg) translateZ(60px); }
@@ -682,120 +384,26 @@
 .d3-box-top, .d3-box-bottom { width: 120px; height: 36px; top: 42px; }
 .d3-box-top { transform: rotateX(90deg) translateZ(60px); }
 .d3-box-bottom { transform: rotateX(-90deg) translateZ(60px); background: #64748B; }
-
-.d3-grille {
-  width: 92px;
-  height: 92px;
-  border-radius: 50%;
-  background: radial-gradient(circle, #F1F5F9, #94A3B8);
-  border: 2px solid #475569;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.d3-part-tag {
-  position: absolute;
-  bottom: 4px;
-  font-size: 0.52rem;
-  font-weight: 800;
-  color: #334155;
-  background: rgba(255,255,255,0.85);
-  padding: 1px 6px;
-  border-radius: 4px;
-}
-
-.d3-single-filter {
-  position: absolute;
-  width: 116px;
-  height: 116px;
-  left: 12px;
-  top: 12px;
-  transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease;
-  transform: translateZ(-78px) scale(0.95);
-  opacity: 0.9;
-}
-
+.d3-grille { width: 92px; height: 92px; border-radius: 50%; background: radial-gradient(circle, #F1F5F9, #94A3B8); border: 2px solid #475569; display: flex; align-items: center; justify-content: center; }
+.d3-part-tag { position: absolute; bottom: 4px; font-size: 0.56rem; font-weight: 800; color: #334155; background: rgba(255,255,255,0.88); padding: 1px 6px; border-radius: 4px; }
+.d3-single-filter { position: absolute; width: 116px; height: 116px; left: 12px; top: 12px; transition: transform 0.75s cubic-bezier(0.22,1,0.36,1); transform: translateZ(-78px) scale(0.95); }
 .diy3d-step-1 .d3-single-filter { transform: translateZ(-55px); }
-.diy3d-step-2 .d3-single-filter,
-.diy3d-step-3 .d3-single-filter,
-.diy3d-step-4 .d3-single-filter,
-.diy3d-step-5 .d3-single-filter,
-.diy3d-step-6 .d3-single-filter {
-  transform: translateZ(-6px);
-  opacity: 1;
-}
-
-.d3-single-tape {
-  position: absolute;
-  width: 122px;
-  height: 122px;
-  left: 9px;
-  top: 9px;
-  transform: translateZ(-3px);
-  opacity: 0;
-  transition: opacity 0.4s ease;
-}
-
-.diy3d-step-3 .d3-single-tape,
-.diy3d-step-4 .d3-single-tape,
-.diy3d-step-5 .d3-single-tape,
-.diy3d-step-6 .d3-single-tape {
-  opacity: 1;
-}
-
-.d3-tape-bar {
-  position: absolute;
-  background: #64748B;
-  border-radius: 3px;
-}
+.diy3d-step-3 .d3-single-filter, .diy3d-step-4 .d3-single-filter, .diy3d-step-6 .d3-single-filter { transform: translateZ(-6px); }
+.d3-single-tape { position: absolute; width: 122px; height: 122px; left: 9px; top: 9px; transform: translateZ(-3px); opacity: 0; transition: opacity 0.4s ease; }
+.diy3d-step-3 .d3-single-tape, .diy3d-step-4 .d3-single-tape, .diy3d-step-6 .d3-single-tape { opacity: 1; }
+.d3-tape-bar { position: absolute; background: #64748B; border-radius: 3px; }
 .d3-tape-top { top: -3px; left: 10%; width: 80%; height: 6px; }
 .d3-tape-bottom { bottom: -3px; left: 10%; width: 80%; height: 6px; }
 .d3-tape-left { left: -3px; top: 10%; width: 6px; height: 80%; }
 .d3-tape-right { right: -3px; top: 10%; width: 6px; height: 80%; }
-
-.d3-airflow-single {
-  position: absolute;
-  inset: -30px;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-}
+.d3-airflow-single { position: absolute; inset: -30px; pointer-events: none; opacity: 0; transition: opacity 0.4s ease; }
 .diy3d-step-6 .d3-airflow-single { opacity: 1; }
-.d3-smog-in {
-  position: absolute;
-  left: -30px;
-  top: 44%;
-  transform: translateZ(-30px);
-}
-.d3-air-lbl--smog {
-  font-size: 0.65rem;
-  font-weight: 800;
-  color: #C2410C;
-  background: #FFEDD5;
-  padding: 2px 7px;
-  border-radius: 999px;
-}
-.d3-clean-out {
-  position: absolute;
-  right: -46px;
-  top: 38%;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  transform: translateZ(45px);
-}
-.d3-clean-wave {
-  font-size: 0.68rem;
-  font-weight: 800;
-  color: #047857;
-  background: #D1FAE5;
-  padding: 2px 8px;
-  border-radius: 999px;
-  animation: smogPullLeft 1.2s ease-out infinite;
-}
+.d3-smog-in { position: absolute; left: -30px; top: 44%; transform: translateZ(-30px); }
+.d3-air-lbl--smog { font-size: 0.7rem; font-weight: 800; color: #C2410C; background: #FFEDD5; padding: 2px 8px; border-radius: 999px; }
+.d3-clean-out { position: absolute; right: -46px; top: 42%; transform: translateZ(45px); }
+.d3-clean-wave { font-size: 0.72rem; font-weight: 800; color: #047857; background: #D1FAE5; padding: 2px 8px; border-radius: 999px; animation: smogPullLeft 1.2s ease-out infinite; }
 
-/* ── Player Controls ── */
+/* Player Bar */
 .diy3d-player {
   display: flex;
   justify-content: space-between;
@@ -805,113 +413,108 @@
 }
 
 .diy3d-play-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
   padding: 10px 18px;
   border-radius: 12px;
-  font-size: 0.82rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: #FFFFFF;
   background: linear-gradient(135deg, #2563EB, #1D4ED8);
   box-shadow: 0 3px 12px rgba(37, 99, 235, 0.25);
-  transition: all 0.2s;
-}
-
-.diy3d-play-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 5px 16px rgba(37, 99, 235, 0.35);
 }
 
 .diy3d-play-btn--playing {
   background: linear-gradient(135deg, #EA580C, #C2410C);
-  box-shadow: 0 3px 12px rgba(234, 88, 12, 0.3);
 }
 
-.diy3d-prev-next {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
+.diy3d-prev-next { display: flex; align-items: center; gap: 8px; }
 .diy3d-nav-btn {
-  padding: 8px 14px;
-  border-radius: 10px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  background: #FFFFFF;
-  border: 1px solid #CBD5E1;
-  transition: all 0.15s;
+  padding: 8px 14px; border-radius: 10px; font-size: 0.84rem; font-weight: 700;
+  color: var(--text-primary); background: #FFFFFF; border: 1px solid #CBD5E1;
 }
+.diy3d-nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.diy3d-nav-btn--next { background: #EA580C; color: #FFFFFF; border-color: #EA580C; }
+.diy3d-step-counter { font-size: 0.86rem; color: var(--text-secondary); }
 
-.diy3d-nav-btn:hover:not(:disabled) {
-  background: #F1F5F9;
-}
-
-.diy3d-nav-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.diy3d-nav-btn--next {
-  background: #EA580C;
-  color: #FFFFFF;
-  border-color: #EA580C;
-}
-
-.diy3d-nav-btn--next:hover:not(:disabled) {
-  background: #C2410C;
-}
-
-.diy3d-step-counter {
-  font-size: 0.78rem;
-  color: var(--text-secondary);
-}
-
-/* ══════════════════════════════════════════
-   RIGHT COLUMN: CLEAR ALL-AGES INSTRUCTIONS
-   ══════════════════════════════════════════ */
+/* Right Column */
 .diy3d-steps-col {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
+
+.diy3d-stepper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.diy3d-step-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+
+.diy3d-step-pill--active {
+  border-color: #EA580C;
+  color: #9A3412;
+  background: #FFEDD5;
+}
+
+.diy3d-step-pill--done {
+  border-color: #86EFAC;
+  background: #F0FDF4;
+  color: #065F46;
+}
+
+.diy3d-tl-badge {
+  width: 20px; height: 20px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.72rem; font-weight: 800;
+  background: #F1F5F9; color: var(--text-primary);
+}
+.diy3d-step-pill--active .diy3d-tl-badge { background: #EA580C; color: #FFFFFF; }
+.diy3d-step-pill--done .diy3d-tl-badge { background: #10B981; color: #FFFFFF; }
 
 .diy3d-focus-card {
   padding: 18px;
   background: #FFFFFF;
   border-radius: 16px;
   border: 2px solid #FDBA74;
-  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.08);
 }
 
 .diy3d-focus-head {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
   margin-bottom: 8px;
 }
 
 .diy3d-focus-num {
   padding: 3px 10px;
   border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   font-weight: 800;
   background: #EA580C;
   color: #FFFFFF;
 }
 
 .diy3d-focus-title {
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 800;
   color: var(--text-primary);
   margin: 0;
 }
 
 .diy3d-focus-text {
-  font-size: 0.92rem;
+  font-size: 0.98rem;
   line-height: 1.55;
   color: var(--text-primary);
   margin: 0 0 10px 0;
@@ -922,168 +525,47 @@
   background: #FFFBEB;
   border-radius: 10px;
   border: 1px solid #FDE68A;
-  font-size: 0.78rem;
+  font-size: 0.86rem;
   color: #78350F;
-  line-height: 1.45;
 }
 
-/* Clickable Timeline */
-.diy3d-timeline {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
-}
-
-.diy3d-tl-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.75);
-  border: 1.5px solid #E2E8F0;
-  text-align: left;
-  transition: all 0.15s;
-}
-
-.diy3d-tl-item:hover {
-  background: #FFFFFF;
-  border-color: #FDBA74;
-}
-
-.diy3d-tl-item--active {
-  background: #FFFFFF;
-  border-color: #EA580C;
-  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.14);
-}
-
-.diy3d-tl-item--done {
-  border-color: #86EFAC;
-  background: #F0FDF4;
-}
-
-.diy3d-tl-badge {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.68rem;
-  font-weight: 800;
-  background: #FFEDD5;
-  color: #C2410C;
-  flex-shrink: 0;
-}
-
-.diy3d-tl-item--active .diy3d-tl-badge {
-  background: #EA580C;
-  color: #FFFFFF;
-}
-
-.diy3d-tl-item--done .diy3d-tl-badge {
-  background: #10B981;
-  color: #FFFFFF;
-}
-
-.diy3d-tl-label {
-  font-size: 0.73rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  line-height: 1.25;
-}
-
-/* Shopping Checklist */
-.diy3d-checklist {
-  padding: 14px 16px;
-  background: #FFFFFF;
-  border-radius: 14px;
-  border: 1px solid #E2E8F0;
-}
-
-.diy3d-checklist-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.78rem;
-  color: var(--text-primary);
-  margin-bottom: 10px;
-}
-
-.diy3d-checklist-head span {
-  font-weight: 800;
-  color: #EA580C;
-}
-
-.diy3d-materials-list {
+.diy3d-items-bar {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-}
-
-.diy3d-mat-item {
-  display: flex;
-  align-items: center;
   gap: 8px;
-  padding: 7px 10px;
-  border-radius: 9px;
-  background: #F8FAFC;
+  padding: 12px 14px;
+  background: #FFFFFF;
+  border-radius: 12px;
   border: 1px solid #E2E8F0;
-  font-size: 0.76rem;
-  color: var(--text-primary);
-  text-align: left;
-  transition: all 0.15s;
 }
 
-.diy3d-mat-item--done {
-  background: #ECFDF5;
-  border-color: #86EFAC;
-  color: #065F46;
+.diy3d-items-label {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text-secondary);
 }
 
-.diy3d-mat-item--done .diy3d-mat-name {
-  text-decoration: line-through;
-  opacity: 0.75;
+.diy3d-items-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.diy3d-mat-check {
-  font-size: 0.9rem;
-  color: #059669;
-}
-
-.diy3d-mat-name {
-  flex: 1;
+.diy3d-item-chip {
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: #F8FAFC;
+  border: 1px solid #CBD5E1;
+  font-size: 0.84rem;
   font-weight: 600;
+  color: var(--text-primary);
 }
 
-.diy3d-mat-qty {
-  font-weight: 800;
-  color: #2563EB;
-}
-
-.diy3d-mat-cost {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-}
-
-/* ── Responsive ── */
+/* Responsive */
 @media (max-width: 900px) {
-  .diy3d-studio {
-    grid-template-columns: 1fr;
-  }
-  .diy3d-impact-grid {
-    grid-template-columns: 1fr;
-  }
+  .diy3d-studio { grid-template-columns: 1fr; }
 }
-
 @media (max-width: 540px) {
-  .diy3d-wrap {
-    padding: 16px;
-  }
-  .diy3d-timeline {
-    grid-template-columns: 1fr;
-  }
-  .diy3d-stage {
-    height: 290px;
-  }
+  .diy3d-wrap { padding: 16px; }
+  .diy3d-stage { height: 280px; }
 }

@@ -1,6 +1,6 @@
 // ============================================
-// HeroLocationBanner — Search Bar + Live Auto
-// Outdoor vs Indoor Air Graph (no click needed)
+// HeroLocationBanner — Search Bar + Auto Outdoor vs
+// Indoor Graph (shown on Commute, Family & Indoor)
 // ============================================
 import { useState, useEffect, useRef } from 'react';
 import { useUser } from '../../context/UserContext.jsx';
@@ -8,12 +8,11 @@ import { useAqi } from '../../context/AqiContext.jsx';
 import { searchPlace, reverseGeocode } from '../../utils/geocoder.js';
 import './HeroLocationBanner.css';
 
-// Color + status helpers for PM2.5 (µg/m³)
 function getPmColor(pm) {
   if (pm <= 12) return '#10B981';
   if (pm <= 35) return '#22C55E';
   if (pm <= 55) return '#F59E0B';
-  if (pm <= 150) return '#EF6C00';
+  if (pm <= 150) return '#EA580C';
   return '#DC2626';
 }
 
@@ -25,13 +24,12 @@ function getPmLabel(pm) {
   return 'Hazardous';
 }
 
-// Compact SVG circular arc gauge for Outdoor / Indoor comparison
 function MiniCircularGauge({ value, maxValue, label, icon, color }) {
-  const size = 78;
+  const size = 82;
   const strokeWidth = 7;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const ratio = Math.min(Math.max(value / Math.max(maxValue, 50), 0.04), 1);
+  const ratio = Math.min(Math.max(value / Math.max(maxValue, 50), 0.05), 1);
   const offset = circumference * (1 - ratio);
   const center = size / 2;
 
@@ -39,14 +37,7 @@ function MiniCircularGauge({ value, maxValue, label, icon, color }) {
     <div className="hero-gauge">
       <div className="hero-gauge-ring" style={{ width: size, height: size }}>
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          <circle
-            cx={center}
-            cy={center}
-            r={radius}
-            fill="none"
-            stroke="#E2E8F0"
-            strokeWidth={strokeWidth}
-          />
+          <circle cx={center} cy={center} r={radius} fill="none" stroke="#E2E8F0" strokeWidth={strokeWidth} />
           <circle
             cx={center}
             cy={center}
@@ -68,7 +59,7 @@ function MiniCircularGauge({ value, maxValue, label, icon, color }) {
       </div>
       <div className="hero-gauge-meta">
         <span className="hero-gauge-title">{icon} {label}</span>
-        <span className="hero-gauge-status" style={{ color, background: `${color}16` }}>
+        <span className="hero-gauge-status" style={{ color, background: `${color}18` }}>
           {getPmLabel(value)}
         </span>
       </div>
@@ -76,7 +67,9 @@ function MiniCircularGauge({ value, maxValue, label, icon, color }) {
   );
 }
 
-function HeroLocationBanner() {
+const GRAPH_TABS = new Set(['indoor', 'commute', 'family']);
+
+function HeroLocationBanner({ activeTab = 'dashboard' }) {
   const { location, setLocation, detectLocation, homeProfile } = useUser();
   const { currentAqi, indoorData, loadAqiData, loadIndoorSimulation, loading } = useAqi();
   const [query, setQuery] = useState('');
@@ -86,6 +79,8 @@ function HeroLocationBanner() {
   const debounceRef = useRef(null);
   const wrapperRef = useRef(null);
   const lastAutoAqiRef = useRef(null);
+
+  const showAirGraph = GRAPH_TABS.has(activeTab);
 
   // Close suggestions on outside click
   useEffect(() => {
@@ -112,7 +107,7 @@ function HeroLocationBanner() {
     }
   }, [location, initialized, loadAqiData, setLocation]);
 
-  // Auto-generate Outdoor vs Indoor graph whenever AQI updates — NO Simulate button click needed
+  // Auto-generate Outdoor vs Indoor graph whenever AQI updates — NO Simulate button needed
   useEffect(() => {
     if (!currentAqi) return;
     const key = `${currentAqi.pm25}-${currentAqi.timestamp || ''}`;
@@ -160,7 +155,6 @@ function HeroLocationBanner() {
     detectLocation();
   };
 
-  // Graph calculations (instant physics fallback if backend indoor response is mid-flight)
   const sim = indoorData?.simulation;
   const outdoorPM = currentAqi?.pm25 ?? null;
   const estimatedFallbackIndoor = outdoorPM !== null ? Math.round(outdoorPM * 0.71) : null;
@@ -171,10 +165,16 @@ function HeroLocationBanner() {
     : 0;
   const safeLinePct = Math.min((35 / maxScale) * 100, 100);
 
+  const panelTag = activeTab === 'commute'
+    ? 'Home vs Outside'
+    : activeTab === 'family'
+      ? 'Family Shelter Air'
+      : `${homeProfile.room_area_sqft || 150} ft² · Auto Live`;
+
   return (
     <section className="hero">
-      <div className="hero-inner hero-inner--split">
-        {/* ── Left: Search Bar ── */}
+      <div className={`hero-inner ${showAirGraph ? 'hero-inner--split' : 'hero-inner--centered'}`}>
+        {/* ── Search Bar Section ── */}
         <div className="hero-search-col">
           <h1 className="hero-title">Check your air quality</h1>
           <div className="hero-search-wrapper" ref={wrapperRef}>
@@ -233,81 +233,80 @@ function HeroLocationBanner() {
           )}
         </div>
 
-        {/* ── Right: Auto-Generated Outdoor vs Indoor Graph ── */}
-        <div className="hero-graph-card" aria-label="Live Outdoor vs Indoor Air Comparison">
-          <div className="hero-graph-head">
-            <span className="hero-graph-title">
-              <span className="hero-graph-live-dot" />
-              Outdoor vs Indoor Graph
-            </span>
-            <span className="hero-graph-sub">
-              {homeProfile.room_area_sqft || 150} ft² · Auto Live
-            </span>
-          </div>
-
-          {outdoorPM !== null && indoorPM !== null ? (
-            <>
-              <div className="hero-graph-gauges">
-                <MiniCircularGauge
-                  value={outdoorPM}
-                  maxValue={maxScale}
-                  label="Outdoor"
-                  icon="🌍"
-                  color={getPmColor(outdoorPM)}
-                />
-
-                <div className="hero-graph-delta">
-                  <span className={`hero-delta-pill ${deltaPct >= 0 ? 'hero-delta-pill--good' : 'hero-delta-pill--bad'}`}>
-                    {deltaPct >= 0 ? `↓ ${deltaPct}%` : `↑ ${Math.abs(deltaPct)}%`}
-                  </span>
-                  <span className="hero-delta-caption">
-                    {deltaPct >= 0 ? 'cleaner inside' : 'higher inside'}
-                  </span>
-                </div>
-
-                <MiniCircularGauge
-                  value={indoorPM}
-                  maxValue={maxScale}
-                  label="Indoor"
-                  icon="🏠"
-                  color={getPmColor(indoorPM)}
-                />
-              </div>
-
-              {/* Dual linear bar scale vs WHO safe 35 µg/m³ */}
-              <div className="hero-scale-bars">
-                <div className="hero-scale-row">
-                  <span className="hero-scale-name">Outdoor</span>
-                  <div className="hero-scale-track">
-                    <div
-                      className="hero-scale-fill"
-                      style={{ width: `${Math.min((outdoorPM / maxScale) * 100, 100)}%`, background: getPmColor(outdoorPM) }}
-                    />
-                    <span className="hero-safe-marker" style={{ left: `${safeLinePct}%` }} title="WHO Safe Limit: 35 µg/m³" />
-                  </div>
-                </div>
-                <div className="hero-scale-row">
-                  <span className="hero-scale-name">Indoor</span>
-                  <div className="hero-scale-track">
-                    <div
-                      className="hero-scale-fill"
-                      style={{ width: `${Math.min((indoorPM / maxScale) * 100, 100)}%`, background: getPmColor(indoorPM) }}
-                    />
-                    <span className="hero-safe-marker" style={{ left: `${safeLinePct}%` }} title="WHO Safe Limit: 35 µg/m³" />
-                  </div>
-                </div>
-                <div className="hero-scale-legend">
-                  <span>Safe line: 35 µg/m³</span>
-                  <span>I/O: {sim ? `${sim.io_ratio_percent}%` : `${Math.round((indoorPM / Math.max(outdoorPM, 1)) * 100)}%`}</span>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="hero-graph-empty">
-              {loading ? '⏳ Loading live Outdoor vs Indoor comparison...' : '📍 Detecting location or search a city to view live comparison'}
+        {/* ── Right Side: Separate Outdoor vs Indoor Graph ONLY on Indoor Air, Commute & Family Plan ── */}
+        {showAirGraph && (
+          <div className="hero-graph-card" aria-label="Live Outdoor vs Indoor Air Comparison">
+            <div className="hero-graph-head">
+              <span className="hero-graph-title">
+                <span className="hero-graph-live-dot" />
+                Outdoor vs Indoor Air
+              </span>
+              <span className="hero-graph-sub">{panelTag}</span>
             </div>
-          )}
-        </div>
+
+            {outdoorPM !== null && indoorPM !== null ? (
+              <>
+                <div className="hero-graph-gauges">
+                  <MiniCircularGauge
+                    value={outdoorPM}
+                    maxValue={maxScale}
+                    label="Outdoor"
+                    icon="🌍"
+                    color={getPmColor(outdoorPM)}
+                  />
+
+                  <div className="hero-graph-delta">
+                    <span className={`hero-delta-pill ${deltaPct >= 0 ? 'hero-delta-pill--good' : 'hero-delta-pill--bad'}`}>
+                      {deltaPct >= 0 ? `↓ ${deltaPct}%` : `↑ ${Math.abs(deltaPct)}%`}
+                    </span>
+                    <span className="hero-delta-caption">
+                      {deltaPct >= 0 ? 'cleaner inside' : 'higher inside'}
+                    </span>
+                  </div>
+
+                  <MiniCircularGauge
+                    value={indoorPM}
+                    maxValue={maxScale}
+                    label="Indoor"
+                    icon="🏠"
+                    color={getPmColor(indoorPM)}
+                  />
+                </div>
+
+                <div className="hero-scale-bars">
+                  <div className="hero-scale-row">
+                    <span className="hero-scale-name">Outdoor</span>
+                    <div className="hero-scale-track">
+                      <div
+                        className="hero-scale-fill"
+                        style={{ width: `${Math.min((outdoorPM / maxScale) * 100, 100)}%`, background: getPmColor(outdoorPM) }}
+                      />
+                      <span className="hero-safe-marker" style={{ left: `${safeLinePct}%` }} title="Safe Limit: 35 µg/m³" />
+                    </div>
+                  </div>
+                  <div className="hero-scale-row">
+                    <span className="hero-scale-name">Indoor</span>
+                    <div className="hero-scale-track">
+                      <div
+                        className="hero-scale-fill"
+                        style={{ width: `${Math.min((indoorPM / maxScale) * 100, 100)}%`, background: getPmColor(indoorPM) }}
+                      />
+                      <span className="hero-safe-marker" style={{ left: `${safeLinePct}%` }} title="Safe Limit: 35 µg/m³" />
+                    </div>
+                  </div>
+                  <div className="hero-scale-legend">
+                    <span>Safe limit: 35 µg/m³</span>
+                    <span>I/O: {sim ? `${sim.io_ratio_percent}%` : `${Math.round((indoorPM / Math.max(outdoorPM, 1)) * 100)}%`}</span>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="hero-graph-empty">
+                {loading ? '⏳ Loading live Outdoor vs Indoor comparison...' : '📍 Detecting location or search a city'}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );

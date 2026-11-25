@@ -18,22 +18,22 @@
   gap: var(--space-sm);
 }
 .family-title {
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 1.1rem;
+  font-weight: 800;
   font-family: var(--font-heading);
 }
 .family-count {
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary);
   background: var(--bg-secondary);
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: var(--radius-full);
 }
 
 .family-add-toggle {
-  padding: 5px 14px;
-  font-size: 0.75rem;
+  padding: 7px 16px;
+  font-size: 0.88rem;
   font-weight: 700;
   color: var(--color-primary);
   background: #E8F5E9;
@@ -103,27 +103,27 @@
   gap: 1px;
 }
 .family-member-name {
-  font-size: 0.85rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 800;
   color: var(--text-primary);
 }
 .family-member-age {
-  font-size: 0.62rem;
-  color: var(--text-muted);
+  font-size: 0.82rem;
+  color: var(--text-secondary);
 }
 
 .family-member-cond {
-  font-size: 0.6rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  padding: 2px 10px;
+  padding: 3px 12px;
   border-radius: var(--radius-full);
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
 
 .family-member-vuln {
-  font-size: 0.55rem;
-  font-weight: 600;
+  font-size: 0.76rem;
+  font-weight: 700;
   color: #E65100;
 }
 
@@ -137,7 +137,7 @@
   color: var(--text-muted);
 }
 .family-empty-icon { font-size: 2rem; }
-.family-empty p { font-size: 0.8rem; text-align: center; }
+.family-empty p { font-size: 0.92rem; text-align: center; }
 
 /* ── Add Member Form ── */
 .family-form {
@@ -169,7 +169,7 @@
 .family-form-field--small { max-width: 90px; }
 
 .family-form-label {
-  font-size: 0.6rem;
+  font-size: 0.78rem;
   font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
@@ -177,9 +177,9 @@
 }
 
 .family-form input {
-  padding: 8px var(--space-sm);
+  padding: 9px var(--space-sm);
   font-family: var(--font-body);
-  font-size: 0.82rem;
+  font-size: 0.94rem;
   border: 1.5px solid var(--border-light);
   border-radius: var(--radius-sm);
   background: var(--bg-primary);
@@ -189,18 +189,18 @@
 
 .family-cond-grid {
   display: flex;
-  gap: 5px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 .family-cond-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 5px 10px;
+  gap: 5px;
+  padding: 6px 12px;
   border: 1.5px solid var(--border-light);
   border-radius: var(--radius-full);
   background: var(--bg-primary);
-  font-size: 0.68rem;
+  font-size: 0.82rem;
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s;
@@ -213,12 +213,12 @@
 .family-cond-name { font-weight: 600; }
 
 .family-form-submit {
-  padding: 8px var(--space-lg);
+  padding: 9px var(--space-lg);
   background: var(--color-primary);
   color: white;
   border-radius: var(--radius-md);
   font-weight: 700;
-  font-size: 0.82rem;
+  font-size: 0.92rem;
   align-self: flex-start;
   transition: all 0.15s;
 }

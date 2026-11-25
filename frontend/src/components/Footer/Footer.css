@@ -30,15 +30,15 @@
 }
 
 .footer-disclaimer {
-  font-size: 0.75rem;
-  max-width: 500px;
-  line-height: 1.5;
+  font-size: 0.88rem;
+  max-width: 540px;
+  line-height: 1.55;
 }
 
 .footer-links {
   display: flex;
   gap: var(--space-lg);
-  font-size: 0.8rem;
+  font-size: 0.92rem;
 }
 
 .footer-link {

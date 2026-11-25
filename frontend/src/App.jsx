@@ -32,7 +32,7 @@ function App() {
         <div className="app">
           <Navbar />
           <main className="app-main">
-            <HeroLocationBanner />
+            <HeroLocationBanner activeTab={activeTab} />
 
             {/* Tab Navigation */}
             <div className="container">

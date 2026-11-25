@@ -4,7 +4,13 @@
 // Overpass for metro/bus with road fallback
 // ============================================
 
-import { fetchMetroLines, fetchBusRoutes, estimateMetroTime, estimateBusTime } from './transitService.js';
+import {
+  fetchMetroLines,
+  selectActiveMetroCorridor,
+  fetchBusRoutes,
+  estimateMetroTime,
+  estimateBusTime,
+} from './transitService.js';
 
 const OSRM_BASE = 'https://router.project-osrm.org/route/v1';
 
@@ -191,7 +197,7 @@ export async function fetchRoutesForMode(originLat, originLng, destLat, destLng,
     }
   }
 
-  // ---- Metro: Overpass real rail lines with official colors ----
+  // ---- Metro: Real official-colored rail lines with A -> B active highlight ----
   if (modeKey === 'METRO') {
     const straightKm = haversineKm(originLat, originLng, destLat, destLng);
     const routeKm = Math.round(straightKm * 1.3 * 10) / 10;
@@ -202,25 +208,35 @@ export async function fetchRoutesForMode(originLat, originLng, destLat, destLng,
       const metroLines = await fetchMetroLines(originLat, originLng, destLat, destLng);
 
       if (metroLines.length > 0) {
-        // Real metro lines found — show them with official colors
+        const { annotatedLines, activeLines, boardPoint, alightPoint } = selectActiveMetroCorridor(
+          metroLines,
+          originLat,
+          originLng,
+          destLat,
+          destLng
+        );
+        const primaryNames = activeLines.map((l) => l.name.split('(')[0].trim()).join(' → ');
+
         const mainRoute = {
           id: 'METRO-0',
           altIndex: 0,
-          altLabel: 'Metro',
-          coordinates: metroLines.flatMap((l) => [...l.coordinates, [NaN, NaN]]).filter(c => !isNaN(c[0])),
+          altLabel: primaryNames || 'Metro',
+          coordinates: metroLines.flatMap((l) => [...l.coordinates, [NaN, NaN]]).filter((c) => !isNaN(c[0])),
           distanceKm: routeKm,
           durationMin: duration,
           estimatedDose: Math.round(dose * 10) / 10,
           isTransit: true,
-          transitLines: metroLines,
+          transitLines: annotatedLines,
+          boardPoint,
+          alightPoint,
         };
         return { mode: modeKey, ...config, routes: [mainRoute] };
       }
     } catch {
-      // Overpass failed, use road fallback below
+      // Fall back to corridor estimate below
     }
 
-    // Fallback: show metro as a road-based route (for cities where Overpass doesn't return data)
+    // Fallback for cities without metro networks
     try {
       const carRoutes = await fetchOSRMRoutes(originLat, originLng, destLat, destLng, 'car');
       const mainRoute = {
@@ -232,7 +248,7 @@ export async function fetchRoutesForMode(originLat, originLng, destLat, destLng,
         durationMin: duration,
         estimatedDose: Math.round(dose * 10) / 10,
         isTransit: true,
-        transitLines: [], // No real lines, will render as single-color polyline
+        transitLines: [],
       };
       return { mode: modeKey, ...config, routes: [mainRoute] };
     } catch {
