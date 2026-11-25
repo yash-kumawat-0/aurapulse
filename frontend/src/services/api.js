@@ -1,7 +1,8 @@
 // ============================================
 // API Service — Backend Communication Layer
 // ============================================
-const API_BASE = '/api/v1';
+const RAW_API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+const API_BASE = `${RAW_API_URL}/api/v1`;
 
 async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
@@ -11,7 +12,16 @@ async function request(endpoint, options = {}) {
   };
 
   const response = await fetch(url, config);
-  const data = await response.json();
+  const rawBody = await response.text();
+  let data = {};
+
+  if (rawBody) {
+    try {
+      data = JSON.parse(rawBody);
+    } catch {
+      throw new Error(`Unexpected API response (${response.status})`);
+    }
+  }
 
   if (!response.ok || !data.success) {
     throw new Error(data.error?.message || `API request failed: ${response.status}`);

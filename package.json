@@ -1,13 +1,21 @@
 {
   "name": "aurapulse",
   "version": "1.0.0",
-  "description": "Urban Air Quality Action Planner — PromptWars Challenge 6",
+  "type": "module",
+  "description": "Urban Air Quality Action Planner — AuraPulse Full-Stack App",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "install:all": "cd backend && npm install && cd ../frontend && npm install"
+    "install:all": "cd backend && npm install && cd ../frontend && npm install",
+    "build:frontend": "cd frontend && npm run build",
+    "build": "npm run install:all && npm run build:frontend",
+    "start": "cd backend && npm start",
+    "test": "cd backend && npm test"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"

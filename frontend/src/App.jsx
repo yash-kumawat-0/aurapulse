@@ -26,6 +26,11 @@ function App() {
     { id: 'indoor', label: 'Indoor Air', icon: '🏠' },
   ];
 
+  const handleFooterTabSelect = (tabId) => {
+    setActiveTab(tabId);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <UserProvider>
       <AqiProvider>
@@ -94,7 +99,7 @@ function App() {
               <WhatsAppShareModal onClose={() => setShowWhatsAppModal(false)} />
             )}
           </main>
-          <Footer />
+          <Footer onSelectTab={handleFooterTabSelect} />
         </div>
       </AqiProvider>
     </UserProvider>
