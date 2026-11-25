@@ -24,7 +24,6 @@ import {
   generateViewportAqiGrid,
 } from '../../utils/aqiRouteColorizer.js';
 import { fetchMultiCommuteComparison } from '../../services/api.js';
-import MultiModalPlanner from '../MultiModalPlanner/MultiModalPlanner.jsx';
 import './CommuteDoseCalculator.css';
 
 // Leaflet icon fix
@@ -154,6 +153,8 @@ function TransitNetworkLayers({
   onSelectLine,
   origin,
   destination,
+  firstMilePath,
+  lastMilePath,
 }) {
   if (!lines?.length) return null;
 
@@ -214,25 +215,49 @@ function TransitNetworkLayers({
         );
       })}
 
-      {/* 2) Subtle dotted first/last mile walk lines to the single selected line */}
-      {selectedLine && origin && selectedLine.boardPoint && (
-        <Polyline
-          positions={[[origin.lat, origin.lng], selectedLine.boardPoint]}
-          color="#475569"
-          weight={3}
-          opacity={0.75}
-          dashArray="6 8"
-        />
-      )}
-      {selectedLine && destination && selectedLine.alightPoint && (
-        <Polyline
-          positions={[selectedLine.alightPoint, [destination.lat, destination.lng]]}
-          color="#475569"
-          weight={3}
-          opacity={0.75}
-          dashArray="6 8"
-        />
-      )}
+      {/* 2) Automated First-Mile & Last-Mile Feeder Paths (Bus / Walk to & from Metro) */}
+      {selectedLine && origin && selectedLine.boardPoint && (() => {
+        const firstLeg = selectedLine.autoPlan?.legs?.find((l) => l.role === 'first');
+        if (!firstLeg) return null;
+        const pts = (selectedLine.isActive && firstMilePath?.length > 1)
+          ? firstMilePath
+          : [[origin.lat, origin.lng], selectedLine.boardPoint];
+        const isWalk = firstLeg.mode === 'WALK';
+        return (
+          <Polyline
+            positions={pts}
+            color={isWalk ? '#2E7D32' : '#0288D1'}
+            weight={4.5}
+            opacity={0.9}
+            dashArray={isWalk ? '5 8' : '10 6'}
+          >
+            <Tooltip sticky>
+              {isWalk ? '🚶 Walk' : '🚌 Bus'} to Metro · {firstLeg.distance_km} km (~{firstLeg.duration_min} min)
+            </Tooltip>
+          </Polyline>
+        );
+      })()}
+      {selectedLine && destination && selectedLine.alightPoint && (() => {
+        const lastLeg = selectedLine.autoPlan?.legs?.find((l) => l.role === 'last');
+        if (!lastLeg) return null;
+        const pts = (selectedLine.isActive && lastMilePath?.length > 1)
+          ? lastMilePath
+          : [selectedLine.alightPoint, [destination.lat, destination.lng]];
+        const isWalk = lastLeg.mode === 'WALK';
+        return (
+          <Polyline
+            positions={pts}
+            color={isWalk ? '#2E7D32' : '#0288D1'}
+            weight={4.5}
+            opacity={0.9}
+            dashArray={isWalk ? '5 8' : '10 6'}
+          >
+            <Tooltip sticky>
+              {isWalk ? '🚶 Walk' : '🚌 Bus'} from Metro · {lastLeg.distance_km} km (~{lastLeg.duration_min} min)
+            </Tooltip>
+          </Polyline>
+        );
+      })()}
 
       {/* 3) Highlight STRICTLY ONE selected line in vivid original color + crisp white halo */}
       {selectedLine && (() => {
@@ -348,10 +373,12 @@ function CommuteDoseCalculator() {
 
       try {
         const routeParams = modes.map((m) => ({
-          mode: m.mode, label: m.label,
+          mode: m.mode,
+          label: m.label,
           distance_km: m.routes[0]?.distanceKm || 10,
           duration_min: m.routes[0]?.durationMin || 20,
           activity_mode: m.activityMode,
+          legs: m.routes[0]?.autoPlan?.legs,
         }));
         const result = await fetchMultiCommuteComparison({
           origin: { latitude: origin.lat, longitude: origin.lng },
@@ -609,7 +636,7 @@ function CommuteDoseCalculator() {
               );
             })}
 
-            {/* ── METRO: All light-thin lines OR 1 bold selected line + light-thin others ── */}
+            {/* ── METRO: All light-thin lines OR 1 bold selected line + feeder connectors ── */}
             {metroLinesToRender.length > 0 && (
               <TransitNetworkLayers
                 lines={metroLinesToRender}
@@ -617,6 +644,8 @@ function CommuteDoseCalculator() {
                 onSelectLine={(idx) => setSelectedMetroLineIdx(idx)}
                 origin={origin}
                 destination={destination}
+                firstMilePath={curRoute?.firstMilePath}
+                lastMilePath={curRoute?.lastMilePath}
               />
             )}
 
@@ -697,43 +726,101 @@ function CommuteDoseCalculator() {
         </div>
       )}
 
-      {/* ── Route Stats (compact) ── */}
+      {/* ── Route Stats (compact) + Automated Feeder/Metro Exposure Summary ── */}
       {curRoute && (() => {
-        const curDose = doseByMode[selectedMode]?.dose_ug ?? curRoute.estimatedDose;
+        const modeEval = doseByMode[selectedMode];
+        const selectedLineObj = isMetroMode && selectedMetroLineIdx !== null
+          ? metroLinesToRender[selectedMetroLineIdx]
+          : null;
+        const activeLegs = selectedLineObj?.autoPlan?.legs || modeEval?.legs || curRoute?.autoPlan?.legs;
+        const curDose = modeEval?.dose_ug ?? curRoute.estimatedDose;
         const curRisk = getRiskTier(curDose);
+
+        // Automated safe path suggestion
+        let safeTip = null;
+        if (isMetroMode && activeLegs?.length > 1) {
+          const walkGapDose = modeEval?.walk_gap_dose_ug;
+          const n95Dose = modeEval?.n95_feeder_dose_ug;
+          const usesBusFeeder = activeLegs.some((l) => l.role !== 'main' && l.mode === 'BUS');
+
+          if (safestMode && safestMode !== 'METRO' && doseByMode[safestMode]?.dose_ug < curDose - 0.5) {
+            const alt = doseByMode[safestMode];
+            const saved = Math.round((curDose - alt.dose_ug) * 10) / 10;
+            safeTip = `Nearest metro station is far — direct ${MODE_CONFIG[safestMode]?.icon} ${MODE_CONFIG[safestMode]?.label} (${alt.dose_ug} µg) saves −${saved} µg total.`;
+          } else if (usesBusFeeder && walkGapDose && walkGapDose > curDose + 0.5) {
+            const busSaved = Math.round((walkGapDose - curDose) * 10) / 10;
+            safeTip = `Auto-selected feeder Bus cuts station-gap inhalation by −${busSaved} µg vs walking${n95Dose ? ` (or wear N95 for ${n95Dose} µg)` : ''}.`;
+          } else if (n95Dose && n95Dose < curDose - 0.5) {
+            safeTip = `Wear an N95 mask on first/last-mile walks to drop exposure to ${n95Dose} µg.`;
+          }
+        } else if (safestMode && safestMode !== selectedMode && doseByMode[safestMode]?.dose_ug < curDose - 0.5) {
+          const alt = doseByMode[safestMode];
+          const saved = Math.round((curDose - alt.dose_ug) * 10) / 10;
+          safeTip = `Switch to ${MODE_CONFIG[safestMode]?.icon} ${MODE_CONFIG[safestMode]?.label} (${alt.dose_ug} µg) to inhale −${saved} µg less pollution.`;
+        }
+
         return (
           <div className="card cdc-stats cdc-stats--compact">
             <div className="cdc-stats-header">
               <span style={{ color: curMode?.color, fontSize: '1.2rem' }}>{curMode?.icon}</span>
-              <h3>{curMode?.label} — {curRoute.altLabel}</h3>
+              <h3>{curMode?.label} — {selectedLineObj ? selectedLineObj.name.split('(')[0].trim() : curRoute.altLabel}</h3>
+              {modeEval?.health_status && (
+                <span className="cdc-health-chip" style={{ color: curRisk.color }}>
+                  {modeEval.health_status.label}
+                </span>
+              )}
               <span className="cdc-safe-pill" style={{ background: curRisk.pillBg, color: curRisk.color }}>
                 {curRisk.icon} {curRisk.label}
               </span>
             </div>
+
+            {/* Automated First-Mile + Metro (% coverage) + Last-Mile Chain */}
+            {isMetroMode && activeLegs?.length > 1 && (
+              <div className="cdc-auto-chain">
+                <div className="cdc-chain-pills">
+                  {activeLegs.map((leg, i) => {
+                    const icon = MODE_CONFIG[leg.mode]?.icon || '🚆';
+                    const name = MODE_CONFIG[leg.mode]?.label || leg.mode;
+                    return (
+                      <Fragment key={i}>
+                        {i > 0 && <span className="cdc-chain-arrow">→</span>}
+                        <span className={`cdc-chain-pill ${leg.mode === 'METRO' ? 'cdc-chain-pill--metro' : ''}`}>
+                          {icon} {name} {leg.coverage_pct ? `(${leg.coverage_pct}% · ` : '('}{leg.distance_km} km · {leg.duration_min}m)
+                        </span>
+                      </Fragment>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="cdc-stats-grid">
               <div className="cdc-stat-box" style={{ background: curRisk.bg, borderColor: curRisk.border }}>
                 <span className="cdc-stat-num" style={{ color: curRisk.color }}>
                   {curDose} <small>µg</small>
                 </span>
-                <span className="cdc-stat-unit">inhaled</span>
+                <span className="cdc-stat-unit">total inhaled</span>
               </div>
               <div className="cdc-stat-box">
-                <span className="cdc-stat-num">{curRoute.durationMin} <small>min</small></span>
+                <span className="cdc-stat-num">{modeEval?.estimated_aqi ?? Math.round(basePM25)}</span>
+                <span className="cdc-stat-unit">est. trip AQI</span>
+              </div>
+              <div className="cdc-stat-box">
+                <span className="cdc-stat-num">{selectedLineObj?.autoPlan?.totalDurationMin || curRoute.durationMin} <small>min</small></span>
                 <span className="cdc-stat-unit">time</span>
               </div>
               <div className="cdc-stat-box">
-                <span className="cdc-stat-num">{curRoute.distanceKm} <small>km</small></span>
+                <span className="cdc-stat-num">{selectedLineObj?.autoPlan?.totalKm || curRoute.distanceKm} <small>km</small></span>
                 <span className="cdc-stat-unit">distance</span>
               </div>
-              <div className="cdc-stat-box">
-                <span className="cdc-stat-num">
-                  {!isTransitMode && selectedColored?.segments
-                    ? calcRouteAvgPM25(selectedColored.segments)
-                    : Math.round(basePM25 * (curMode?.pm25Multiplier || 1))}
-                </span>
-                <span className="cdc-stat-unit">avg PM2.5</span>
-              </div>
             </div>
+
+            {safeTip && (
+              <div className="cdc-safe-suggest">
+                <span>🛡️</span>
+                <span>{safeTip}</span>
+              </div>
+            )}
 
             {Object.keys(doseByMode).length > 1 && (
               <div className="cdc-dose-bars cdc-dose-bars--compact">
@@ -763,9 +850,6 @@ function CommuteDoseCalculator() {
           </div>
         );
       })()}
-
-      {/* ── New Feature: Multi-Step Journey Exposure Planner (e.g. Walk -> Metro -> Bus) ── */}
-      <MultiModalPlanner origin={origin} basePM25={basePM25} />
     </div>
   );
 }

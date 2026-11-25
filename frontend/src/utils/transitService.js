@@ -503,15 +503,73 @@ export function selectActiveMetroCorridor(metroLines, originLat, originLng, dest
   const annotatedLines = scored.map((item) => {
     const isActive = item.index === activeIndex;
     let activeSegments = null;
+    let metroTrackKm = 0;
 
     if (item.line.type === 'network' && item.coords.length >= 2) {
       const lo = Math.min(item.idxA, item.idxB);
       const hi = Math.max(item.idxA, item.idxB);
       const sub = item.coords.slice(lo, hi + 1);
-      if (sub.length >= 2) activeSegments = [sub];
+      if (sub.length >= 2) {
+        activeSegments = [sub];
+        for (let i = 1; i < sub.length; i++) {
+          metroTrackKm += distKm(sub[i - 1][0], sub[i - 1][1], sub[i][0], sub[i][1]);
+        }
+      }
     } else if (item.line.segments?.length) {
       activeSegments = item.line.segments;
     }
+
+    if (metroTrackKm <= 0 && item.ptA && item.ptB) {
+      metroTrackKm = distKm(item.ptA[0], item.ptA[1], item.ptB[0], item.ptB[1]) * 1.15;
+    }
+
+    // Automatic Door-to-Door First-Mile + Metro + Last-Mile Plan
+    const firstMileKm = Math.round(item.minA * 1.25 * 10) / 10;
+    const lastMileKm = Math.round(item.minB * 1.25 * 10) / 10;
+    const metroKm = Math.max(0.5, Math.round(metroTrackKm * 10) / 10);
+    const totalKm = Math.round((firstMileKm + metroKm + lastMileKm) * 10) / 10;
+    const coveragePct = totalKm > 0 ? Math.min(100, Math.round((metroKm / totalKm) * 100)) : 100;
+
+    const autoLegs = [];
+    if (firstMileKm >= 0.25) {
+      const firstMode = firstMileKm > 0.7 ? 'BUS' : 'WALK';
+      const firstDur = firstMode === 'WALK'
+        ? Math.max(3, Math.round((firstMileKm / 4.8) * 60))
+        : Math.max(4, Math.round((firstMileKm / 18) * 60) + 3);
+      autoLegs.push({
+        role: 'first',
+        mode: firstMode,
+        distance_km: firstMileKm,
+        duration_min: firstDur,
+        activity_mode: firstMode === 'WALK' ? 'walking_brisk' : 'resting_in_vehicle',
+      });
+    }
+
+    autoLegs.push({
+      role: 'main',
+      mode: 'METRO',
+      distance_km: metroKm,
+      duration_min: Math.max(5, Math.round((metroKm / 34) * 60) + 4),
+      activity_mode: 'resting_in_vehicle',
+      coverage_pct: coveragePct,
+      line_name: item.line.name,
+    });
+
+    if (lastMileKm >= 0.25) {
+      const lastMode = lastMileKm > 0.7 ? 'BUS' : 'WALK';
+      const lastDur = lastMode === 'WALK'
+        ? Math.max(3, Math.round((lastMileKm / 4.8) * 60))
+        : Math.max(4, Math.round((lastMileKm / 18) * 60) + 3);
+      autoLegs.push({
+        role: 'last',
+        mode: lastMode,
+        distance_km: lastMileKm,
+        duration_min: lastDur,
+        activity_mode: lastMode === 'WALK' ? 'walking_brisk' : 'resting_in_vehicle',
+      });
+    }
+
+    const totalAutoDuration = autoLegs.reduce((sum, l) => sum + l.duration_min, 0);
 
     return {
       ...item.line,
@@ -520,6 +578,15 @@ export function selectActiveMetroCorridor(metroLines, originLat, originLng, dest
       activeSegments,
       boardPoint: item.ptA,
       alightPoint: item.ptB,
+      autoPlan: {
+        firstMileKm,
+        metroKm,
+        lastMileKm,
+        totalKm,
+        totalDurationMin: totalAutoDuration,
+        coveragePct,
+        legs: autoLegs,
+      },
     };
   });
 

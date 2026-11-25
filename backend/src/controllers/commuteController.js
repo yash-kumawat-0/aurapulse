@@ -181,10 +181,84 @@ export async function multiCompare(req, res, next) {
       BICYCLE: 0,
     };
 
-    // Calculate dose for each route
+    // Evaluate each route (supports single-mode routes AND automatic multi-leg chains like Bus -> Metro -> Walk)
     const results = routes.map((route) => {
+      if (Array.isArray(route.legs) && route.legs.length > 0) {
+        const evalLegs = route.legs.map((leg) => {
+          const mode = leg.mode || 'WALK';
+          const mult = PM25_MULTIPLIERS[mode] || 1.0;
+          const effPm = Math.round(basePM25 * mult * 10) / 10;
+          const dur = Math.max(1, parseFloat(leg.duration_min) || 5);
+          const dist = Math.max(0.1, parseFloat(leg.distance_km) || 0.5);
+          const dose = calculateSegmentDose({
+            pm25Concentration: effPm,
+            durationMinutes: dur,
+            activityMode: leg.activity_mode || ACTIVITY_BY_MODE[mode] || 'resting_in_vehicle',
+            maskType: leg.mask_type || mask_type || 'none',
+          });
+          return {
+            mode,
+            duration_min: dur,
+            distance_km: dist,
+            effective_pm25: effPm,
+            effective_aqi: pm25ToAqi(effPm),
+            dose_ug: dose.dose_ug,
+            co2_kg: Math.round((CO2_FACTORS[mode] || 0) * dist * 100) / 100,
+          };
+        });
+
+        const totalDose = Math.round(evalLegs.reduce((s, l) => s + l.dose_ug, 0) * 100) / 100;
+        const totalDur = Math.round(evalLegs.reduce((s, l) => s + l.duration_min, 0));
+        const totalDist = Math.round(evalLegs.reduce((s, l) => s + l.distance_km, 0) * 10) / 10;
+        const totalCo2 = Math.round(evalLegs.reduce((s, l) => s + l.co2_kg, 0) * 100) / 100;
+        const weightedPm = totalDur > 0
+          ? Math.round((evalLegs.reduce((s, l) => s + l.effective_pm25 * l.duration_min, 0) / totalDur) * 10) / 10
+          : basePM25;
+        const tripAqi = pm25ToAqi(weightedPm);
+        const healthStatus = getCommuteHealthStatus(totalDose, tripAqi);
+
+        // Compare vs walking those feeder gaps directly (and vs adding N95 on exposed gaps)
+        const walkGapDose = Math.round(evalLegs.reduce((s, l) => {
+          if (l.mode === 'METRO') return s + l.dose_ug;
+          const wPm = basePM25 * PM25_MULTIPLIERS.WALK;
+          const wDur = Math.max(3, Math.round((l.distance_km / 4.8) * 60));
+          return s + calculateSegmentDose({
+            pm25Concentration: wPm,
+            durationMinutes: wDur,
+            activityMode: 'walking_brisk',
+            maskType: mask_type || 'none',
+          }).dose_ug;
+        }, 0) * 100) / 100;
+
+        const n95FeederDose = Math.round(evalLegs.reduce((s, l) => {
+          if (l.mode === 'METRO') return s + l.dose_ug;
+          return s + calculateSegmentDose({
+            pm25Concentration: l.effective_pm25,
+            durationMinutes: l.duration_min,
+            activityMode: ACTIVITY_BY_MODE[l.mode] || 'resting_in_vehicle',
+            maskType: 'n95_sealed',
+          }).dose_ug;
+        }, 0) * 100) / 100;
+
+        return {
+          mode: route.mode,
+          label: route.label || route.mode,
+          dose_ug: totalDose,
+          pm25_exposure: weightedPm,
+          estimated_aqi: tripAqi,
+          health_status: healthStatus,
+          distance_km: totalDist,
+          duration_min: totalDur,
+          co2_kg: totalCo2,
+          legs: evalLegs,
+          walk_gap_dose_ug: walkGapDose,
+          n95_feeder_dose_ug: n95FeederDose,
+        };
+      }
+
       const multiplier = PM25_MULTIPLIERS[route.mode] || 1.0;
-      const effectivePM25 = basePM25 * multiplier;
+      const effectivePM25 = Math.round(basePM25 * multiplier * 10) / 10;
+      const effAqi = pm25ToAqi(effectivePM25);
 
       const dose = calculateSegmentDose({
         pm25Concentration: effectivePM25,
@@ -200,6 +274,8 @@ export async function multiCompare(req, res, next) {
         label: route.label || route.mode,
         dose_ug: dose.dose_ug,
         pm25_exposure: effectivePM25,
+        estimated_aqi: effAqi,
+        health_status: getCommuteHealthStatus(dose.dose_ug, effAqi),
         distance_km: route.distance_km,
         duration_min: route.duration_min,
         co2_kg: co2Kg,
@@ -212,18 +288,20 @@ export async function multiCompare(req, res, next) {
     // Sort by dose (safest first)
     results.sort((a, b) => a.dose_ug - b.dose_ug);
 
-    // Mark the safest
     if (results.length > 0) {
       results[0].is_safest = true;
     }
 
+    // Attach crisp automated safe path suggestion across all evaluated modes
+    const safestRoute = results[0] || null;
     res.json({
       success: true,
       data: {
         routes: results,
         base_pm25: basePM25,
         origin_aqi: originAqi.aqi,
-        safest_mode: results[0]?.mode || null,
+        safest_mode: safestRoute?.mode || null,
+        safest_route_summary: safestRoute,
       },
     });
   } catch (err) {

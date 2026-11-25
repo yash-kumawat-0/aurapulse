@@ -216,19 +216,62 @@ export async function fetchRoutesForMode(originLat, originLng, destLat, destLng,
           destLng
         );
 
+        const autoPlan = activeLine?.autoPlan || {
+          firstMileKm: 0,
+          metroKm: routeKm,
+          lastMileKm: 0,
+          totalKm: routeKm,
+          totalDurationMin: duration,
+          coveragePct: 100,
+          legs: [{ role: 'main', mode: 'METRO', distance_km: routeKm, duration_min: duration, activity_mode: 'resting_in_vehicle' }],
+        };
+
+        // Fetch street-following OSRM paths for first & last mile gaps (if >= 0.25 km)
+        const firstLeg = autoPlan.legs.find((l) => l.role === 'first');
+        const lastLeg = autoPlan.legs.find((l) => l.role === 'last');
+
+        const fetchFeederPath = async (p1Lat, p1Lng, p2Lat, p2Lng, modeKey) => {
+          const prof = modeKey === 'WALK' ? 'foot' : 'car';
+          try {
+            const res = await fetchOSRMRoutes(p1Lat, p1Lng, p2Lat, p2Lng, prof);
+            return res[0]?.coordinates || [[p1Lat, p1Lng], [p2Lat, p2Lng]];
+          } catch {
+            return [[p1Lat, p1Lng], [p2Lat, p2Lng]];
+          }
+        };
+
+        const [firstPathRes, lastPathRes] = await Promise.all([
+          firstLeg && boardPoint
+            ? fetchFeederPath(originLat, originLng, boardPoint[0], boardPoint[1], firstLeg.mode)
+            : Promise.resolve(null),
+          lastLeg && alightPoint
+            ? fetchFeederPath(alightPoint[0], alightPoint[1], destLat, destLng, lastLeg.mode)
+            : Promise.resolve(null),
+        ]);
+
+        // Accurate fallback dose summing across all legs
+        const autoDose = autoPlan.legs.reduce((sum, leg) => {
+          const legCfg = MODE_CONFIG[leg.mode] || config;
+          const legVe = veRates[leg.activity_mode] || ve;
+          return sum + (100 * legCfg.pm25Multiplier * legVe * leg.duration_min) / 1000;
+        }, 0);
+
         const mainRoute = {
           id: 'METRO-0',
           altIndex: 0,
           altLabel: activeLine ? activeLine.name.split('(')[0].trim() : 'Metro',
           coordinates: metroLines.flatMap((l) => [...l.coordinates, [NaN, NaN]]).filter((c) => !isNaN(c[0])),
-          distanceKm: routeKm,
-          durationMin: duration,
-          estimatedDose: Math.round(dose * 10) / 10,
+          distanceKm: autoPlan.totalKm,
+          durationMin: autoPlan.totalDurationMin,
+          estimatedDose: Math.round(autoDose * 10) / 10,
           isTransit: true,
           transitLines: annotatedLines,
           defaultActiveLineIndex: activeIndex,
           boardPoint,
           alightPoint,
+          autoPlan,
+          firstMilePath: firstPathRes,
+          lastMilePath: lastPathRes,
         };
         return { mode: modeKey, ...config, routes: [mainRoute] };
       }
