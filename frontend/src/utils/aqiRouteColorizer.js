@@ -159,6 +159,54 @@ export function getPM25Label(pm25) {
 }
 
 /**
+ * Generate a seamless AQI color grid covering the entire visible map viewport.
+ * Uses smooth deterministic 2D spatial variation around basePM25 so colors
+ * stay consistent across pan/zoom while covering 100% of the map.
+ */
+export function generateViewportAqiGrid(bounds, basePM25 = 100, cols = 7, rows = 5) {
+  if (!bounds) return [];
+  const south = bounds.getSouth();
+  const north = bounds.getNorth();
+  const west = bounds.getWest();
+  const east = bounds.getEast();
+  const latSpan = north - south;
+  const lngSpan = east - west;
+  if (latSpan <= 0 || lngSpan <= 0) return [];
+
+  const stepLat = latSpan / rows;
+  const stepLng = lngSpan / cols;
+  const base = Math.max(10, basePM25);
+  const cells = [];
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const sLat = south + r * stepLat;
+      const nLat = sLat + stepLat;
+      const wLng = west + c * stepLng;
+      const eLng = wLng + stepLng;
+      const midLat = (sLat + nLat) / 2;
+      const midLng = (wLng + eLng) / 2;
+
+      // Smooth spatial pollution variation (~0.68x green belts to ~1.35x traffic corridors)
+      const waveA = Math.sin(midLat * 95 + midLng * 72);
+      const waveB = Math.cos(midLat * 54 - midLng * 110);
+      const mult = 1.0 + waveA * 0.2 + waveB * 0.14;
+      const pm25 = Math.max(6, Math.round(base * mult));
+
+      cells.push({
+        id: `cell-${r}-${c}`,
+        bounds: [[sLat, wLng], [nLat, eLng]],
+        pm25,
+        color: getPM25Color(pm25),
+        label: getPM25Label(pm25),
+      });
+    }
+  }
+
+  return cells;
+}
+
+/**
  * Generate colored AQI zones across the map around origin, destination, and corridor.
  * Lets users visually inspect air quality zones right on the map in color.
  */

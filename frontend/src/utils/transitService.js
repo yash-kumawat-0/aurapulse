@@ -516,7 +516,7 @@ export function selectActiveMetroCorridor(metroLines, originLat, originLng, dest
     return {
       ...item.line,
       isActive,
-      lightColor: lightenHex(item.line.color, 0.48),
+      lightColor: lightenHex(item.line.color, 0.22),
       activeSegments,
       boardPoint: item.ptA,
       alightPoint: item.ptB,

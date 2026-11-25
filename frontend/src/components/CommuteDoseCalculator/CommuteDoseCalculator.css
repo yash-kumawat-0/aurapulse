@@ -271,59 +271,65 @@
 }
 .cdc-legend-dot { width: 12px; height: 10px; border-radius: 3px; flex-shrink: 0; }
 
-/* ── Stats ── */
-.cdc-stats { display: flex; flex-direction: column; gap: var(--space-md); }
+/* ── Stats & Compact Exposure Graph Below Map ── */
+.cdc-stats { display: flex; flex-direction: column; gap: 10px; }
+.cdc-stats--compact { padding: 14px 18px; }
 .cdc-stats-header { display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; }
-.cdc-stats-header h3 { font-size: 1.1rem; font-weight: 800; font-family: var(--font-heading); }
+.cdc-stats-header h3 { font-size: 1.02rem; font-weight: 800; font-family: var(--font-heading); }
 .cdc-safe-pill {
-  margin-left: auto; padding: 4px 12px;
-  border-radius: var(--radius-full); font-size: 0.78rem; font-weight: 800;
+  margin-left: auto; padding: 3px 10px;
+  border-radius: var(--radius-full); font-size: 0.76rem; font-weight: 800;
 }
-.cdc-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-sm); }
+.cdc-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .cdc-stat-box {
-  text-align: center; padding: 12px var(--space-sm);
-  background: var(--bg-secondary); border-radius: 12px; border: 1.5px solid var(--border-light);
+  text-align: center; padding: 7px 8px;
+  background: var(--bg-secondary); border-radius: 10px; border: 1px solid var(--border-light);
 }
 .cdc-stat-num {
-  display: block; font-weight: 900; font-size: 1.28rem; font-family: var(--font-heading);
+  display: block; font-weight: 900; font-size: 1.08rem; font-family: var(--font-heading);
 }
+.cdc-stat-num small { font-size: 0.78rem; font-weight: 700; }
 .cdc-stat-unit {
-  display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);
-  text-transform: uppercase; margin-top: 2px;
+  display: block; font-size: 0.72rem; font-weight: 600; color: var(--text-secondary);
+  text-transform: uppercase; margin-top: 1px;
 }
 
-/* ── Bars ── */
-.cdc-dose-bars { display: flex; flex-direction: column; gap: 6px; }
+/* ── Shrunk 2-Column Exposure Bars ── */
+.cdc-dose-bars { display: flex; flex-direction: column; gap: 5px; }
+.cdc-dose-bars--compact { padding-top: 4px; border-top: 1px solid var(--border-light); }
 .cdc-bars-title {
-  font-size: 0.84rem; font-weight: 700; color: var(--text-secondary);
-  text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 2px;
+  font-size: 0.8rem; font-weight: 700; color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: 0.03em;
+}
+.cdc-bars-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 5px 14px;
 }
 .cdc-bar-row {
-  display: grid; grid-template-columns: 125px 1fr 68px 85px;
-  gap: var(--space-sm); align-items: center;
-  padding: 6px var(--space-sm); border-radius: var(--radius-sm);
+  display: grid; grid-template-columns: 112px 1fr 56px;
+  gap: 8px; align-items: center;
+  padding: 4px 8px; border-radius: 8px;
   cursor: pointer; transition: background 0.15s;
 }
 .cdc-bar-row:hover { background: var(--bg-secondary); }
 .cdc-bar-row--on { background: var(--bg-secondary); font-weight: 700; }
 .cdc-bar-name {
-  font-size: 0.86rem; font-weight: 600; color: var(--text-primary);
+  font-size: 0.84rem; font-weight: 600; color: var(--text-primary);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.cdc-bar-track { height: 10px; background: #ECEFF1; border-radius: 5px; overflow: hidden; }
-.cdc-bar-fill { height: 100%; border-radius: 5px; transition: width 0.4s ease; min-width: 4px; }
-.cdc-bar-val { font-size: 0.86rem; font-weight: 800; text-align: right; }
-.cdc-bar-risk {
-  font-size: 0.74rem; font-weight: 800; text-align: right;
-  text-transform: uppercase; letter-spacing: 0.02em;
-}
+.cdc-bar-track { height: 7px; background: #ECEFF1; border-radius: 4px; overflow: hidden; }
+.cdc-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; min-width: 4px; }
+.cdc-bar-val { font-size: 0.82rem; font-weight: 800; text-align: right; }
 
 /* ── Responsive ── */
+@media (max-width: 720px) {
+  .cdc-bars-grid { grid-template-columns: 1fr; }
+}
 @media (max-width: 640px) {
   .cdc-search-row { flex-direction: column; align-items: stretch; }
   .cdc-arrow { display: none; }
   .cdc-map { height: 360px; }
   .cdc-modes { grid-template-columns: repeat(2, 1fr); }
   .cdc-stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .cdc-bar-row { grid-template-columns: 105px 1fr 56px 70px; }
 }

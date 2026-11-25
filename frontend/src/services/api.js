@@ -52,6 +52,13 @@ export function fetchMultiCommuteComparison(params) {
   });
 }
 
+export function fetchMultiLegCommute(params) {
+  return request('/commute/multi-leg', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  });
+}
+
 // --- Gemini Advice Endpoint ---
 export function fetchAdvice(params) {
   return request('/advice/generate', {

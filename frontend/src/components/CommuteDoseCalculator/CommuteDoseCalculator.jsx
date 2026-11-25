@@ -8,8 +8,8 @@
 //   • Toggleable colored AQI zones right on the map
 //   • Bold Safe/Danger color-coded transport cards
 // ============================================
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Polyline, Circle, Tooltip, useMap } from 'react-leaflet';
+import { Fragment, useState, useEffect, useRef, useCallback } from 'react';
+import { MapContainer, TileLayer, Marker, Polyline, Rectangle, Tooltip, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useUser } from '../../context/UserContext.jsx';
@@ -21,9 +21,10 @@ import {
   colorizeRoute,
   getColorLegend,
   calcRouteAvgPM25,
-  generateMapAqiZones,
+  generateViewportAqiGrid,
 } from '../../utils/aqiRouteColorizer.js';
 import { fetchMultiCommuteComparison } from '../../services/api.js';
+import MultiModalPlanner from '../MultiModalPlanner/MultiModalPlanner.jsx';
 import './CommuteDoseCalculator.css';
 
 // Leaflet icon fix
@@ -52,6 +53,39 @@ function FitBounds({ coords }) {
     }
   }, [map, coords]);
   return null;
+}
+
+// ── Full-Map AQI Grid Overlay (fills entire visible map seamlessly with AQI colors) ──
+function ViewportAqiOverlay({ basePM25 }) {
+  const map = useMap();
+  const [bounds, setBounds] = useState(() => map.getBounds());
+
+  useMapEvents({
+    moveend: () => setBounds(map.getBounds()),
+    zoomend: () => setBounds(map.getBounds()),
+  });
+
+  useEffect(() => {
+    setBounds(map.getBounds());
+  }, [map, basePM25]);
+
+  const cells = generateViewportAqiGrid(bounds, basePM25, 8, 6);
+
+  return cells.map((cell) => (
+    <Rectangle
+      key={cell.id}
+      bounds={cell.bounds}
+      pathOptions={{
+        stroke: false,
+        fillColor: cell.color,
+        fillOpacity: 0.2,
+      }}
+    >
+      <Tooltip sticky>
+        AQI Zone: ~{cell.pm25} µg/m³ ({cell.label})
+      </Tooltip>
+    </Rectangle>
+  ));
 }
 
 // ── Place Search Input ──
@@ -126,7 +160,7 @@ function TransitNetworkLayers({
   const hasSelection = selectedIndex !== null && selectedIndex !== undefined && lines[selectedIndex];
   const selectedLine = hasSelection ? lines[selectedIndex] : null;
 
-  const renderPolylines = (line, lineIdx, weight, colorOverride, opacity, useSlice = false) => {
+  const renderPolylines = (line, lineIdx, weight, colorOverride, opacity, useSlice = false, interactive = true) => {
     const segList = (useSlice && line.activeSegments?.length)
       ? line.activeSegments
       : (line.segments?.length ? line.segments : [line.coordinates]);
@@ -137,19 +171,20 @@ function TransitNetworkLayers({
       if (valid.length < 2) return null;
       return (
         <Polyline
-          key={`tl-${lineIdx}-${sIdx}-${useSlice ? 'hi' : 'thin'}`}
+          key={`tl-${lineIdx}-${sIdx}-${weight}-${interactive ? 'i' : 'c'}`}
           positions={valid}
           color={color}
           weight={weight}
           opacity={opacity}
-          eventHandlers={onSelectLine ? {
+          interactive={interactive}
+          eventHandlers={interactive && onSelectLine ? {
             click: (e) => {
               L.DomEvent?.stopPropagation?.(e);
               onSelectLine(selectedIndex === lineIdx ? null : lineIdx);
             },
           } : {}}
         >
-          {sIdx === 0 && (
+          {interactive && sIdx === 0 && (
             <Tooltip sticky>
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
                 <span style={{ width: 10, height: 10, borderRadius: 3, background: line.color, display: 'inline-block' }} />
@@ -164,16 +199,19 @@ function TransitNetworkLayers({
 
   return (
     <>
-      {/* 1) Unselected lines (OR all lines when nothing selected): Thin + Light Original Color */}
+      {/* 1) All unselected lines (OR all lines when nothing selected):
+             White contrast rim + noticeable thin official color track */}
       {lines.map((line, idx) => {
-        if (hasSelection && idx === selectedIndex) {
-          // If selected line only highlights an A->B slice, keep rest of that line thin & light too
-          if (line.activeSegments?.length) {
-            return renderPolylines(line, idx, 3, line.lightColor || lightenHex(line.color, 0.52), 0.72, false);
-          }
+        if (hasSelection && idx === selectedIndex && !line.activeSegments?.length) {
           return null;
         }
-        return renderPolylines(line, idx, 3.2, line.lightColor || lightenHex(line.color, 0.52), 0.72, false);
+        const thinColor = line.lightColor || lightenHex(line.color, 0.22);
+        return (
+          <Fragment key={`thin-wrap-${idx}`}>
+            {renderPolylines(line, idx, 7, '#FFFFFF', 0.8, false, false)}
+            {renderPolylines(line, idx, 4, thinColor, 0.92, false, true)}
+          </Fragment>
+        );
       })}
 
       {/* 2) Subtle dotted first/last mile walk lines to the single selected line */}
@@ -359,9 +397,6 @@ function CommuteDoseCalculator() {
     ? curRoute.transitLines
     : (!destination ? previewMetroLines : []);
   const busLines = curMode?.mode === 'BUS' ? (curRoute?.transitLines || []) : [];
-
-  // Colored AQI level zones overlaid softly across the map
-  const aqiZones = showAqiZones ? generateMapAqiZones(origin, destination, basePM25) : [];
 
   // Keep map camera neatly framed around origin/destination & selected line
   const mapCoords = (() => {
@@ -556,25 +591,8 @@ function CommuteDoseCalculator() {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             {mapCoords?.length > 1 && <FitBounds coords={mapCoords} />}
 
-            {/* ── Colored AQI Level Zones across map ── */}
-            {aqiZones.map((zone) => (
-              <Circle
-                key={zone.id}
-                center={[zone.lat, zone.lng]}
-                radius={zone.radius}
-                pathOptions={{
-                  color: zone.color,
-                  weight: 1.2,
-                  opacity: 0.4,
-                  fillColor: zone.color,
-                  fillOpacity: 0.2,
-                }}
-              >
-                <Tooltip sticky>
-                  <strong>{zone.area}</strong> · PM2.5: ~{zone.pm25} µg/m³ ({zone.label})
-                </Tooltip>
-              </Circle>
-            ))}
+            {/* ── Colored AQI Overlay All Over Map ── */}
+            {showAqiZones && <ViewportAqiOverlay basePM25={basePM25} />}
 
             {/* ── Road Alternatives (faded behind) ── */}
             {!isTransitMode && coloredAlts.map((r, idx) => {
@@ -679,14 +697,14 @@ function CommuteDoseCalculator() {
         </div>
       )}
 
-      {/* ── Route Stats ── */}
+      {/* ── Route Stats (compact) ── */}
       {curRoute && (() => {
         const curDose = doseByMode[selectedMode]?.dose_ug ?? curRoute.estimatedDose;
         const curRisk = getRiskTier(curDose);
         return (
-          <div className="card cdc-stats">
+          <div className="card cdc-stats cdc-stats--compact">
             <div className="cdc-stats-header">
-              <span style={{ color: curMode?.color, fontSize: '1.35rem' }}>{curMode?.icon}</span>
+              <span style={{ color: curMode?.color, fontSize: '1.2rem' }}>{curMode?.icon}</span>
               <h3>{curMode?.label} — {curRoute.altLabel}</h3>
               <span className="cdc-safe-pill" style={{ background: curRisk.pillBg, color: curRisk.color }}>
                 {curRisk.icon} {curRisk.label}
@@ -695,17 +713,17 @@ function CommuteDoseCalculator() {
             <div className="cdc-stats-grid">
               <div className="cdc-stat-box" style={{ background: curRisk.bg, borderColor: curRisk.border }}>
                 <span className="cdc-stat-num" style={{ color: curRisk.color }}>
-                  {curDose}
+                  {curDose} <small>µg</small>
                 </span>
-                <span className="cdc-stat-unit">µg inhaled</span>
+                <span className="cdc-stat-unit">inhaled</span>
               </div>
               <div className="cdc-stat-box">
-                <span className="cdc-stat-num">{curRoute.durationMin}</span>
-                <span className="cdc-stat-unit">minutes</span>
+                <span className="cdc-stat-num">{curRoute.durationMin} <small>min</small></span>
+                <span className="cdc-stat-unit">time</span>
               </div>
               <div className="cdc-stat-box">
-                <span className="cdc-stat-num">{curRoute.distanceKm}</span>
-                <span className="cdc-stat-unit">km</span>
+                <span className="cdc-stat-num">{curRoute.distanceKm} <small>km</small></span>
+                <span className="cdc-stat-unit">distance</span>
               </div>
               <div className="cdc-stat-box">
                 <span className="cdc-stat-num">
@@ -718,32 +736,36 @@ function CommuteDoseCalculator() {
             </div>
 
             {Object.keys(doseByMode).length > 1 && (
-              <div className="cdc-dose-bars">
-                <span className="cdc-bars-title">Pollution Exposure by Transport</span>
-                {allModes.map((m) => {
-                  const dose = doseByMode[m.mode];
-                  if (!dose) return null;
-                  const maxD = Math.max(...Object.values(doseByMode).map((d) => d.dose_ug), 1);
-                  const pct = Math.max((dose.dose_ug / maxD) * 100, 4);
-                  const barRisk = getRiskTier(dose.dose_ug);
-                  return (
-                    <div key={m.mode}
-                      className={`cdc-bar-row ${m.mode === selectedMode ? 'cdc-bar-row--on' : ''}`}
-                      onClick={() => { setSelectedMode(m.mode); setSelectedAlt(0); }}>
-                      <span className="cdc-bar-name">{m.icon} {m.label}</span>
-                      <div className="cdc-bar-track">
-                        <div className="cdc-bar-fill" style={{ width: `${pct}%`, background: barRisk.color }} />
+              <div className="cdc-dose-bars cdc-dose-bars--compact">
+                <span className="cdc-bars-title">Exposure Comparison</span>
+                <div className="cdc-bars-grid">
+                  {allModes.map((m) => {
+                    const dose = doseByMode[m.mode];
+                    if (!dose) return null;
+                    const maxD = Math.max(...Object.values(doseByMode).map((d) => d.dose_ug), 1);
+                    const pct = Math.max((dose.dose_ug / maxD) * 100, 5);
+                    const barRisk = getRiskTier(dose.dose_ug);
+                    return (
+                      <div key={m.mode}
+                        className={`cdc-bar-row ${m.mode === selectedMode ? 'cdc-bar-row--on' : ''}`}
+                        onClick={() => { setSelectedMode(m.mode); setSelectedAlt(0); }}>
+                        <span className="cdc-bar-name">{m.icon} {m.label}</span>
+                        <div className="cdc-bar-track">
+                          <div className="cdc-bar-fill" style={{ width: `${pct}%`, background: barRisk.color }} />
+                        </div>
+                        <span className="cdc-bar-val" style={{ color: barRisk.color }}>{dose.dose_ug} µg</span>
                       </div>
-                      <span className="cdc-bar-val" style={{ color: barRisk.color }}>{dose.dose_ug} µg</span>
-                      <span className="cdc-bar-risk" style={{ color: barRisk.color }}>{barRisk.label}</span>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
         );
       })()}
+
+      {/* ── New Feature: Multi-Step Journey Exposure Planner (e.g. Walk -> Metro -> Bus) ── */}
+      <MultiModalPlanner origin={origin} basePM25={basePM25} />
     </div>
   );
 }
