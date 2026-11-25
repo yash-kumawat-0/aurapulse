@@ -1,83 +1,278 @@
 /* ============================================
-   FamilyAdviceCard — Compact
+   FamilyAdviceCard — Action Plan Layout
    ============================================ */
-.advice-section {
+.advice-card {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
 }
 
-.advice-btn {
-  width: 100%;
-  padding: var(--space-sm) var(--space-md);
-  background: var(--color-primary);
-  color: white;
-  font-size: 0.85rem;
-  font-weight: 600;
-  border-radius: var(--radius-sm);
-  transition: background 0.2s;
-}
-
-.advice-btn:hover {
-  background: var(--color-primary-dark);
-}
-
-.advice-btn:disabled {
-  background: var(--text-muted);
-  cursor: not-allowed;
-}
-
-.advice-summary {
-  padding: var(--space-md);
-  background: #E3F2FD;
-  border-radius: var(--radius-sm);
-  font-size: 0.85rem;
-  line-height: 1.6;
-  color: var(--text-primary);
-}
-
-.advice-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: var(--space-sm);
-}
-
-.advice-item {
-  padding: var(--space-md);
-  background: var(--bg-secondary);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-light);
-}
-
-.advice-item-top {
+/* ── Header ── */
+.advice-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-xs);
+  flex-wrap: wrap;
+  gap: var(--space-sm);
 }
-
-.advice-name {
+.advice-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.advice-title {
+  font-size: 0.95rem;
   font-weight: 700;
-  font-size: 0.85rem;
+  font-family: var(--font-heading);
 }
-
-.advice-risk {
-  padding: 2px var(--space-sm);
+.advice-ready-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #2E7D32;
+  background: #E8F5E9;
+  padding: 2px 8px;
   border-radius: var(--radius-full);
-  font-size: 0.65rem;
-  font-weight: 700;
   text-transform: uppercase;
 }
 
-.advice-action {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  line-height: 1.5;
+.advice-gen-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  background: var(--color-primary);
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border-radius: var(--radius-md);
+  transition: all 0.2s;
+}
+.advice-gen-btn:hover { background: var(--color-primary-dark); transform: translateY(-1px); }
+.advice-gen-btn:disabled { background: var(--text-muted); cursor: not-allowed; transform: none; }
+
+.advice-spin {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: advSpin 0.6s linear infinite;
+}
+@keyframes advSpin { to { transform: rotate(360deg); } }
+
+/* ── Empty / Loading States ── */
+.advice-empty, .advice-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xl) var(--space-md);
+  color: var(--text-muted);
+  text-align: center;
+}
+.advice-empty-icon, .advice-loading-icon { font-size: 2rem; }
+.advice-empty p, .advice-loading p { font-size: 0.82rem; max-width: 320px; line-height: 1.5; }
+.advice-loading {
+  animation: advPulse 1.5s ease infinite;
+}
+@keyframes advPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
-.advice-hint {
-  text-align: center;
-  padding: var(--space-lg);
+/* ── Results Container ── */
+.advice-results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  animation: advFadeIn 0.3s ease;
+}
+@keyframes advFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* ── Summary Banner ── */
+.advice-summary {
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: #E3F2FD;
+  border-radius: var(--radius-md);
+  border: 1px solid #BBDEFB;
+}
+.advice-summary-icon { font-size: 1.3rem; flex-shrink: 0; }
+.advice-summary-text { display: flex; flex-direction: column; gap: 4px; }
+.advice-summary-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #1565C0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.advice-summary p {
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: #1A237E;
+}
+
+/* ── Section Title ── */
+.advice-section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Per-Member Cards ── */
+.advice-members {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+.advice-members-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-sm);
+}
+
+.advice-member-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: var(--bg-primary);
+  border: 1.5px solid var(--border-light);
+  border-top: 3px solid var(--border-light);
+  border-radius: var(--radius-md);
+  transition: box-shadow 0.15s;
+}
+.advice-member-card:hover { box-shadow: var(--shadow-sm); }
+
+.advice-member-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-sm);
+}
+.advice-member-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.advice-member-name {
+  font-size: 0.9rem;
+  font-weight: 800;
+  font-family: var(--font-heading);
+  color: var(--text-primary);
+}
+.advice-member-age {
+  font-size: 0.62rem;
   color: var(--text-muted);
-  font-size: 0.85rem;
+}
+
+.advice-member-risk {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border: 1px solid;
+  flex-shrink: 0;
+}
+
+.advice-member-action {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.advice-member-action-label {
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.advice-member-action p {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.advice-member-secondary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: var(--space-xs);
+  border-top: 1px solid var(--border-light);
+}
+.advice-member-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+.advice-tip-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.advice-member-window {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  padding: 5px 8px;
+  background: #FFF8E1;
+  border-radius: var(--radius-sm);
+  border: 1px solid #FFECB3;
+}
+
+/* ── General Tips ── */
+.advice-tips {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+.advice-tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.advice-tip-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: 6px var(--space-sm);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+.advice-tip-num {
+  min-width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: white;
+  font-size: 0.6rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .advice-members-grid { grid-template-columns: 1fr; }
+  .advice-header { flex-direction: column; align-items: flex-start; }
+  .advice-summary { flex-direction: column; gap: var(--space-sm); }
 }

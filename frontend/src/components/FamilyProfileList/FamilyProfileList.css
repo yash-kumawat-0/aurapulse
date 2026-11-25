@@ -1,5 +1,5 @@
 /* ============================================
-   FamilyProfileList — Minimal
+   FamilyProfileList — Visual Cards
    ============================================ */
 .family-card {
   display: flex;
@@ -12,54 +12,68 @@
   justify-content: space-between;
   align-items: center;
 }
-
+.family-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
 .family-title {
   font-size: 0.95rem;
   font-weight: 700;
+  font-family: var(--font-heading);
+}
+.family-count {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
 }
 
 .family-add-toggle {
-  padding: 4px var(--space-sm);
-  font-size: 0.8rem;
-  font-weight: 600;
+  padding: 5px 14px;
+  font-size: 0.75rem;
+  font-weight: 700;
   color: var(--color-primary);
   background: #E8F5E9;
   border-radius: var(--radius-full);
+  transition: all 0.15s;
 }
+.family-add-toggle:hover { background: #C8E6C9; }
 
-.family-add-toggle:hover {
-  background: #C8E6C9;
-}
-
-.family-tags {
-  display: flex;
+/* ── Member Cards Grid ── */
+.family-members-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: var(--space-sm);
-  flex-wrap: wrap;
 }
 
-.family-tag {
+.family-member-card {
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 6px;
-  padding: 4px var(--space-sm) 4px 8px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-full);
-  font-size: 0.8rem;
+  padding: var(--space-md) var(--space-sm);
+  background: var(--bg-primary);
+  border: 1.5px solid var(--border-light);
+  border-left: 4px solid var(--border-light);
+  border-radius: var(--radius-md);
+  transition: all 0.15s;
+}
+.family-member-card:hover {
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+.family-member-card--vulnerable {
+  background: #FFFDE7;
 }
 
-.family-tag-name {
-  font-weight: 600;
-}
-
-.family-tag-meta {
-  font-size: 0.7rem;
-  color: var(--text-secondary);
-}
-
-.family-tag-x {
-  width: 18px;
-  height: 18px;
+.family-member-remove {
+  position: absolute;
+  top: 6px; right: 6px;
+  width: 20px; height: 20px;
   border-radius: 50%;
   background: transparent;
   color: var(--text-muted);
@@ -67,36 +81,152 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  opacity: 0;
   transition: all 0.15s;
 }
+.family-member-card:hover .family-member-remove { opacity: 1; }
+.family-member-remove:hover { background: #FFEBEE; color: #F44336; }
 
-.family-tag-x:hover {
-  background: #FFEBEE;
-  color: #F44336;
+.family-member-avatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
 }
 
+.family-member-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.family-member-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.family-member-age {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+}
+
+.family-member-cond {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.family-member-vuln {
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: #E65100;
+}
+
+/* ── Empty State ── */
+.family-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xl) var(--space-md);
+  color: var(--text-muted);
+}
+.family-empty-icon { font-size: 2rem; }
+.family-empty p { font-size: 0.8rem; text-align: center; }
+
+/* ── Add Member Form ── */
 .family-form {
   display: flex;
-  gap: var(--space-sm);
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1.5px dashed var(--border-light);
+  animation: formSlideIn 0.2s ease;
+}
+@keyframes formSlideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
 }
 
-.family-form input,
-.family-form select {
-  padding: 6px var(--space-sm);
+.family-form-row {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.family-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+.family-form-field--small { max-width: 90px; }
+
+.family-form-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.family-form input {
+  padding: 8px var(--space-sm);
   font-family: var(--font-body);
-  font-size: 0.8rem;
-  border: 1px solid var(--border-light);
+  font-size: 0.82rem;
+  border: 1.5px solid var(--border-light);
   border-radius: var(--radius-sm);
   background: var(--bg-primary);
+  transition: border-color 0.15s;
 }
+.family-form input:focus { outline: none; border-color: var(--color-primary); }
 
-.family-form-btn {
-  padding: 6px var(--space-md);
+.family-cond-grid {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.family-cond-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border: 1.5px solid var(--border-light);
+  border-radius: var(--radius-full);
+  background: var(--bg-primary);
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.family-cond-btn:hover { border-color: var(--text-muted); }
+.family-cond-btn--on {
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+}
+.family-cond-name { font-weight: 600; }
+
+.family-form-submit {
+  padding: 8px var(--space-lg);
   background: var(--color-primary);
   color: white;
-  border-radius: var(--radius-sm);
-  font-weight: 600;
-  font-size: 0.8rem;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 0.82rem;
+  align-self: flex-start;
+  transition: all 0.15s;
+}
+.family-form-submit:hover { background: var(--color-primary-dark); transform: translateY(-1px); }
+
+@media (max-width: 640px) {
+  .family-members-grid { grid-template-columns: repeat(2, 1fr); }
+  .family-form-row { flex-direction: column; }
+  .family-form-field--small { max-width: unset; }
+  .family-header { flex-direction: column; align-items: flex-start; gap: var(--space-sm); }
 }
