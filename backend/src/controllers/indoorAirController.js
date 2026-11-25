@@ -44,10 +44,32 @@ export async function simulateIndoorAir(req, res, next) {
       outdoorPM25: parseFloat(outdoor_pm25),
     });
 
+    const diyTotalCadr = diyRec.estimated_cadr * diyRec.units_needed;
+
+    const diySimulation = calculateIndoorPM25({
+      outdoorPM25: parseFloat(outdoor_pm25),
+      roomAreaSqft: parseInt(room_area_sqft) || 150,
+      ceilingHeightFt: parseInt(ceiling_height_ft) || 10,
+      windowSealType: window_seal_type || 'standard_aluminum',
+      purifierCADR: diyTotalCadr,
+      indoorSource: indoor_source || 'none',
+    });
+
+    const sourceFreeSimulation = calculateIndoorPM25({
+      outdoorPM25: parseFloat(outdoor_pm25),
+      roomAreaSqft: parseInt(room_area_sqft) || 150,
+      ceilingHeightFt: parseInt(ceiling_height_ft) || 10,
+      windowSealType: window_seal_type || 'standard_aluminum',
+      purifierCADR: parseFloat(purifier_cadr) || 0,
+      indoorSource: 'none',
+    });
+
     res.json({
       success: true,
       data: {
         simulation,
+        diy_simulation: diySimulation,
+        source_free_simulation: sourceFreeSimulation,
         purifier_recommendation: purifierRec,
         diy_purifier: diyRec,
       },

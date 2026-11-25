@@ -1,9 +1,10 @@
 /* ============================================
-   HeroLocationBanner — Minimal Search Bar
+   HeroLocationBanner — Search Bar + Right-Side
+   Auto Outdoor vs Indoor Live Graph
    ============================================ */
 .hero {
-  background: var(--bg-primary);
-  padding: var(--space-xl) 0 var(--space-lg);
+  background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+  padding: var(--space-lg) 0;
   border-bottom: 1px solid var(--border-light);
 }
 
@@ -11,12 +12,22 @@
   max-width: var(--max-width);
   margin: 0 auto;
   padding: 0 var(--space-md);
-  text-align: center;
+}
+
+.hero-inner--split {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.15fr) minmax(300px, 1fr);
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.hero-search-col {
+  text-align: left;
 }
 
 .hero-title {
   font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-primary);
   margin-bottom: var(--space-md);
 }
@@ -24,8 +35,7 @@
 /* --- Search Bar --- */
 .hero-search-wrapper {
   position: relative;
-  max-width: 480px;
-  margin: 0 auto;
+  max-width: 540px;
 }
 
 .hero-search {
@@ -33,9 +43,10 @@
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-sm) var(--space-md);
-  background: var(--bg-secondary);
+  background: var(--bg-primary);
   border: 1.5px solid var(--border-light);
   border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
@@ -138,13 +149,251 @@
 /* --- Current Location Label --- */
 .hero-current-loc {
   margin-top: var(--space-sm);
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   color: var(--color-primary);
-  font-weight: 500;
+  font-weight: 600;
+}
+
+/* ════════════════════════════════════════════
+   RIGHT SIDE: LIVE OUTDOOR VS INDOOR GRAPH
+   ════════════════════════════════════════════ */
+.hero-graph-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 14px 18px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hero-graph-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.hero-graph-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: var(--font-heading);
+}
+
+.hero-graph-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+.hero-graph-sub {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: #F1F5F9;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.hero-graph-gauges {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.hero-gauge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hero-gauge-ring {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hero-gauge-ring svg {
+  display: block;
+}
+
+.hero-gauge-arc {
+  transition: stroke-dashoffset 0.6s ease;
+}
+
+.hero-gauge-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-gauge-num {
+  font-size: 1.05rem;
+  font-weight: 800;
+  font-family: var(--font-heading);
+  line-height: 1;
+}
+
+.hero-gauge-unit {
+  font-size: 0.52rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.hero-gauge-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.hero-gauge-title {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.hero-gauge-status {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.hero-graph-delta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.hero-delta-pill {
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  font-family: var(--font-heading);
+}
+
+.hero-delta-pill--good {
+  background: #ECFDF5;
+  color: #059669;
+  border: 1px solid #A7F3D0;
+}
+
+.hero-delta-pill--bad {
+  background: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FECACA;
+}
+
+.hero-delta-caption {
+  font-size: 0.58rem;
+  color: var(--text-muted);
+}
+
+/* Linear Bar Scale vs WHO Limit */
+.hero-scale-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-top: 6px;
+  border-top: 1px solid #F1F5F9;
+}
+
+.hero-scale-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hero-scale-name {
+  width: 48px;
+  font-size: 0.64rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.hero-scale-track {
+  position: relative;
+  flex: 1;
+  height: 7px;
+  background: #F1F5F9;
+  border-radius: 999px;
+  overflow: visible;
+}
+
+.hero-scale-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.5s ease;
+}
+
+.hero-safe-marker {
+  position: absolute;
+  top: -2px;
+  width: 2px;
+  height: 11px;
+  background: #0F172A;
+  border-radius: 1px;
+  opacity: 0.45;
+}
+
+.hero-scale-legend {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.6rem;
+  color: var(--text-muted);
+}
+
+.hero-graph-empty {
+  padding: 20px 10px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* --- Responsive --- */
+@media (max-width: 920px) {
+  .hero-inner--split {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+  .hero-search-col {
+    text-align: center;
+  }
+  .hero-search-wrapper {
+    margin: 0 auto;
+  }
 }
 
 @media (max-width: 640px) {
   .hero-title {
     font-size: 1.25rem;
+  }
+  .hero-graph-gauges {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .hero-gauge {
+    width: 100%;
+    justify-content: center;
   }
 }

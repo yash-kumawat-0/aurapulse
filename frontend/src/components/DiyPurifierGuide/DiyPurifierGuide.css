@@ -1,268 +1,1089 @@
 /* ============================================
-   DiyPurifierGuide — Interactive
+   DiyPurifierGuide — Interactive 3D Animated
+   Corsi-Rosenthal Assembly Studio (All Ages)
    ============================================ */
-.diy-card {
+
+.diy3d-wrap {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: 20px;
+  padding: 24px;
+  border-radius: 20px;
+  border: 1.5px solid #FED7AA;
+  background: linear-gradient(155deg, #FFFDF9 0%, #FFF7ED 100%);
+  box-shadow: 0 8px 28px rgba(234, 88, 12, 0.08);
 }
 
-.diy-toggle {
+.diy3d-wrap--optional {
+  border-color: #CBD5E1;
+  background: linear-gradient(155deg, #FFFFFF 0%, #F8FAFC 100%);
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
+}
+
+/* ── Header ── */
+.diy3d-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  background: transparent;
-  text-align: left;
-  padding: 2px 0;
-}
-.diy-toggle-left {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-}
-.diy-toggle-icon { font-size: 1.3rem; }
-.diy-toggle-info { display: flex; flex-direction: column; }
-.diy-toggle-title {
-  font-family: var(--font-heading);
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-.diy-toggle-sub {
-  font-size: 0.68rem;
-  color: var(--text-secondary);
-}
-.diy-chevron {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-
-.diy-body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
-  animation: diyFadeIn 0.25s ease;
-}
-@keyframes diyFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-
-/* ── Interactive Config ── */
-.diy-config {
-  display: flex;
-  align-items: center;
-  gap: var(--space-lg);
-  padding: var(--space-md);
-  background: var(--bg-secondary);
-  border-radius: var(--radius-md);
+  align-items: flex-start;
   flex-wrap: wrap;
+  gap: 14px;
 }
-.diy-config-item {
+
+.diy3d-header-left {
+  flex: 1;
+  min-width: 240px;
+}
+
+.diy3d-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
+.diy3d-badge--urgent {
+  background: #FFEDD5;
+  color: #C2410C;
+  border: 1px solid #FDBA74;
+}
+
+.diy3d-badge--safe {
+  background: #E0F2FE;
+  color: #0369A1;
+  border: 1px solid #BAE6FD;
+}
+
+.diy3d-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.diy3d-subtitle {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin: 4px 0 0 0;
+}
+
+.diy3d-mode-switch {
+  display: flex;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+}
+
+.diy3d-mode-btn {
+  padding: 7px 12px;
+  border-radius: 9px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: transparent;
+  transition: all 0.2s;
+}
+
+.diy3d-mode-btn--active {
+  background: #EA580C;
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.28);
+}
+
+/* ── Room Impact Numbers Strip ── */
+.diy3d-impact-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.diy3d-impact-card {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
+  gap: 3px;
+  padding: 14px 16px;
+  background: #FFFFFF;
+  border-radius: 14px;
+  border: 1px solid #E2E8F0;
 }
-.diy-config-label {
-  font-size: 0.6rem;
+
+.diy3d-impact-card--highlight {
+  border-color: #86EFAC;
+  background: linear-gradient(135deg, #FFFFFF, #ECFDF5);
+}
+
+.diy3d-impact-lbl {
+  font-size: 0.68rem;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
-.diy-counter {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  border: 1.5px solid var(--border-light);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-.diy-counter-btn {
-  width: 32px; height: 32px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1rem; font-weight: 700;
-  color: var(--color-secondary);
-  background: var(--bg-primary);
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.diy-counter-btn:hover { background: var(--bg-secondary); }
-.diy-counter-val {
-  width: 32px; height: 32px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 0.95rem; font-weight: 800;
-  font-family: var(--font-heading);
-  color: var(--text-primary);
-  background: var(--bg-secondary);
-  border-left: 1px solid var(--border-light);
-  border-right: 1px solid var(--border-light);
-}
 
-.diy-config-result {
-  display: flex;
-  gap: var(--space-lg);
-  margin-left: auto;
-}
-.diy-config-stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.diy-config-stat-num {
-  font-size: 1.1rem;
+.diy3d-impact-val {
+  font-size: 1.15rem;
   font-weight: 800;
   font-family: var(--font-heading);
-}
-.diy-config-stat-label {
-  font-size: 0.55rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
+  color: var(--text-primary);
 }
 
-/* ── Materials ── */
-.diy-section {
+.diy3d-impact-sub {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+
+/* ══════════════════════════════════════════
+   STUDIO: 3D VIEWPORT + STEP GUIDE
+   ══════════════════════════════════════════ */
+.diy3d-studio {
+  display: grid;
+  grid-template-columns: minmax(290px, 1.05fr) minmax(290px, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.diy3d-viewport-col {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: 12px;
 }
-.diy-section-title {
+
+.diy3d-stage-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.diy3d-drag-hint {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.diy3d-cam-btns {
+  display: flex;
+  gap: 5px;
+}
+
+.diy3d-cam-btn {
+  padding: 4px 9px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 8px;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  color: var(--text-primary);
+  transition: all 0.15s;
+}
+
+.diy3d-cam-btn:hover {
+  background: #F1F5F9;
+}
+
+.diy3d-cam-btn--on {
+  background: #2563EB;
+  color: #FFFFFF;
+  border-color: #2563EB;
+}
+
+/* ── 3D Stage ── */
+.diy3d-stage {
+  position: relative;
+  height: 330px;
+  border-radius: 18px;
+  background: radial-gradient(circle at 50% 42%, #EFF6FF 0%, #DBEAFE 52%, #E2E8F0 100%);
+  border: 1.5px solid #BFDBFE;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 900px;
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  box-shadow: inset 0 2px 14px rgba(37, 99, 235, 0.08);
+}
+
+.diy3d-stage:active {
+  cursor: grabbing;
+}
+
+.diy3d-stage-callout {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(6px);
+  border-radius: 999px;
+  border: 1px solid #CBD5E1;
+  font-size: 0.78rem;
+  color: var(--text-primary);
+  z-index: 20;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+/* ── 3D Assembly Root ── */
+.diy3d-assembly {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  transform-style: preserve-3d;
+  transition: transform 0.35s ease;
+  margin-top: 26px;
+}
+
+.diy3d-autospin {
+  animation: diy3dSpin 10s linear infinite;
+}
+
+@keyframes diy3dSpin {
+  from { transform: rotateX(-20deg) rotateY(0deg); }
+  to { transform: rotateX(-20deg) rotateY(360deg); }
+}
+
+.diy3d-floor-shadow {
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  left: -5px;
+  top: -5px;
+  background: radial-gradient(circle, rgba(15, 23, 42, 0.22) 0%, transparent 72%);
+  transform: rotateX(90deg) translateZ(-78px);
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════════════
+   4-FILTER CORSI-ROSENTHAL CUBE GEOMETRY
+   Cube side = 124px -> half = 62px
+   ══════════════════════════════════════════ */
+.d3-wall {
+  position: absolute;
+  width: 124px;
+  height: 124px;
+  left: 8px;
+  top: 8px;
+  transform-style: preserve-3d;
+  transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s ease;
+}
+
+.d3-filter-panel {
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(145deg, #FEF9C3, #FDE68A);
+  border: 4px solid #F59E0B;
+  box-shadow: inset 0 0 12px rgba(217, 119, 6, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  position: relative;
+  overflow: hidden;
+  backface-visibility: visible;
+}
+
+.d3-pleats {
+  position: absolute;
+  inset: 5px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(245, 158, 11, 0.14) 0px,
+    rgba(245, 158, 11, 0.14) 3px,
+    rgba(255, 255, 255, 0.55) 3px,
+    rgba(255, 255, 255, 0.55) 7px
+  );
+  border-radius: 3px;
+}
+
+.d3-filter-badge {
+  position: relative;
+  z-index: 2;
+  padding: 2px 7px;
+  font-size: 0.56rem;
+  font-weight: 800;
+  color: #92400E;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+}
+
+.d3-arrow-in {
+  position: relative;
+  z-index: 2;
+  padding: 2px 8px;
+  font-size: 0.58rem;
+  font-weight: 800;
+  color: #065F46;
+  background: #A7F3D0;
+  border-radius: 999px;
+  border: 1px solid #34D399;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all 0.4s ease;
+}
+
+/* Step 0: Exploded Floating Parts */
+.diy3d-step-0 .d3-wall-front { transform: translateZ(105px) translateY(-6px); }
+.diy3d-step-0 .d3-wall-back { transform: rotateY(180deg) translateZ(105px) translateY(-6px); }
+.diy3d-step-0 .d3-wall-left { transform: rotateY(-90deg) translateZ(105px) translateY(-6px); }
+.diy3d-step-0 .d3-wall-right { transform: rotateY(90deg) translateZ(105px) translateY(-6px); }
+
+/* Step 1: Arrows INWARD Focus (angled slightly open) */
+.diy3d-step-1 .d3-wall-front { transform: translateZ(84px); }
+.diy3d-step-1 .d3-wall-back { transform: rotateY(180deg) translateZ(84px); }
+.diy3d-step-1 .d3-wall-left { transform: rotateY(-90deg) translateZ(84px); }
+.diy3d-step-1 .d3-wall-right { transform: rotateY(90deg) translateZ(84px); }
+.diy3d-step-1 .d3-arrow-in,
+.diy3d-step-2 .d3-arrow-in {
+  opacity: 1;
+  transform: scale(1.08);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+}
+
+/* Steps 2..6: Closed Cube Square */
+.diy3d-step-2 .d3-wall-front,
+.diy3d-step-3 .d3-wall-front,
+.diy3d-step-4 .d3-wall-front,
+.diy3d-step-5 .d3-wall-front,
+.diy3d-step-6 .d3-wall-front { transform: translateZ(62px); }
+
+.diy3d-step-2 .d3-wall-back,
+.diy3d-step-3 .d3-wall-back,
+.diy3d-step-4 .d3-wall-back,
+.diy3d-step-5 .d3-wall-back,
+.diy3d-step-6 .d3-wall-back { transform: rotateY(180deg) translateZ(62px); }
+
+.diy3d-step-2 .d3-wall-left,
+.diy3d-step-3 .d3-wall-left,
+.diy3d-step-4 .d3-wall-left,
+.diy3d-step-5 .d3-wall-left,
+.diy3d-step-6 .d3-wall-left { transform: rotateY(-90deg) translateZ(62px); }
+
+.diy3d-step-2 .d3-wall-right,
+.diy3d-step-3 .d3-wall-right,
+.diy3d-step-4 .d3-wall-right,
+.diy3d-step-5 .d3-wall-right,
+.diy3d-step-6 .d3-wall-right { transform: rotateY(90deg) translateZ(62px); }
+
+/* 4 Vertical Corner Duct Tape Seals */
+.d3-corner-tape {
+  position: absolute;
+  width: 10px;
+  height: 126px;
+  left: 65px;
+  top: 7px;
+  background: linear-gradient(180deg, #94A3B8, #64748B, #94A3B8);
+  border: 1px solid #CBD5E1;
+  border-radius: 3px;
+  opacity: 0;
+  transition: opacity 0.45s ease, transform 0.6s ease;
+  pointer-events: none;
+}
+
+.d3-ct-fl { transform: translateX(-62px) translateZ(63px) rotateY(-45deg) scaleY(0); }
+.d3-ct-fr { transform: translateX(62px) translateZ(63px) rotateY(45deg) scaleY(0); }
+.d3-ct-bl { transform: translateX(-62px) translateZ(-63px) rotateY(45deg) scaleY(0); }
+.d3-ct-br { transform: translateX(62px) translateZ(-63px) rotateY(-45deg) scaleY(0); }
+
+.diy3d-step-3 .d3-corner-tape,
+.diy3d-step-4 .d3-corner-tape,
+.diy3d-step-5 .d3-corner-tape,
+.diy3d-step-6 .d3-corner-tape {
+  opacity: 0.95;
+}
+.diy3d-step-3 .d3-ct-fl, .diy3d-step-4 .d3-ct-fl, .diy3d-step-5 .d3-ct-fl, .diy3d-step-6 .d3-ct-fl {
+  transform: translateX(-62px) translateZ(63px) rotateY(-45deg) scaleY(1);
+}
+.diy3d-step-3 .d3-ct-fr, .diy3d-step-4 .d3-ct-fr, .diy3d-step-5 .d3-ct-fr, .diy3d-step-6 .d3-ct-fr {
+  transform: translateX(62px) translateZ(63px) rotateY(45deg) scaleY(1);
+}
+.diy3d-step-3 .d3-ct-bl, .diy3d-step-4 .d3-ct-bl, .diy3d-step-5 .d3-ct-bl, .diy3d-step-6 .d3-ct-bl {
+  transform: translateX(-62px) translateZ(-63px) rotateY(45deg) scaleY(1);
+}
+.diy3d-step-3 .d3-ct-br, .diy3d-step-4 .d3-ct-br, .diy3d-step-5 .d3-ct-br, .diy3d-step-6 .d3-ct-br {
+  transform: translateX(62px) translateZ(-63px) rotateY(-45deg) scaleY(1);
+}
+
+/* Cardboard Base */
+.d3-cardboard {
+  position: absolute;
+  width: 126px;
+  height: 126px;
+  left: 7px;
+  top: 7px;
+  background: repeating-linear-gradient(45deg, #D97706, #D97706 6px, #B45309 6px, #B45309 12px);
+  border: 3px solid #92400E;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s ease;
+  transform: translateY(88px) rotateX(90deg);
+  opacity: 0.35;
+}
+
+.d3-cardboard-lbl {
+  font-size: 0.55rem;
+  font-weight: 800;
+  color: #FEF3C7;
+  background: rgba(69, 26, 3, 0.75);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.diy3d-step-0 .d3-cardboard {
+  transform: translateY(92px) rotateX(90deg);
+  opacity: 0.9;
+}
+
+.diy3d-step-4 .d3-cardboard,
+.diy3d-step-5 .d3-cardboard,
+.diy3d-step-6 .d3-cardboard {
+  transform: translateY(63px) rotateX(90deg);
+  opacity: 1;
+}
+
+/* Top Box Fan Assembly */
+.d3-top-fan {
+  position: absolute;
+  width: 128px;
+  height: 128px;
+  left: 6px;
+  top: 6px;
+  transform-style: preserve-3d;
+  transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s ease;
+  transform: translateY(-102px) rotateX(90deg);
+  opacity: 0.25;
+}
+
+.diy3d-step-0 .d3-top-fan {
+  transform: translateY(-105px) rotateX(90deg);
+  opacity: 0.95;
+}
+
+.diy3d-step-5 .d3-top-fan,
+.diy3d-step-6 .d3-top-fan {
+  transform: translateY(-64px) rotateX(90deg);
+  opacity: 1;
+}
+
+.d3-fan-frame {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #F1F5F9, #CBD5E1);
+  border: 4px solid #64748B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+}
+
+.d3-fan-ring {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #E2E8F0, #94A3B8);
+  border: 2px solid #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.d3-blades {
+  position: relative;
+  width: 82px;
+  height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.diy3d-step-6 .d3-blades {
+  animation: fanSpinFast 0.45s linear infinite;
+}
+
+@keyframes fanSpinFast {
+  to { transform: rotate(360deg); }
+}
+
+.d3-blade {
+  position: absolute;
+  width: 74px;
+  height: 12px;
+  background: linear-gradient(90deg, #334155, #475569, #334155);
+  border-radius: 999px;
+}
+.d3-b1 { transform: rotate(0deg); }
+.d3-b2 { transform: rotate(60deg); }
+.d3-b3 { transform: rotate(120deg); }
+
+.d3-hub {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #1E293B;
+  border: 2px solid #94A3B8;
+  z-index: 2;
+}
+
+.d3-fan-up-badge {
+  position: absolute;
+  bottom: 4px;
+  font-size: 0.54rem;
+  font-weight: 800;
+  color: #1D4ED8;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.d3-fan-rim-tape {
+  position: absolute;
+  inset: -4px;
+  border: 5px dashed #64748B;
+  border-radius: 12px;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.diy3d-step-5 .d3-fan-rim-tape,
+.diy3d-step-6 .d3-fan-rim-tape {
+  opacity: 0.85;
+}
+
+/* Airflow Streams on Cube (Step 6 = Step 7 UI) */
+.d3-cube-airflow {
+  position: absolute;
+  inset: -50px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  transform-style: preserve-3d;
+}
+
+.diy3d-step-6 .d3-cube-airflow {
+  opacity: 1;
+}
+
+.d3-smog-stream {
+  position: absolute;
+  top: 46%;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #C2410C;
+  background: rgba(255, 237, 213, 0.92);
+  padding: 2px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.d3-smog-l {
+  left: -34px;
+  animation: smogPullLeft 1.6s ease-in-out infinite;
+}
+
+.d3-smog-r {
+  right: -34px;
+  animation: smogPullRight 1.6s ease-in-out infinite;
+}
+
+@keyframes smogPullLeft {
+  0% { transform: translateX(-16px); opacity: 0.35; }
+  65% { transform: translateX(18px); opacity: 1; }
+  100% { transform: translateX(28px); opacity: 0; }
+}
+
+@keyframes smogPullRight {
+  0% { transform: translateX(16px); opacity: 0.35; }
+  65% { transform: translateX(-18px); opacity: 1; }
+  100% { transform: translateX(-28px); opacity: 0; }
+}
+
+.d3-clean-plume {
+  position: absolute;
+  top: -38px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.d3-plume-arrow {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #047857;
+  background: rgba(209, 250, 229, 0.94);
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid #6EE7B7;
+  white-space: nowrap;
+  animation: cleanRise 1.4s ease-out infinite;
+}
+
+.d3-plume-arrow:nth-child(2) {
+  animation-delay: 0.65s;
+}
+
+@keyframes cleanRise {
+  0% { transform: translateY(10px); opacity: 0.25; }
+  50% { transform: translateY(-6px); opacity: 1; }
+  100% { transform: translateY(-22px); opacity: 0; }
+}
+
+/* ══════════════════════════════════════════
+   1-FILTER FAN 3D ASSEMBLY
+   ══════════════════════════════════════════ */
+.d3-single-fan {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  left: 10px;
+  top: 10px;
+  transform-style: preserve-3d;
+  transform: translateZ(18px);
+}
+
+.d3-box-face {
+  position: absolute;
+  background: linear-gradient(145deg, #E2E8F0, #CBD5E1);
+  border: 2px solid #94A3B8;
+}
+
+.d3-box-front, .d3-box-back { width: 120px; height: 120px; border-radius: 10px; }
+.d3-box-front {
+  transform: translateZ(18px);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.d3-box-back { transform: rotateY(180deg) translateZ(18px); }
+.d3-box-left, .d3-box-right { width: 36px; height: 120px; left: 42px; }
+.d3-box-left { transform: rotateY(-90deg) translateZ(60px); }
+.d3-box-right { transform: rotateY(90deg) translateZ(60px); }
+.d3-box-top, .d3-box-bottom { width: 120px; height: 36px; top: 42px; }
+.d3-box-top { transform: rotateX(90deg) translateZ(60px); }
+.d3-box-bottom { transform: rotateX(-90deg) translateZ(60px); background: #64748B; }
+
+.d3-grille {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #F1F5F9, #94A3B8);
+  border: 2px solid #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.d3-part-tag {
+  position: absolute;
+  bottom: 4px;
+  font-size: 0.52rem;
+  font-weight: 800;
+  color: #334155;
+  background: rgba(255,255,255,0.85);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.d3-single-filter {
+  position: absolute;
+  width: 116px;
+  height: 116px;
+  left: 12px;
+  top: 12px;
+  transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease;
+  transform: translateZ(-78px) scale(0.95);
+  opacity: 0.9;
+}
+
+.diy3d-step-1 .d3-single-filter { transform: translateZ(-55px); }
+.diy3d-step-2 .d3-single-filter,
+.diy3d-step-3 .d3-single-filter,
+.diy3d-step-4 .d3-single-filter,
+.diy3d-step-5 .d3-single-filter,
+.diy3d-step-6 .d3-single-filter {
+  transform: translateZ(-6px);
+  opacity: 1;
+}
+
+.d3-single-tape {
+  position: absolute;
+  width: 122px;
+  height: 122px;
+  left: 9px;
+  top: 9px;
+  transform: translateZ(-3px);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.diy3d-step-3 .d3-single-tape,
+.diy3d-step-4 .d3-single-tape,
+.diy3d-step-5 .d3-single-tape,
+.diy3d-step-6 .d3-single-tape {
+  opacity: 1;
+}
+
+.d3-tape-bar {
+  position: absolute;
+  background: #64748B;
+  border-radius: 3px;
+}
+.d3-tape-top { top: -3px; left: 10%; width: 80%; height: 6px; }
+.d3-tape-bottom { bottom: -3px; left: 10%; width: 80%; height: 6px; }
+.d3-tape-left { left: -3px; top: 10%; width: 6px; height: 80%; }
+.d3-tape-right { right: -3px; top: 10%; width: 6px; height: 80%; }
+
+.d3-airflow-single {
+  position: absolute;
+  inset: -30px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.diy3d-step-6 .d3-airflow-single { opacity: 1; }
+.d3-smog-in {
+  position: absolute;
+  left: -30px;
+  top: 44%;
+  transform: translateZ(-30px);
+}
+.d3-air-lbl--smog {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #C2410C;
+  background: #FFEDD5;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.d3-clean-out {
+  position: absolute;
+  right: -46px;
+  top: 38%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transform: translateZ(45px);
+}
+.d3-clean-wave {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #047857;
+  background: #D1FAE5;
+  padding: 2px 8px;
+  border-radius: 999px;
+  animation: smogPullLeft 1.2s ease-out infinite;
+}
+
+/* ── Player Controls ── */
+.diy3d-player {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.diy3d-play-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  background: linear-gradient(135deg, #2563EB, #1D4ED8);
+  box-shadow: 0 3px 12px rgba(37, 99, 235, 0.25);
+  transition: all 0.2s;
+}
+
+.diy3d-play-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 16px rgba(37, 99, 235, 0.35);
+}
+
+.diy3d-play-btn--playing {
+  background: linear-gradient(135deg, #EA580C, #C2410C);
+  box-shadow: 0 3px 12px rgba(234, 88, 12, 0.3);
+}
+
+.diy3d-prev-next {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.diy3d-nav-btn {
+  padding: 8px 14px;
+  border-radius: 10px;
   font-size: 0.78rem;
   font-weight: 700;
   color: var(--text-primary);
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  transition: all 0.15s;
 }
-.diy-materials {
+
+.diy3d-nav-btn:hover:not(:disabled) {
+  background: #F1F5F9;
+}
+
+.diy3d-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.diy3d-nav-btn--next {
+  background: #EA580C;
+  color: #FFFFFF;
+  border-color: #EA580C;
+}
+
+.diy3d-nav-btn--next:hover:not(:disabled) {
+  background: #C2410C;
+}
+
+.diy3d-step-counter {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+/* ══════════════════════════════════════════
+   RIGHT COLUMN: CLEAR ALL-AGES INSTRUCTIONS
+   ══════════════════════════════════════════ */
+.diy3d-steps-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.diy3d-focus-card {
+  padding: 18px;
+  background: #FFFFFF;
+  border-radius: 16px;
+  border: 2px solid #FDBA74;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.08);
+}
+
+.diy3d-focus-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.diy3d-focus-num {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: #EA580C;
+  color: #FFFFFF;
+}
+
+.diy3d-focus-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.diy3d-focus-text {
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--text-primary);
+  margin: 0 0 10px 0;
+}
+
+.diy3d-focus-why {
+  padding: 9px 12px;
+  background: #FFFBEB;
+  border-radius: 10px;
+  border: 1px solid #FDE68A;
+  font-size: 0.78rem;
+  color: #78350F;
+  line-height: 1.45;
+}
+
+/* Clickable Timeline */
+.diy3d-timeline {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 6px;
 }
-.diy-material {
+
+.diy3d-tl-item {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  padding: 8px var(--space-sm);
-  background: var(--bg-secondary);
-  border-radius: var(--radius-sm);
-}
-.diy-material-icon {
-  font-size: 1.1rem;
-  flex-shrink: 0;
-}
-.diy-material-info {
-  display: flex;
-  flex-direction: column;
-}
-.diy-material-name {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-.diy-material-meta {
-  font-size: 0.6rem;
-  color: var(--text-secondary);
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1.5px solid #E2E8F0;
+  text-align: left;
+  transition: all 0.15s;
 }
 
-/* ── Steps with Progress ── */
-.diy-steps-header {
+.diy3d-tl-item:hover {
+  background: #FFFFFF;
+  border-color: #FDBA74;
+}
+
+.diy3d-tl-item--active {
+  background: #FFFFFF;
+  border-color: #EA580C;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.14);
+}
+
+.diy3d-tl-item--done {
+  border-color: #86EFAC;
+  background: #F0FDF4;
+}
+
+.diy3d-tl-badge {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+  font-weight: 800;
+  background: #FFEDD5;
+  color: #C2410C;
+  flex-shrink: 0;
+}
+
+.diy3d-tl-item--active .diy3d-tl-badge {
+  background: #EA580C;
+  color: #FFFFFF;
+}
+
+.diy3d-tl-item--done .diy3d-tl-badge {
+  background: #10B981;
+  color: #FFFFFF;
+}
+
+.diy3d-tl-label {
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+/* Shopping Checklist */
+.diy3d-checklist {
+  padding: 14px 16px;
+  background: #FFFFFF;
+  border-radius: 14px;
+  border: 1px solid #E2E8F0;
+}
+
+.diy3d-checklist-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-.diy-progress-text {
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: var(--color-primary);
-}
-.diy-progress-bar {
-  height: 4px;
-  background: #E0E0E0;
-  border-radius: 2px;
-  overflow: hidden;
-}
-.diy-progress-fill {
-  height: 100%;
-  background: var(--color-primary);
-  border-radius: 2px;
-  transition: width 0.3s ease;
-}
-
-.diy-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.diy-step {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-sm);
-  padding: 8px var(--space-sm);
-  border-radius: var(--radius-sm);
-  background: var(--bg-primary);
-  border: 1px solid var(--border-light);
-  cursor: pointer;
-  transition: all 0.15s;
-  text-align: left;
-  width: 100%;
-}
-.diy-step:hover { background: var(--bg-secondary); }
-.diy-step--done {
-  background: #F1F8E9;
-  border-color: #C5E1A5;
-}
-
-.diy-step-check {
-  min-width: 24px; height: 24px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 0.65rem; font-weight: 700;
-  background: var(--bg-secondary);
-  color: var(--text-secondary);
-  border: 1.5px solid var(--border-light);
-  flex-shrink: 0;
-  transition: all 0.2s;
-}
-.diy-step-check--done {
-  background: var(--color-primary);
-  color: white;
-  border-color: var(--color-primary);
-}
-
-.diy-step-content {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.diy-step-text {
   font-size: 0.78rem;
   color: var(--text-primary);
-  line-height: 1.4;
+  margin-bottom: 10px;
 }
-.diy-step-text--done {
+
+.diy3d-checklist-head span {
+  font-weight: 800;
+  color: #EA580C;
+}
+
+.diy3d-materials-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.diy3d-mat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 9px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  font-size: 0.76rem;
+  color: var(--text-primary);
+  text-align: left;
+  transition: all 0.15s;
+}
+
+.diy3d-mat-item--done {
+  background: #ECFDF5;
+  border-color: #86EFAC;
+  color: #065F46;
+}
+
+.diy3d-mat-item--done .diy3d-mat-name {
   text-decoration: line-through;
+  opacity: 0.75;
+}
+
+.diy3d-mat-check {
+  font-size: 0.9rem;
+  color: #059669;
+}
+
+.diy3d-mat-name {
+  flex: 1;
+  font-weight: 600;
+}
+
+.diy3d-mat-qty {
+  font-weight: 800;
+  color: #2563EB;
+}
+
+.diy3d-mat-cost {
+  font-size: 0.7rem;
   color: var(--text-muted);
 }
-.diy-step-tip {
-  font-size: 0.62rem;
-  color: var(--text-secondary);
-  font-style: italic;
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .diy3d-studio {
+    grid-template-columns: 1fr;
+  }
+  .diy3d-impact-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-/* ── Completion Banner ── */
-.diy-complete {
-  padding: var(--space-md);
-  background: #E8F5E9;
-  color: #1B5E20;
-  border: 1px solid #A5D6A7;
-  border-radius: var(--radius-md);
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-align: center;
-  animation: diyFadeIn 0.3s ease;
-}
-
-@media (max-width: 640px) {
-  .diy-config { flex-direction: column; align-items: flex-start; gap: var(--space-md); }
-  .diy-config-result { margin-left: 0; }
-  .diy-materials { grid-template-columns: 1fr; }
+@media (max-width: 540px) {
+  .diy3d-wrap {
+    padding: 16px;
+  }
+  .diy3d-timeline {
+    grid-template-columns: 1fr;
+  }
+  .diy3d-stage {
+    height: 290px;
+  }
 }
