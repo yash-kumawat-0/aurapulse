@@ -197,6 +197,9 @@ export async function multiCompare(req, res, next) {
             maskType: leg.mask_type || mask_type || 'none',
           });
           return {
+            role: leg.role || null,
+            coverage_pct: leg.coverage_pct || null,
+            line_name: leg.line_name || null,
             mode,
             duration_min: dur,
             distance_km: dist,
