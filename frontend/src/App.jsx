@@ -11,7 +11,6 @@ import DiurnalTimeline from './components/DiurnalTimeline/DiurnalTimeline.jsx';
 import FamilyProfileList from './components/FamilyProfileList/FamilyProfileList.jsx';
 import FamilyAdviceCard from './components/FamilyAdviceCard/FamilyAdviceCard.jsx';
 import IndoorAirSimulator from './components/IndoorAirSimulator/IndoorAirSimulator.jsx';
-import DiyPurifierGuide from './components/DiyPurifierGuide/DiyPurifierGuide.jsx';
 import CommuteDoseCalculator from './components/CommuteDoseCalculator/CommuteDoseCalculator.jsx';
 import WhatsAppShareModal from './components/WhatsAppShareModal/WhatsAppShareModal.jsx';
 import Footer from './components/Footer/Footer.jsx';
@@ -76,7 +75,6 @@ function App() {
               {activeTab === 'indoor' && (
                 <section className="tab-panel" id="indoor">
                   <IndoorAirSimulator />
-                  <DiyPurifierGuide />
                 </section>
               )}
             </div>
