@@ -2,10 +2,10 @@
 // IndoorAirSimulator — Minimal 3 Inputs → Simulate
 // On Simulate:
 //   1) ONE Big Clear Summary Line (auto-volume + action)
-//   2) Key Numbers Range Container with Safe 35 Marker
-//   3) Big Window 3D DIY Purifier Animation (auto volume)
+//   2) Key Numbers Range Card with Safe 35 Marker
+//   3) Clean Interactive 3D DIY Purifier Builder
 // ============================================
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useUser } from '../../context/UserContext.jsx';
 import { useAqi } from '../../context/AqiContext.jsx';
 import DiyPurifierGuide from '../DiyPurifierGuide/DiyPurifierGuide.jsx';
@@ -55,7 +55,7 @@ function getPmLabel(pm) {
 function PmRangeRow({ label, value, maxRange }) {
   const safeVal = 35;
   const pct = Math.min(Math.max((value / maxRange) * 100, 3), 100);
-  const safePct = Math.min((safeVal / maxRange) * 100, 92);
+  const safePct = Math.min(Math.max((safeVal / maxRange) * 100, 8), 90);
   const color = getPmColor(value);
 
   return (
@@ -73,9 +73,12 @@ function PmRangeRow({ label, value, maxRange }) {
           className="ia-range-safe-line"
           style={{ left: `${safePct}%` }}
           title="WHO Safe Limit: 35 µg/m³"
-        >
-          <span className="ia-range-safe-tag">Safe 35</span>
-        </div>
+        />
+      </div>
+      <div className="ia-range-scale-foot">
+        <span>0</span>
+        <span className="ia-safe-foot-lbl">Safe ≤ 35 µg/m³</span>
+        <span>{Math.round(maxRange)}</span>
       </div>
     </div>
   );
@@ -96,6 +99,8 @@ function IndoorAirSimulator() {
   const [hasSimulated, setHasSimulated] = useState(false);
   const [needsRefresh, setNeedsRefresh] = useState(false);
   const [simulating, setSimulating] = useState(false);
+
+  const resultsRef = useRef(null);
 
   useEffect(() => {
     if (location && !currentAqi && !loading) {
@@ -125,6 +130,9 @@ function IndoorAirSimulator() {
     setSimulating(false);
     setHasSimulated(true);
     setNeedsRefresh(false);
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
   };
 
   // Auto-detected live volume & target CADR
@@ -165,7 +173,9 @@ function IndoorAirSimulator() {
   })();
 
   const diyAfterPm = diySimulation?.indoor_pm25 ?? Math.max(12, Math.round((sim?.indoor_pm25 || 120) * 0.25));
-  const cadrMax = Math.max(effectiveCadrNeed, diyRec?.estimated_cadr || 350, 450);
+  const diyTotalCadr = (diyRec?.estimated_cadr || 350) * (diyRec?.units_needed || 1);
+  const cadrMax = Math.max(effectiveCadrNeed, diyTotalCadr, 450);
+  const cadrNeedPct = Math.min(Math.max((sim?.cadr_needed_for_safe || 0) / cadrMax * 100, 6), 92);
 
   return (
     <div className="ia-shell">
@@ -178,20 +188,20 @@ function IndoorAirSimulator() {
             <span className="ia-setup-icon">🏠</span>
             <div>
               <h3 className="ia-setup-title">Indoor Air Planner</h3>
-              <p className="ia-setup-sub">Pick 3 room details — volume &amp; purifier size are detected automatically.</p>
+              <p className="ia-setup-sub">Pick 3 room details — volume &amp; purifier size update automatically.</p>
             </div>
           </div>
           <div className="ia-volume-pill">
-            Auto Volume: <strong>{volumeCuFt.toLocaleString()} ft³ ({volumeM3} m³)</strong> · Target: <strong>{autoTargetCadr} m³/h</strong>
+            Room: <strong>{volumeM3} m³</strong> · Target: <strong>{autoTargetCadr} m³/h</strong>
           </div>
         </div>
 
         <div className="ia-three-inputs">
-          {/* 1. Room Type & Size [Overall Room Volume] */}
+          {/* 1. Room Type & Size */}
           <div className="ia-input-box">
             <div className="ia-box-top">
               <span className="ia-step-badge">1</span>
-              <span className="ia-box-label">Room Type &amp; Size (Auto Volume)</span>
+              <span className="ia-box-label">Room Type &amp; Size</span>
               <button
                 type="button"
                 className="ia-size-toggle"
@@ -324,28 +334,28 @@ function IndoorAirSimulator() {
                 : '🔬 Simulate Indoor Air'}
           </button>
           {needsRefresh && (
-            <span className="ia-stale-hint">Inputs changed — click Simulate to refresh</span>
+            <span className="ia-stale-hint">Inputs changed — tap Update to refresh</span>
           )}
         </div>
       </div>
 
       {/* ══════════════════════════════════════════
-          PART 2: CLEAN SIMULATE CONTAINER
-          1 Big Line + Range Chart + Big 3D DIY Window
+          PART 2: CLEAN UNCLUTTERED RESULTS
+          1 Big Line + Clean Key Numbers + Simple DIY Guide
           ══════════════════════════════════════════ */}
       {hasSimulated && sim && (
-        <div className="ia-results-container">
+        <div ref={resultsRef} id="ia-results" className="ia-results-container">
           {/* ONE BIG LINE Summary */}
           <div className={`ia-one-line ${isUrgent ? 'ia-one-line--warn' : 'ia-one-line--safe'}`}>
             <span className="ia-one-line-icon">{isUrgent ? '⚠️' : '✅'}</span>
             <span className="ia-one-line-text">{oneBigLine}</span>
           </div>
 
-          {/* Key Numbers Container — Ranges with Safe Marker (35 µg/m³) */}
+          {/* Key Numbers Container — Clean Cards + Bottom Scale Labels */}
           <div className="ia-ranges-panel" aria-label="Air Quality Ranges and Safe Limit Marker">
             <div className="ia-ranges-head">
-              <span>📊 Key Numbers &amp; Safe Range (Safe ≤ 35 µg/m³)</span>
-              <span className="ia-ranges-vol">Detected Volume: <strong>{volumeM3} m³</strong></span>
+              <span>📊 Key Numbers &amp; Safe Range</span>
+              <span className="ia-ranges-vol">Room: <strong>{volumeM3} m³</strong></span>
             </div>
 
             <div className="ia-ranges-grid">
@@ -355,32 +365,37 @@ function IndoorAirSimulator() {
 
               <div className="ia-range-item">
                 <div className="ia-range-top">
-                  <span className="ia-range-name">🌀 Purifier CADR (Room: {volumeM3} m³)</span>
+                  <span className="ia-range-name">🌀 Purifier Output (CADR)</span>
                   <span className="ia-range-pill" style={{ color: '#1D4ED8', background: '#EFF6FF' }}>
-                    Need <strong>{sim.cadr_needed_for_safe}</strong> / DIY <strong>{(diyRec?.estimated_cadr || 350) * (diyRec?.units_needed || 1)} m³/h</strong>
+                    DIY <strong>{diyTotalCadr}</strong> m³/h
                   </span>
                 </div>
                 <div className="ia-range-track">
                   <div
                     className="ia-range-fill"
                     style={{
-                      width: `${Math.min(((diyRec?.estimated_cadr || 350) * (diyRec?.units_needed || 1) / cadrMax) * 100, 100)}%`,
+                      width: `${Math.min(Math.max((diyTotalCadr / cadrMax) * 100, 6), 100)}%`,
                       background: '#2563EB',
                     }}
                   />
                   <div
                     className="ia-range-safe-line"
-                    style={{ left: `${Math.min((sim.cadr_needed_for_safe / cadrMax) * 100, 94)}%` }}
+                    style={{ left: `${cadrNeedPct}%` }}
                     title={`Needed CADR: ${sim.cadr_needed_for_safe} m³/h`}
-                  >
-                    <span className="ia-range-safe-tag ia-range-safe-tag--blue">Need {sim.cadr_needed_for_safe}</span>
-                  </div>
+                  />
+                </div>
+                <div className="ia-range-scale-foot">
+                  <span>0</span>
+                  <span className="ia-safe-foot-lbl ia-safe-foot-lbl--blue">
+                    Need {sim.cadr_needed_for_safe} m³/h
+                  </span>
+                  <span>{cadrMax}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Big Interactive 3D DIY Purifier Window (auto-detects room volume) */}
+          {/* Simple Interactive 3D DIY Purifier Builder */}
           <DiyPurifierGuide
             sim={sim}
             diySimulation={diySimulation}

@@ -1,6 +1,6 @@
 // ============================================
-// DiyPurifierGuide — Large 3D Animation Window
-// Auto-detects room volume & selects build tier.
+// DiyPurifierGuide — Clean Uncluttered 3D Purifier
+// Simple layout, crisp centered stage, unified controls
 // ============================================
 import { useState, useEffect, useRef } from 'react';
 import './DiyPurifierGuide.css';
@@ -12,42 +12,37 @@ function getMinimalSteps(isSingleFilter, beforePm, afterPm) {
       {
         num: 1,
         icon: '🛒',
-        title: 'Gather Items',
-        instruction: 'Get 1 Box Fan, 1 HEPA/MERV-13 filter (same size as fan), and 1 roll of duct tape.',
-        tip: 'Lay them out on any flat table.',
-        callout: 'Fan + 1 Filter + Tape',
+        title: 'Gather Parts',
+        instruction: 'Keep 1 box fan, 1 same-size HEPA/MERV-13 filter, and duct tape ready on a flat table.',
+        tip: 'Simplest quick setup for smaller rooms.',
       },
       {
         num: 2,
         icon: '➡️',
         title: 'Point Arrow In',
-        instruction: 'Find the printed arrow (➔) on the filter edge and point it INTO the back of the fan.',
-        tip: 'Air must flow in the arrow direction.',
-        callout: 'Arrow ➔ points INTO fan',
+        instruction: 'Check the printed airflow arrow on the filter frame so it points INTO the back of the fan.',
+        tip: 'Air must travel in the same direction as the arrow.',
       },
       {
         num: 3,
         icon: '🔧',
         title: 'Tape All 4 Sides',
-        instruction: 'Place the filter flush against the back grille and tape all 4 edges tightly with zero gaps.',
-        tip: 'No air cracks means 100% filtration.',
-        callout: 'Seal all 4 filter edges',
+        instruction: 'Press the filter flat against the back grille and tape all 4 edges with zero air gaps.',
+        tip: 'Taping tightly forces all smog through the filter media.',
       },
       {
         num: 4,
         icon: '📦',
-        title: 'Stand Steady',
-        instruction: 'Check that the fan sits flat and stable upright with the front blowing toward the room.',
-        tip: 'Keep safe away from curtains.',
-        callout: 'Front blows clean air out',
+        title: 'Stand Upright',
+        instruction: 'Place the unit on a sturdy flat surface with the front blowing unobstructed into the room.',
+        tip: 'Leave space behind the intake for smooth airflow.',
       },
       {
         num: 5,
         icon: '✨',
         title: 'Switch On',
-        instruction: `Turn on Medium/High speed. Lowers room PM2.5 by −${dropUg} µg/m³ (down to ~${Math.round(afterPm)} µg/m³).`,
-        tip: 'Replace filter when it turns dark grey.',
-        callout: `Clean Air: ${Math.round(beforePm)} ➔ ${Math.round(afterPm)} µg/m³`,
+        instruction: `Run on Medium/High speed to cut PM2.5 by −${dropUg} µg/m³ (down to ~${Math.round(afterPm)} µg/m³).`,
+        tip: 'Replace the filter once it turns dark grey.',
       },
     ];
   }
@@ -56,42 +51,37 @@ function getMinimalSteps(isSingleFilter, beforePm, afterPm) {
     {
       num: 1,
       icon: '🛒',
-      title: 'Gather Items',
-      instruction: 'Get 1 Box Fan (20"), 4 MERV-13/HEPA filters, 1 cardboard square, and duct tape.',
-      tip: 'Beats ₹15,000+ store purifiers for ~₹1,500.',
-      callout: 'Fan + 4 Filters + Cardboard + Tape',
+      title: 'Gather Parts',
+      instruction: 'Prepare 1 box fan (20"), 4 MERV-13/HEPA filters, 1 square cardboard base, and duct tape.',
+      tip: 'Performs like a ₹15,000 purifier for around ₹1,500.',
     },
     {
       num: 2,
       icon: '➡️',
       title: 'Arrows Inward',
-      instruction: 'Check the edge of each filter: point every printed arrow (➔) INWARD toward the inside of the box.',
-      tip: 'All 4 sides will pull room air inside.',
-      callout: 'All 4 Arrows ➔ point INWARD',
+      instruction: 'Point the airflow arrow on all 4 filter edges INWARD toward the center of the cube.',
+      tip: 'All four sides pull polluted room air into the box.',
     },
     {
       num: 3,
       icon: '📦',
-      title: 'Form & Tape Cube',
-      instruction: 'Stand the 4 filters in a square wall and tape every vertical corner seam airtight.',
-      tip: 'Zero cracks forces all smog through filters.',
-      callout: '4 filters taped at 90° corners',
+      title: 'Tape 4 Corners',
+      instruction: 'Stand the 4 filters into a square ring and tape every vertical corner seam airtight.',
+      tip: 'Sealed corners stop polluted air from bypassing filters.',
     },
     {
       num: 4,
       icon: '🟫',
       title: 'Seal Bottom',
-      instruction: 'Tape the cardboard square cleanly onto the bottom of the filter cube.',
-      tip: 'Blocks dust from lifting off the floor.',
-      callout: 'Cardboard sealed underneath',
+      instruction: 'Tape the square cardboard sheet flat across the bottom of the filter cube.',
+      tip: 'Keeps floor dust out and completes the chamber.',
     },
     {
       num: 5,
       icon: '🌬️',
       title: 'Fan Top & Run',
-      instruction: `Lay fan flat on top blowing UP ⬆️, tape edges, and run! Drops room by −${dropUg} µg/m³ (to ~${Math.round(afterPm)}).`,
-      tip: 'Replace filters every 2–4 months.',
-      callout: `Fan Blows UP ⬆️ · ${Math.round(beforePm)} ➔ ${Math.round(afterPm)} µg/m³`,
+      instruction: `Set the fan on top blowing UP ⬆️, seal the rim, and run! Cuts PM2.5 by −${dropUg} µg/m³ (to ~${Math.round(afterPm)}).`,
+      tip: 'Swap filters every 2–4 months depending on smog.',
     },
   ];
 }
@@ -105,11 +95,8 @@ function DiyPurifierGuide({
   purifierRec,
   isUrgent,
   roomVolumeM3,
-  roomVolumeCuFt,
 }) {
-  // Auto-detect live room volume & build tier automatically
   const detectedVolM3 = roomVolumeM3 ?? sim?.room_volume_m3 ?? 42.5;
-  const detectedVolCuFt = roomVolumeCuFt ?? Math.round(detectedVolM3 * 35.3147);
   const autoNeedCadr = Math.max(sim?.cadr_needed_for_safe || 0, Math.round(detectedVolM3 * 5));
   const autoRecommendedStyle = (detectedVolM3 < 30 && autoNeedCadr <= 180) ? 'single' : 'cube';
 
@@ -122,7 +109,6 @@ function DiyPurifierGuide({
 
   const dragRef = useRef({ active: false, startX: 0, startY: 0, baseRotX: -18, baseRotY: -32 });
 
-  // Automatically switch DIY purifier style when detected room volume changes
   useEffect(() => {
     setBuildStyle(autoRecommendedStyle);
   }, [autoRecommendedStyle, detectedVolM3]);
@@ -141,8 +127,8 @@ function DiyPurifierGuide({
         Math.round(
           (((sim?.indoor_pm25 || 120) * ((sim?.ach_rate || 1.5) + 0.3)) /
             ((sim?.ach_rate || 1.5) + 0.3 + activeCadr / Math.max(detectedVolM3, 10))) *
-            10
-        ) / 10
+            10,
+        ) / 10,
       );
 
   const estCost = (isSingle ? 800 : (detectedVolM3 > 75 ? 2200 : 1500)) * autoUnits;
@@ -160,7 +146,7 @@ function DiyPurifierGuide({
         }
         return prev + 1;
       });
-    }, 3200);
+    }, 3000);
     return () => clearInterval(id);
   }, [autoPlay, steps.length]);
 
@@ -196,20 +182,15 @@ function DiyPurifierGuide({
   const filterQty = isSingle ? autoUnits : (detectedVolM3 > 75 ? 5 : 4) * autoUnits;
 
   return (
-    <div className={`diy3d-wrap ${isUrgent ? 'diy3d-wrap--urgent' : 'diy3d-wrap--optional'}`}>
-      {/* ── Header with Auto-Detected Volume Pill ── */}
+    <section className={`diy3d-wrap ${isUrgent ? 'diy3d-wrap--urgent' : 'diy3d-wrap--optional'}`} aria-label="DIY Purifier Guide">
+      {/* ── Clean Compact Header ── */}
       <div className="diy3d-header">
         <div className="diy3d-header-left">
-          <div className="diy3d-title-row">
-            <h4 className="diy3d-title">🛠️ DIY Purifier Maker (3D Animation)</h4>
-            <span className="diy3d-impact-pill">
-              Auto: <strong>{detectedVolM3} m³</strong> ({detectedVolCuFt.toLocaleString()} ft³) → <strong>{autoUnits}× {isSingle ? '1-Filter Fan' : '4-Filter Cube'}</strong> ({activeCadr} m³/h · ~₹{estCost})
-            </span>
-          </div>
+          <h4 className="diy3d-title">🛠️ DIY Purifier Guide</h4>
           <p className="diy3d-subtitle">
             {purifierRec?.diy_box_sufficient
-              ? `1 unit drops room PM2.5 from ${Math.round(beforePm)} to ${Math.round(afterPm)} µg/m³.`
-              : `Auto-sized ${autoUnits} unit(s) to cover your ${detectedVolM3} m³ room (${Math.round(beforePm)} ➔ ${Math.round(afterPm)} µg/m³).`}
+              ? `1× ${isSingle ? '1-Filter Fan' : '4-Filter Cube'} (${activeCadr} m³/h · ~₹${estCost}) lowers indoor air to ~${Math.round(afterPm)} µg/m³.`
+              : `Recommended: ${autoUnits}× ${isSingle ? '1-Filter Fan' : '4-Filter Cube'} (${activeCadr} m³/h · ~₹${estCost}) → ~${Math.round(afterPm)} µg/m³.`}
           </p>
         </div>
 
@@ -231,25 +212,10 @@ function DiyPurifierGuide({
         </div>
       </div>
 
-      {/* ── Big 3D Window + Clean Step Controls ── */}
+      {/* ── Main Interactive Studio: 3D Preview + Clean Step Guide ── */}
       <div className="diy3d-studio">
+        {/* Clean 3D Stage */}
         <div className="diy3d-viewport-col">
-          <div className="diy3d-stage-toolbar">
-            <span className="diy3d-drag-hint">✋ Drag model to inspect in 3D</span>
-            <div className="diy3d-cam-btns">
-              <button type="button" className="diy3d-cam-btn" onClick={() => applyPreset('iso')}>📐 3D</button>
-              <button type="button" className="diy3d-cam-btn" onClick={() => applyPreset('front')}>👀 Front</button>
-              <button type="button" className="diy3d-cam-btn" onClick={() => applyPreset('top')}>⬆️ Top</button>
-              <button
-                type="button"
-                className={`diy3d-cam-btn ${autoSpin ? 'diy3d-cam-btn--on' : ''}`}
-                onClick={() => applyPreset('spin')}
-              >
-                🔄 Spin
-              </button>
-            </div>
-          </div>
-
           <div
             className="diy3d-stage"
             onPointerDown={handlePointerDown}
@@ -257,9 +223,21 @@ function DiyPurifierGuide({
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
           >
-            <div className="diy3d-stage-callout">
-              <span>{currentStep.icon}</span>
-              <strong>Step {currentStep.num}:</strong> {currentStep.callout}
+            <div className="diy3d-stage-pill">
+              {currentStep.icon} Step {currentStep.num}/{steps.length} · {currentStep.title}
+            </div>
+
+            <div className="diy3d-cam-overlay" onPointerDown={(e) => e.stopPropagation()}>
+              <button type="button" className="diy3d-cam-btn" onClick={() => applyPreset('iso')}>3D</button>
+              <button type="button" className="diy3d-cam-btn" onClick={() => applyPreset('front')}>Front</button>
+              <button type="button" className="diy3d-cam-btn" onClick={() => applyPreset('top')}>Top</button>
+              <button
+                type="button"
+                className={`diy3d-cam-btn ${autoSpin ? 'diy3d-cam-btn--on' : ''}`}
+                onClick={() => applyPreset('spin')}
+              >
+                Spin
+              </button>
             </div>
 
             <div className="diy3d-scale-wrap">
@@ -281,7 +259,6 @@ function DiyPurifierGuide({
                             <span className="d3-hub" />
                           </div>
                         </div>
-                        <span className="d3-part-tag">FAN</span>
                       </div>
                       <div className="d3-box-face d3-box-back" />
                       <div className="d3-box-face d3-box-top" />
@@ -294,7 +271,6 @@ function DiyPurifierGuide({
                       <div className="d3-filter-panel">
                         <div className="d3-pleats" />
                         <span className="d3-filter-badge">HEPA</span>
-                        <span className="d3-arrow-in">➔ IN</span>
                       </div>
                     </div>
 
@@ -304,44 +280,28 @@ function DiyPurifierGuide({
                       <span className="d3-tape-bar d3-tape-left" />
                       <span className="d3-tape-bar d3-tape-right" />
                     </div>
-
-                    <div className="d3-airflow-single">
-                      <div className="d3-smog-in">
-                        <span className="d3-air-lbl d3-air-lbl--smog">Smog IN</span>
-                      </div>
-                      <div className="d3-clean-out">
-                        <span className="d3-clean-wave">Clean Air ➔</span>
-                      </div>
-                    </div>
                   </>
                 ) : (
                   <>
                     <div className="d3-wall d3-wall-front">
                       <div className="d3-filter-panel">
                         <div className="d3-pleats" />
-                        <span className="d3-filter-badge">FILTER 1</span>
-                        <span className="d3-arrow-in">➔ IN</span>
+                        <span className="d3-filter-badge">FILTER</span>
                       </div>
                     </div>
                     <div className="d3-wall d3-wall-back">
                       <div className="d3-filter-panel">
                         <div className="d3-pleats" />
-                        <span className="d3-filter-badge">FILTER 2</span>
-                        <span className="d3-arrow-in">➔ IN</span>
                       </div>
                     </div>
                     <div className="d3-wall d3-wall-left">
                       <div className="d3-filter-panel">
                         <div className="d3-pleats" />
-                        <span className="d3-filter-badge">FILTER 3</span>
-                        <span className="d3-arrow-in">➔ IN</span>
                       </div>
                     </div>
                     <div className="d3-wall d3-wall-right">
                       <div className="d3-filter-panel">
                         <div className="d3-pleats" />
-                        <span className="d3-filter-badge">FILTER 4</span>
-                        <span className="d3-arrow-in">➔ IN</span>
                       </div>
                     </div>
 
@@ -350,9 +310,7 @@ function DiyPurifierGuide({
                     <div className="d3-corner-tape d3-ct-bl" />
                     <div className="d3-corner-tape d3-ct-br" />
 
-                    <div className="d3-cardboard">
-                      <span className="d3-cardboard-lbl">CARDBOARD BASE</span>
-                    </div>
+                    <div className="d3-cardboard" />
 
                     <div className="d3-top-fan">
                       <div className="d3-fan-frame">
@@ -364,41 +322,65 @@ function DiyPurifierGuide({
                             <span className="d3-hub" />
                           </div>
                         </div>
-                        <span className="d3-fan-up-badge">BLOWS UP ⬆️</span>
                       </div>
                       <div className="d3-fan-rim-tape" />
-                    </div>
-
-                    <div className="d3-cube-airflow">
-                      <span className="d3-smog-stream d3-smog-l">💨 Smog ➔</span>
-                      <span className="d3-smog-stream d3-smog-r">⬅ Smog 💨</span>
-                      <div className="d3-clean-plume">
-                        <span className="d3-plume-arrow">⬆️ Clean Air</span>
-                      </div>
                     </div>
                   </>
                 )}
               </div>
             </div>
-          </div>
 
-          <div className="diy3d-player">
+            {visualStep === 6 && (
+              <div className="diy3d-clean-badge">
+                ✨ Clean Air · ~{Math.round(afterPm)} µg/m³
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Clean Step Guide & Unified Controls */}
+        <div className="diy3d-steps-col">
+          <div className="diy3d-step-top">
+            <div className="diy3d-stepper" role="tablist" aria-label="Assembly steps">
+              {steps.map((s, idx) => (
+                <button
+                  key={s.num}
+                  type="button"
+                  role="tab"
+                  aria-selected={idx === step}
+                  className={`diy3d-step-pill ${idx === step ? 'diy3d-step-pill--active' : ''} ${idx < step ? 'diy3d-step-pill--done' : ''}`}
+                  onClick={() => { setAutoPlay(false); setStep(idx); }}
+                >
+                  <span className="diy3d-tl-badge">{idx < step ? '✓' : s.num}</span>
+                  <span className="diy3d-step-name">{s.title}</span>
+                </button>
+              ))}
+            </div>
+
             <button
               type="button"
               className={`diy3d-play-btn ${autoPlay ? 'diy3d-play-btn--playing' : ''}`}
               onClick={togglePlayMovie}
             >
-              {autoPlay ? '⏸ Pause' : '▶ Watch Animation'}
+              {autoPlay ? '⏸ Pause' : '▶ Play'}
             </button>
+          </div>
 
-            <div className="diy3d-prev-next">
+          <div className="diy3d-focus-card">
+            <h5 className="diy3d-focus-title">{currentStep.icon} Step {currentStep.num}: {currentStep.title}</h5>
+            <p className="diy3d-focus-text">{currentStep.instruction}</p>
+            <div className="diy3d-focus-why">
+              💡 {currentStep.tip}
+            </div>
+
+            <div className="diy3d-card-nav">
               <button
                 type="button"
                 className="diy3d-nav-btn"
                 disabled={step === 0}
                 onClick={() => { setAutoPlay(false); setStep((s) => Math.max(0, s - 1)); }}
               >
-                ← Back
+                ← Prev
               </button>
               <span className="diy3d-step-counter">
                 <strong>{step + 1}</strong> / {steps.length}
@@ -413,37 +395,9 @@ function DiyPurifierGuide({
               </button>
             </div>
           </div>
-        </div>
-
-        {/* RIGHT: 5 Clean Step Pills + Clear Focus Card + Compact Materials */}
-        <div className="diy3d-steps-col">
-          <div className="diy3d-stepper">
-            {steps.map((s, idx) => (
-              <button
-                key={s.num}
-                type="button"
-                className={`diy3d-step-pill ${idx === step ? 'diy3d-step-pill--active' : ''} ${idx < step ? 'diy3d-step-pill--done' : ''}`}
-                onClick={() => { setAutoPlay(false); setStep(idx); }}
-              >
-                <span className="diy3d-tl-badge">{idx < step ? '✓' : s.num}</span>
-                <span>{s.title}</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="diy3d-focus-card">
-            <div className="diy3d-focus-head">
-              <span className="diy3d-focus-num">Step {currentStep.num}</span>
-              <h5 className="diy3d-focus-title">{currentStep.icon} {currentStep.title}</h5>
-            </div>
-            <p className="diy3d-focus-text">{currentStep.instruction}</p>
-            <div className="diy3d-focus-why">
-              💡 {currentStep.tip}
-            </div>
-          </div>
 
           <div className="diy3d-items-bar">
-            <span className="diy3d-items-label">Items Needed:</span>
+            <span className="diy3d-items-label">Needed:</span>
             <div className="diy3d-items-chips">
               <span className="diy3d-item-chip">💨 {autoUnits}× Box Fan</span>
               <span className="diy3d-item-chip">🧹 {filterQty}× HEPA Filter</span>
@@ -453,7 +407,7 @@ function DiyPurifierGuide({
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 

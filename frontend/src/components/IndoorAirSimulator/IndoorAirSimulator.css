@@ -1,12 +1,12 @@
 /* ============================================
    IndoorAirSimulator — Minimal 3-Input Panel +
-   One Big Line Summary + Range Safe-Marker Chart
+   Clean Results Cards + Safe Scale Bars
    ============================================ */
 
 .ia-shell {
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 18px;
 }
 
 /* ══════════════════════════════════════════
@@ -15,12 +15,12 @@
 .ia-setup-card {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding: 26px;
+  gap: 18px;
+  padding: 24px;
   background: var(--bg-primary);
-  border-radius: 20px;
+  border-radius: 18px;
   border: 1px solid var(--border-light);
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 2px 10px rgba(21, 101, 192, 0.04);
 }
 
 .ia-setup-header {
@@ -38,36 +38,36 @@
 }
 
 .ia-setup-icon {
-  width: 46px;
-  height: 46px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  border-radius: 14px;
+  font-size: 1.45rem;
+  border-radius: 12px;
   background: linear-gradient(135deg, #DBEAFE, #E0E7FF);
   flex-shrink: 0;
 }
 
 .ia-setup-title {
-  font-size: 1.2rem;
+  font-size: 1.18rem;
   font-weight: 800;
   color: var(--text-primary);
   margin: 0;
 }
 
 .ia-setup-sub {
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   color: var(--text-secondary);
   margin: 2px 0 0 0;
 }
 
 .ia-volume-pill {
-  padding: 7px 14px;
-  background: #F1F5F9;
-  border: 1px solid #CBD5E1;
+  padding: 6px 14px;
+  background: var(--bg-accent-soft);
+  border: 1px solid var(--border-accent-soft);
   border-radius: 999px;
-  font-size: 0.86rem;
+  font-size: 0.84rem;
   color: var(--text-secondary);
 }
 
@@ -79,14 +79,14 @@
 .ia-three-inputs {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .ia-input-box {
-  padding: 18px 20px;
+  padding: 16px 18px;
   background: #F8FAFC;
   border: 1px solid #E2E8F0;
-  border-radius: 16px;
+  border-radius: 14px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -113,7 +113,7 @@
 }
 
 .ia-box-label {
-  font-size: 0.98rem;
+  font-size: 0.96rem;
   font-weight: 700;
   color: var(--text-primary);
   flex: 1;
@@ -140,12 +140,12 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 14px 10px;
+  padding: 13px 10px;
   background: #FFFFFF;
   border: 2px solid #E2E8F0;
-  border-radius: 14px;
+  border-radius: 13px;
   cursor: pointer;
-  transition: all 0.18s ease;
+  transition: all 0.16s ease;
   text-align: center;
 }
 
@@ -161,9 +161,9 @@
   box-shadow: 0 4px 14px rgba(37, 99, 235, 0.14);
 }
 
-.ia-choice-emoji { font-size: 1.55rem; line-height: 1.1; }
-.ia-choice-name { font-size: 0.92rem; font-weight: 700; color: var(--text-primary); }
-.ia-choice-meta { font-size: 0.78rem; color: var(--text-secondary); }
+.ia-choice-emoji { font-size: 1.5rem; line-height: 1.1; }
+.ia-choice-name { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); }
+.ia-choice-meta { font-size: 0.76rem; color: var(--text-secondary); }
 
 .ia-custom-size {
   display: grid;
@@ -193,26 +193,27 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: 12px;
 }
 
 .ia-simulate-cta {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 14px 30px;
+  padding: 13px 28px;
   background: linear-gradient(135deg, #2563EB, #1D4ED8);
   color: #FFFFFF;
-  font-size: 1rem;
+  font-size: 0.98rem;
   font-weight: 800;
-  border-radius: 14px;
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.28);
+  border-radius: 13px;
+  box-shadow: 0 5px 18px rgba(37, 99, 235, 0.25);
   transition: all 0.2s ease;
 }
 
 .ia-simulate-cta:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 26px rgba(37, 99, 235, 0.36);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.34);
 }
 
 .ia-simulate-cta:disabled {
@@ -222,31 +223,28 @@
 }
 
 .ia-stale-hint {
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   font-weight: 600;
-  color: #D97706;
+  color: #B45309;
   background: #FEF3C7;
   padding: 6px 14px;
   border-radius: 999px;
 }
 
 /* ══════════════════════════════════════════
-   PART 2: CLEAN RESULTS CONTAINER
+   PART 2: CLEAN UNCLUTTERED RESULTS STACK
+   (No outer cage border around cards)
    ══════════════════════════════════════════ */
 .ia-results-container {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding: 24px;
-  background: #FFFFFF;
-  border-radius: 22px;
-  border: 1.5px solid #CBD5E1;
-  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.08);
-  animation: iaFadeSlide 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  gap: 16px;
+  scroll-margin-top: 66px;
+  animation: iaFadeSlide 0.32s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes iaFadeSlide {
-  from { opacity: 0; transform: translateY(14px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: none; }
 }
 
@@ -255,39 +253,41 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px 20px;
+  padding: 15px 18px;
   border-radius: 14px;
-  font-size: 1.06rem;
+  font-size: 1.02rem;
   font-weight: 700;
-  line-height: 1.4;
+  line-height: 1.45;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
 }
 
 .ia-one-line--warn {
-  background: linear-gradient(90deg, #FFFBEB, #FEF3C7);
+  background: #FFFBEB;
   border: 1.5px solid #F59E0B;
   color: #78350F;
 }
 
 .ia-one-line--safe {
-  background: linear-gradient(90deg, #ECFDF5, #D1FAE5);
+  background: #ECFDF5;
   border: 1.5px solid #10B981;
   color: #065F46;
 }
 
 .ia-one-line-icon {
-  font-size: 1.45rem;
+  font-size: 1.35rem;
   flex-shrink: 0;
 }
 
-/* KEY NUMBERS CONTAINER — RANGES WITH SAFE MARKER */
+/* KEY NUMBERS CONTAINER — CLEAN WHITE CARD */
 .ia-ranges-panel {
   display: flex;
   flex-direction: column;
   gap: 14px;
   padding: 18px 20px;
-  background: #F8FAFC;
+  background: var(--bg-primary);
   border-radius: 16px;
-  border: 1px solid #CBD5E1;
+  border: 1px solid var(--border-light);
+  box-shadow: 0 2px 10px rgba(21, 101, 192, 0.04);
 }
 
 .ia-ranges-head {
@@ -302,23 +302,26 @@
 }
 
 .ia-ranges-vol {
-  font-size: 0.86rem;
+  font-size: 0.84rem;
   font-weight: 600;
   color: var(--text-secondary);
+  background: var(--bg-accent-soft);
+  padding: 3px 10px;
+  border-radius: 999px;
 }
 
 .ia-ranges-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px 22px;
+  gap: 12px 16px;
 }
 
 .ia-range-item {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 12px 14px 18px;
-  background: #FFFFFF;
+  padding: 12px 14px;
+  background: #F8FAFC;
   border-radius: 12px;
   border: 1px solid #E2E8F0;
 }
@@ -338,17 +341,17 @@
 }
 
 .ia-range-pill {
-  font-size: 0.84rem;
+  font-size: 0.82rem;
   padding: 3px 10px;
   border-radius: 999px;
 }
 
 .ia-range-track {
   position: relative;
-  height: 11px;
+  height: 10px;
   border-radius: 999px;
   background: #E2E8F0;
-  margin-top: 2px;
+  margin: 2px 0;
 }
 
 .ia-range-fill {
@@ -360,8 +363,8 @@
 .ia-range-thumb {
   position: absolute;
   top: 50%;
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   border-radius: 50%;
   background: #FFFFFF;
   border: 3px solid;
@@ -372,25 +375,29 @@
 
 .ia-range-safe-line {
   position: absolute;
-  top: -5px;
+  top: -4px;
   width: 2.5px;
-  height: 21px;
+  height: 18px;
   background: #15803D;
+  border-radius: 2px;
   z-index: 2;
 }
 
-.ia-range-safe-tag {
-  position: absolute;
-  top: 22px;
-  left: 50%;
-  transform: translateX(-50%);
+.ia-range-scale-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   font-size: 0.72rem;
-  font-weight: 800;
-  color: #15803D;
-  white-space: nowrap;
+  font-weight: 600;
+  color: var(--text-muted);
 }
 
-.ia-range-safe-tag--blue {
+.ia-safe-foot-lbl {
+  color: #15803D;
+  font-weight: 700;
+}
+
+.ia-safe-foot-lbl--blue {
   color: #1D4ED8;
 }
 
@@ -401,19 +408,20 @@
 }
 
 @media (max-width: 640px) {
-  .ia-shell { gap: 14px; }
-  .ia-setup-card, .ia-results-container { padding: 14px; gap: 14px; border-radius: 16px; }
+  .ia-shell { gap: 12px; }
+  .ia-setup-card { padding: 14px; gap: 14px; border-radius: 16px; }
   .ia-setup-icon { width: 40px; height: 40px; font-size: 1.3rem; }
   .ia-setup-title { font-size: 1.08rem; }
-  .ia-input-box { padding: 13px; border-radius: 14px; gap: 10px; }
+  .ia-input-box { padding: 12px; border-radius: 12px; gap: 10px; }
   .ia-room-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .ia-seal-grid { grid-template-columns: 1fr; gap: 8px; }
   .ia-source-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-  .ia-choice-card { min-height: 68px; padding: 10px 8px; }
+  .ia-choice-card { min-height: 66px; padding: 10px 8px; }
   .ia-custom-size { grid-template-columns: 1fr; gap: 10px; }
-  .ia-sim-action-row { flex-direction: column; align-items: stretch; gap: 10px; }
-  .ia-simulate-cta { width: 100%; justify-content: center; min-height: 48px; padding: 13px 18px; }
-  .ia-one-line { padding: 12px 14px; font-size: 0.96rem; align-items: flex-start; }
-  .ia-ranges-panel { padding: 14px; gap: 10px; }
-  .ia-range-item { padding: 12px 12px 24px; }
+  .ia-sim-action-row { flex-direction: column; align-items: stretch; gap: 8px; }
+  .ia-simulate-cta { width: 100%; min-height: 48px; padding: 13px 18px; }
+  .ia-results-container { gap: 12px; }
+  .ia-one-line { padding: 12px 14px; font-size: 0.94rem; align-items: flex-start; }
+  .ia-ranges-panel { padding: 14px; gap: 10px; border-radius: 14px; }
+  .ia-range-item { padding: 11px 12px; }
 }
