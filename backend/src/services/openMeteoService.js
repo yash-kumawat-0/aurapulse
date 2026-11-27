@@ -34,7 +34,9 @@ export async function getWeatherData(lat, lng) {
       timezone: 'auto',
     });
 
-    const response = await fetch(`${OPEN_METEO_BASE}?${params}`);
+    const response = await fetch(`${OPEN_METEO_BASE}?${params}`, {
+      signal: AbortSignal.timeout(8000),
+    });
 
     if (!response.ok) {
       console.warn(`Open-Meteo API error (${response.status}), using simulated weather.`);

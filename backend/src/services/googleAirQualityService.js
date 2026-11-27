@@ -25,6 +25,7 @@ export async function getCurrentConditions(lat, lng) {
       const response = await fetch(AIR_QUALITY_ENDPOINTS.currentConditions, {
         method: 'POST',
         headers: getGoogleHeaders(),
+        signal: AbortSignal.timeout(8000),
         body: JSON.stringify({
           location: { latitude: lat, longitude: lng },
           extraComputations: [
@@ -76,6 +77,7 @@ export async function getForecast(lat, lng, hours = 48) {
       const response = await fetch(AIR_QUALITY_ENDPOINTS.forecast, {
         method: 'POST',
         headers: getGoogleHeaders(),
+        signal: AbortSignal.timeout(8000),
         body: JSON.stringify({
           location: { latitude: lat, longitude: lng },
           period: {

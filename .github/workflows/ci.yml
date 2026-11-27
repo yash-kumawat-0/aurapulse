@@ -1,0 +1,39 @@
+name: AuraPulse CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality-and-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install root devDependencies
+        run: npm ci
+
+      - name: Install workspace dependencies
+        run: npm run install:all
+
+      - name: Run ESLint and syntax checks
+        run: npm run lint && npm run check:syntax
+
+      - name: Run backend and frontend test suites
+        run: npm test
+
+      - name: Build production frontend bundle
+        run: npm run build:frontend

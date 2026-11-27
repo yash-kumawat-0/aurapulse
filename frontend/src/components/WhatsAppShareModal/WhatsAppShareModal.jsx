@@ -68,16 +68,21 @@ _Powered by AuraPulse • Google Maps Air Quality API • Gemini AI_`;
   };
 
   return (
-    <div className="whatsapp-overlay" onClick={onClose} role="presentation">
+    <div className="whatsapp-overlay">
+      <button
+        type="button"
+        className="whatsapp-backdrop-btn"
+        aria-label="Close clean air bulletin"
+        onClick={onClose}
+      />
       <div
         className="whatsapp-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="whatsapp-modal-title"
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="whatsapp-header">
-          <h3 id="whatsapp-modal-title">📱 Clean Air Bulletin</h3>
+          <h2 id="whatsapp-modal-title">📱 Clean Air Bulletin</h2>
           <button
             type="button"
             className="whatsapp-close-btn"

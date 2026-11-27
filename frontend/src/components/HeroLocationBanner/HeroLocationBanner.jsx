@@ -73,17 +73,18 @@ function HeroLocationBanner({ activeTab = 'dashboard' }) {
   const { location, setLocation, detectLocation, homeProfile } = useUser();
   const { currentAqi, indoorData, loadAqiData, loadIndoorSimulation, loading } = useAqi();
   const [query, setQuery] = useState('');
+  const [userTyping, setUserTyping] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [noMatch, setNoMatch] = useState(false);
-  const [initialized, setInitialized] = useState(false);
+  const loadedCoordKeyRef = useRef('');
   const debounceRef = useRef(null);
   const wrapperRef = useRef(null);
   const lastAutoAqiRef = useRef(null);
 
   const showAirGraph = GRAPH_TABS.has(activeTab);
+  const displayQuery = userTyping ? query : (location?.label || query);
 
-  // Close suggestions on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
@@ -94,21 +95,20 @@ function HeroLocationBanner({ activeTab = 'dashboard' }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // When location is set via GPS, reverse geocode and load data
   useEffect(() => {
-    if (location && !initialized) {
-      setInitialized(true);
-      setQuery(location.label);
-      loadAqiData(location.lat, location.lng);
+    if (!location) return;
+    const key = `${location.lat},${location.lng}`;
+    if (loadedCoordKeyRef.current === key) return;
+    loadedCoordKeyRef.current = key;
 
+    loadAqiData(location.lat, location.lng);
+    if (location.label && /^[\d.\-,\s]+$/.test(location.label)) {
       reverseGeocode(location.lat, location.lng).then((name) => {
-        setQuery(name);
         setLocation((prev) => ({ ...prev, label: name }));
-      });
+      }).catch(() => {});
     }
-  }, [location, initialized, loadAqiData, setLocation]);
+  }, [location, loadAqiData, setLocation]);
 
-  // Auto-generate Outdoor vs Indoor graph whenever AQI updates — NO Simulate button needed
   useEffect(() => {
     if (!currentAqi) return;
     const key = `${currentAqi.pm25}-${currentAqi.timestamp || ''}`;
@@ -128,6 +128,7 @@ function HeroLocationBanner({ activeTab = 'dashboard' }) {
 
   const handleInputChange = (e) => {
     const value = e.target.value;
+    setUserTyping(true);
     setQuery(value);
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -147,15 +148,17 @@ function HeroLocationBanner({ activeTab = 'dashboard' }) {
   };
 
   const handleSelectPlace = (place) => {
+    loadedCoordKeyRef.current = `${place.lat},${place.lng}`;
+    setUserTyping(false);
     setQuery(place.label);
     setLocation({ lat: place.lat, lng: place.lng, label: place.label });
     loadAqiData(place.lat, place.lng);
     setShowSuggestions(false);
-    setInitialized(true);
   };
 
   const handleDetect = () => {
-    setInitialized(false);
+    loadedCoordKeyRef.current = '';
+    setUserTyping(false);
     detectLocation();
   };
 
@@ -190,8 +193,12 @@ function HeroLocationBanner({ activeTab = 'dashboard' }) {
                 type="text"
                 className="hero-search-input"
                 aria-label="Search any city or place"
+                role="combobox"
+                aria-expanded={showSuggestions}
+                aria-controls="hero-city-suggestions"
+                aria-autocomplete="list"
                 placeholder="Search any place..."
-                value={query}
+                value={displayQuery}
                 onChange={handleInputChange}
                 onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
               />
@@ -214,14 +221,15 @@ function HeroLocationBanner({ activeTab = 'dashboard' }) {
             </div>
 
             {showSuggestions && (
-              <ul className="hero-suggestions">
+              <ul id="hero-city-suggestions" className="hero-suggestions" role="listbox">
                 {suggestions.length > 0 ? suggestions.map((place, i) => (
-                  <li key={i}>
+                  <li key={i} role="option" aria-selected={false}>
                     <button
+                      type="button"
                       className="hero-suggestion-item"
                       onClick={() => handleSelectPlace(place)}
                     >
-                      <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14" className="hero-suggestion-pin">
+                      <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14" className="hero-suggestion-pin" aria-hidden="true">
                         <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                       </svg>
                       {place.label}

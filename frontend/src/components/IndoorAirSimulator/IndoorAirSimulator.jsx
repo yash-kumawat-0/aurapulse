@@ -1,11 +1,11 @@
 // ============================================
 // IndoorAirSimulator — Minimal 3 Inputs (+ Other)
-// Interactive 3D Air-Flow Room Chamber + Live Toggle,
-// Economics/Filter Countdown, ₹0 Instant Hacks & 3D DIY Store Guide
+// Delegates 3D Room Chamber to Room3dTwin & 3D DIY Guide
 // ============================================
 import { useState, useEffect, useRef } from 'react';
 import { useUser } from '../../context/UserContext.jsx';
 import { useAqi } from '../../context/AqiContext.jsx';
+import Room3dTwin from './Room3dTwin.jsx';
 import DiyPurifierGuide from '../DiyPurifierGuide/DiyPurifierGuide.jsx';
 import './IndoorAirSimulator.css';
 
@@ -18,9 +18,9 @@ const ROOMS = [
 
 const SEALS = [
   { key: 'leaky_wood', label: 'Old Wood', desc: 'High leaks', icon: '🪟', color: '#DC2626' },
-  { key: 'standard_aluminum', label: 'Aluminum', desc: 'Standard fit', icon: '🔲', color: '#D97706' },
-  { key: 'sealed_upvc', label: 'UPVC Sealed', desc: 'Airtight', icon: '✨', color: '#059669' },
-  { key: 'other', label: 'Other', desc: 'Custom fit', icon: '✏️', color: '#0284C7' },
+  { key: 'standard_aluminum', label: 'Aluminum', desc: 'Standard fit', icon: '🔲', color: '#B45309' },
+  { key: 'sealed_upvc', label: 'UPVC Sealed', desc: 'Airtight', icon: '✨', color: '#15803D' },
+  { key: 'other', label: 'Other', desc: 'Custom fit', icon: '✏️', color: '#0369A1' },
 ];
 
 const SOURCES = [
@@ -32,39 +32,11 @@ const SOURCES = [
   { key: 'other', label: 'Other', icon: '✏️', rate: 'Custom' },
 ];
 
-const PARTICLES = [
-  { x: 14, y: 22, d: '0s', s: 7 },
-  { x: 26, y: 58, d: '0.4s', s: 9 },
-  { x: 38, y: 34, d: '0.8s', s: 6 },
-  { x: 48, y: 74, d: '1.1s', s: 8 },
-  { x: 56, y: 18, d: '0.2s', s: 7 },
-  { x: 64, y: 48, d: '1.4s', s: 9 },
-  { x: 74, y: 28, d: '0.6s', s: 6 },
-  { x: 82, y: 66, d: '0.9s', s: 8 },
-  { x: 20, y: 80, d: '1.3s', s: 7 },
-  { x: 42, y: 14, d: '0.5s', s: 6 },
-  { x: 68, y: 78, d: '0.7s', s: 7 },
-  { x: 86, y: 40, d: '1.2s', s: 6 },
-];
-
 function getPmColor(pm) {
-  if (pm <= 12) return '#10B981';
-  if (pm <= 35) return '#22C55E';
-  if (pm <= 55) return '#F59E0B';
-  if (pm <= 150) return '#EA580C';
-  return '#DC2626';
-}
-
-function getPmLabel(pm) {
-  if (pm <= 12) return 'Excellent';
-  if (pm <= 35) return 'Safe';
-  if (pm <= 55) return 'Moderate';
-  if (pm <= 150) return 'Unhealthy';
-  return 'Hazardous';
-}
-
-function getSourceIcon(src) {
-  return SOURCES.find((s) => s.key === src)?.icon || '💨';
+  if (pm <= 35) return '#15803D';
+  if (pm <= 55) return '#B45309';
+  if (pm <= 150) return '#C2410C';
+  return '#B91C1C';
 }
 
 function IndoorAirSimulator() {
@@ -130,13 +102,11 @@ function IndoorAirSimulator() {
     }, 80);
   };
 
-  const volumeCuFt = roomArea * ceilingHeight;
   const volumeM3 = Math.round(roomArea * 0.0929 * ceilingHeight * 0.3048 * 10) / 10;
   const autoTargetCadr = Math.round(volumeM3 * 5);
 
   const sim = indoorData?.simulation;
   const diySimulation = indoorData?.diy_simulation;
-  const purifierRec = indoorData?.purifier_recommendation;
   const diyRec = indoorData?.diy_purifier;
   const aiGuidance = indoorData?.ai_indoor_guidance;
 
@@ -149,23 +119,14 @@ function IndoorAirSimulator() {
     : 0;
 
   const displayedPm = fanPreviewOn ? diyAfterPm : (sim?.indoor_pm25 ?? outdoorPM);
-  const activeColor = getPmColor(displayedPm);
-  const isLeaky = sealType === 'leaky_wood' || sealType === 'other';
-  const econ = aiGuidance?.economics;
-  const hacks = Array.isArray(aiGuidance?.zero_cost_hacks) ? aiGuidance.zero_cost_hacks : [];
 
   return (
     <div className="ia-shell">
-      {/* ══════════════════════════════════════════
-          PART 1: 3 CLEAN INPUTS (+ CUSTOM OTHER)
-          ══════════════════════════════════════════ */}
       <div className="ia-setup-card">
         <div className="ia-setup-header">
           <div className="ia-setup-title-wrap">
-            <span className="ia-setup-icon">🏠</span>
-            <div>
-              <h3 className="ia-setup-title">Indoor Air Planner</h3>
-            </div>
+            <span className="ia-setup-icon" aria-hidden="true">🏠</span>
+            <h2 className="ia-setup-title">Indoor Air Planner</h2>
           </div>
           <div className="ia-volume-pill">
             Room: <strong>{volumeM3} m³</strong> · Target: <strong>{autoTargetCadr} m³/h</strong>
@@ -173,21 +134,21 @@ function IndoorAirSimulator() {
         </div>
 
         <div className="ia-three-inputs">
-          {/* 1. Room Type & Size */}
           <div className="ia-input-box">
             <div className="ia-box-top">
-              <span className="ia-step-badge">1</span>
+              <span className="ia-step-badge" aria-hidden="true">1</span>
               <span className="ia-box-label">Room Size</span>
               <button
                 type="button"
                 className="ia-size-toggle"
+                aria-expanded={showCustomSize}
                 onClick={() => setShowCustomSize((s) => !s)}
               >
                 {showCustomSize ? 'Done' : 'Custom size'}
               </button>
             </div>
 
-            <div className="ia-room-grid">
+            <div className="ia-room-grid" role="group" aria-label="Room Size Presets">
               {ROOMS.map((r) => {
                 const active = roomKey === r.key && roomArea === r.area && ceilingHeight === r.height;
                 const vol = r.area * r.height;
@@ -195,10 +156,11 @@ function IndoorAirSimulator() {
                   <button
                     key={r.key}
                     type="button"
+                    aria-pressed={active}
                     className={`ia-choice-card ${active ? 'ia-choice-card--active' : ''}`}
                     onClick={() => handleSelectRoom(r)}
                   >
-                    <span className="ia-choice-emoji">{r.icon}</span>
+                    <span className="ia-choice-emoji" aria-hidden="true">{r.icon}</span>
                     <span className="ia-choice-name">{r.label}</span>
                     <span className="ia-choice-meta">{r.area} ft² · {vol.toLocaleString()} ft³</span>
                   </button>
@@ -242,24 +204,24 @@ function IndoorAirSimulator() {
             )}
           </div>
 
-          {/* 2. Window Seal Quality (+ Other) */}
           <div className="ia-input-box">
             <div className="ia-box-top">
-              <span className="ia-step-badge">2</span>
+              <span className="ia-step-badge" aria-hidden="true">2</span>
               <span className="ia-box-label">Window Type</span>
             </div>
-            <div className="ia-seal-grid">
+            <div className="ia-seal-grid" role="group" aria-label="Window Type Presets">
               {SEALS.map((s) => {
                 const active = sealType === s.key;
                 return (
                   <button
                     key={s.key}
                     type="button"
+                    aria-pressed={active}
                     className={`ia-choice-card ${active ? 'ia-choice-card--active' : ''}`}
                     onClick={() => { setSealType(s.key); if (hasSimulated) setNeedsRefresh(true); }}
                     style={active ? { borderColor: s.color, background: `${s.color}12` } : undefined}
                   >
-                    <span className="ia-choice-emoji">{s.icon}</span>
+                    <span className="ia-choice-emoji" aria-hidden="true">{s.icon}</span>
                     <span className="ia-choice-name">{s.label}</span>
                     <span className="ia-choice-meta" style={{ color: s.color, fontWeight: 700 }}>{s.desc}</span>
                   </button>
@@ -279,23 +241,23 @@ function IndoorAirSimulator() {
             )}
           </div>
 
-          {/* 3. Pollution Source (+ Other) */}
           <div className="ia-input-box">
             <div className="ia-box-top">
-              <span className="ia-step-badge">3</span>
+              <span className="ia-step-badge" aria-hidden="true">3</span>
               <span className="ia-box-label">Indoor Smoke / Dust</span>
             </div>
-            <div className="ia-source-grid">
+            <div className="ia-source-grid" role="group" aria-label="Indoor Smoke or Dust Sources">
               {SOURCES.map((s) => {
                 const active = source === s.key;
                 return (
                   <button
                     key={s.key}
                     type="button"
+                    aria-pressed={active}
                     className={`ia-choice-card ia-choice-card--compact ${active ? 'ia-choice-card--active' : ''}`}
                     onClick={() => { setSource(s.key); if (hasSimulated) setNeedsRefresh(true); }}
                   >
-                    <span className="ia-choice-emoji">{s.icon}</span>
+                    <span className="ia-choice-emoji" aria-hidden="true">{s.icon}</span>
                     <span className="ia-choice-name">{s.label}</span>
                     <span className="ia-choice-meta">{s.rate}</span>
                   </button>
@@ -331,22 +293,16 @@ function IndoorAirSimulator() {
                   : '🔬 Re-simulate Room'
                 : '🔬 Simulate Indoor Air'}
           </button>
-          {needsRefresh && (
-            <span className="ia-stale-hint">Changed — tap Update</span>
-          )}
+          {needsRefresh && <span className="ia-stale-hint">Changed — tap Update</span>}
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════
-          PART 2: INTERACTIVE 3D ROOM + FILTER ECONOMICS
-          ══════════════════════════════════════════ */}
       {hasSimulated && sim && (
         <div ref={resultsRef} id="ia-results" className="ia-results-container" aria-live="polite">
-          {/* Animated Before -> DIY Transformation Strip + Gemini Stickers */}
           <div className={`ia-visual-hero ${isUrgent ? 'ia-visual-hero--warn' : 'ia-visual-hero--safe'}`}>
             <div className="ia-flow-strip">
               <div className="ia-flow-node">
-                <span className="ia-flow-emoji">🏠</span>
+                <span className="ia-flow-emoji" aria-hidden="true">🏠</span>
                 <div>
                   <span className="ia-flow-lbl">Room Now</span>
                   <strong className="ia-flow-val" style={{ color: getPmColor(sim.indoor_pm25) }}>
@@ -361,10 +317,10 @@ function IndoorAirSimulator() {
               </div>
 
               <div className="ia-flow-node ia-flow-node--clean">
-                <span className="ia-flow-emoji ia-sparkle-float">✨</span>
+                <span className="ia-flow-emoji ia-sparkle-float" aria-hidden="true">✨</span>
                 <div>
                   <span className="ia-flow-lbl">With DIY</span>
-                  <strong className="ia-flow-val" style={{ color: '#059669' }}>
+                  <strong className="ia-flow-val" style={{ color: '#15803D' }}>
                     {Math.round(diyAfterPm)} µg/m³
                   </strong>
                 </div>
@@ -385,125 +341,25 @@ function IndoorAirSimulator() {
             )}
           </div>
 
-          {/* Interactive 3D Clean-Room Twin Chamber */}
-          <div className="ia-room3d-card">
-            <div className="ia-room3d-top">
-              <div className="ia-room3d-title">
-                <span>🧊 3D Room Air Twin</span>
-                <span className="ia-room3d-pill" style={{ color: activeColor, background: `${activeColor}18` }}>
-                  {Math.round(displayedPm)} µg/m³ · {getPmLabel(displayedPm)}
-                </span>
-              </div>
+          <Room3dTwin
+            fanPreviewOn={fanPreviewOn}
+            setFanPreviewOn={setFanPreviewOn}
+            displayedPm={displayedPm}
+            diyTotalCadr={diyTotalCadr}
+            outdoorPM={outdoorPM}
+            sealType={sealType}
+            source={source}
+            customSourceDesc={customSourceDesc}
+            econ={aiGuidance?.economics}
+            hacks={Array.isArray(aiGuidance?.zero_cost_hacks) ? aiGuidance.zero_cost_hacks : []}
+          />
 
-              <div className="ia-room3d-toggle" role="group" aria-label="Toggle 3D room purifier">
-                <button
-                  type="button"
-                  className={`ia-toggle-btn ${!fanPreviewOn ? 'ia-toggle-btn--off' : ''}`}
-                  onClick={() => setFanPreviewOn(false)}
-                >
-                  🌫️ Fan OFF
-                </button>
-                <button
-                  type="button"
-                  className={`ia-toggle-btn ${fanPreviewOn ? 'ia-toggle-btn--on' : ''}`}
-                  onClick={() => setFanPreviewOn(true)}
-                >
-                  ✨ DIY ON ({diyTotalCadr} m³/h)
-                </button>
-              </div>
-            </div>
-
-            <div className={`ia-room3d-stage ${fanPreviewOn ? 'ia-room3d-stage--clean' : 'ia-room3d-stage--smog'}`}>
-              <div className="ia-r3d-perspective">
-                <div className="ia-r3d-wall-back" />
-                <div className="ia-r3d-floor" />
-
-                {/* Left Window Leak Visualization */}
-                <div className={`ia-r3d-window ${isLeaky ? 'ia-r3d-window--leaky' : 'ia-r3d-window--tight'}`}>
-                  <span>{sealType === 'sealed_upvc' ? '✨ Sealed' : '🪟 Draft'}</span>
-                  <span className="ia-r3d-out">Out: {Math.round(outdoorPM)}</span>
-                </div>
-
-                {/* Indoor Smoke / Candle / Coil Source */}
-                {source !== 'none' && (
-                  <div className="ia-r3d-source">
-                    <span className="ia-r3d-src-icon">{getSourceIcon(source)}</span>
-                    <span className="ia-r3d-src-lbl">{source === 'other' && customSourceDesc ? customSourceDesc.slice(0, 14) : source}</span>
-                  </div>
-                )}
-
-                {/* Animated Airborne Particles Clearing Live */}
-                {PARTICLES.map((pt, idx) => (
-                  <span
-                    key={idx}
-                    className={`ia-dust-speck ${fanPreviewOn ? 'ia-dust-speck--clean' : 'ia-dust-speck--dirty'}`}
-                    style={{
-                      left: `${pt.x}%`,
-                      top: `${pt.y}%`,
-                      width: `${fanPreviewOn ? Math.max(4, pt.s - 3) : pt.s + 2}px`,
-                      height: `${fanPreviewOn ? Math.max(4, pt.s - 3) : pt.s + 2}px`,
-                      animationDelay: pt.d,
-                    }}
-                  />
-                ))}
-
-                {/* Corner 3D Purifier Fan Spinning */}
-                <div className={`ia-r3d-purifier ${fanPreviewOn ? 'ia-r3d-purifier--spin' : ''}`}>
-                  <div className="ia-r3d-fan-face">
-                    <span className="ia-r3d-fan-icon">🌀</span>
-                  </div>
-                  <span className="ia-r3d-fan-lbl">{fanPreviewOn ? 'ON · Cleaning' : 'OFF'}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Filter Clock + Exact Money Saved Economics Strip */}
-            {econ && (
-              <div className="ia-econ-strip">
-                <div className="ia-econ-card">
-                  <span className="ia-econ-icon">🗓️</span>
-                  <div>
-                    <span className="ia-econ-lbl">Filter Life</span>
-                    <strong>~{econ.filter_life_days} Days</strong>
-                  </div>
-                </div>
-                <div className="ia-econ-card ia-econ-card--save">
-                  <span className="ia-econ-icon">💰</span>
-                  <div>
-                    <span className="ia-econ-lbl">Saved vs Commercial</span>
-                    <strong>{econ.yearly_savings_estimate}</strong>
-                  </div>
-                </div>
-                <div className="ia-econ-card">
-                  <span className="ia-econ-icon">⚡</span>
-                  <div>
-                    <span className="ia-econ-lbl">Monthly Power</span>
-                    <strong>{econ.monthly_electricity_cost}</strong>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Instant Zero-Cost Hacks */}
-            {hacks.length > 0 && (
-              <div className="ia-zero-hacks">
-                <span className="ia-zero-title">₹0 Immediate Fixes:</span>
-                {hacks.map((h, idx) => (
-                  <span key={idx} className="ia-zero-pill">{h.emoji} {h.label}</span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* 3D DIY Purifier Builder WITH Integrated Needed Parts, Local Prices & Store Links */}
           <DiyPurifierGuide
             sim={sim}
             diySimulation={diySimulation}
             diyRec={diyRec}
-            purifierRec={purifierRec}
             isUrgent={isUrgent}
             roomVolumeM3={volumeM3}
-            roomVolumeCuFt={volumeCuFt}
             aiGuidance={aiGuidance}
           />
         </div>

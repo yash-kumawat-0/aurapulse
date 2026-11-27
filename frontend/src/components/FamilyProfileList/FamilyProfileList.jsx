@@ -61,7 +61,7 @@ function FamilyProfileList() {
     <div className="card family-card">
       <div className="family-header">
         <div className="family-header-left">
-          <h3 className="family-title">👨‍👩‍👧 Family Members</h3>
+          <h2 className="family-title">👨‍👩‍👧 Family Members</h2>
           <span className="family-count">
             {familyMembers.length} member{familyMembers.length !== 1 ? 's' : ''} · tap for plan
           </span>
@@ -136,7 +136,6 @@ function FamilyProfileList() {
                 value={customIssue}
                 onChange={(e) => setCustomIssue(e.target.value)}
                 required
-                autoFocus
               />
             </div>
           )}

@@ -1,10 +1,10 @@
 // ============================================
-// HTTP Security Headers & CSP Middleware (OWASP Best Practices)
+// HTTP Security Headers & Strict CSP Middleware
 // ============================================
 
 const CSP_DIRECTIVES = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  "script-src 'self'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
   "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://cdnjs.cloudflare.com https://raw.githubusercontent.com",
@@ -15,7 +15,7 @@ const CSP_DIRECTIVES = [
 ].join('; ');
 
 /**
- * Attaches strict security and Content-Security-Policy headers cleanly.
+ * Attaches strict OWASP security and Content-Security-Policy headers cleanly.
  *
  * @param {import('express').Request} _req
  * @param {import('express').Response} res

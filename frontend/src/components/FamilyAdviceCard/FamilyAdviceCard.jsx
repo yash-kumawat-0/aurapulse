@@ -1,11 +1,11 @@
 // ============================================
-// FamilyAdviceCard — 3D Shield Diorama, Safe Budget Ring,
-// Visual Stickers & 1-Tap Symptom Trigger Detective
+// FamilyAdviceCard — 3D Shield Diorama, Safe Budget & Symptom Panel
 // ============================================
 import { useEffect, useState } from 'react';
 import { useUser } from '../../context/UserContext.jsx';
 import { useAqi } from '../../context/AqiContext.jsx';
 import { getRiskColor } from '../../utils/aqiColorMapper.js';
+import SymptomDetectivePanel from './SymptomDetectivePanel.jsx';
 import './FamilyAdviceCard.css';
 
 const RISK_INFO = {
@@ -53,13 +53,6 @@ const SCENE_CONFIG = {
   },
 };
 
-const QUICK_SYMPTOMS = [
-  { id: 'wheezing', emoji: '😮‍💨', label: 'Wheeze / Cough' },
-  { id: 'eye_burn', emoji: '👁️', label: 'Eye Burn' },
-  { id: 'sinus', emoji: '🤧', label: 'Sinus / Nose' },
-  { id: 'fatigue', emoji: '🤕', label: 'Headache' },
-];
-
 function getMemberIcon(age) {
   if (age <= 5) return '👶';
   if (age <= 12) return '🧒';
@@ -88,8 +81,6 @@ function FamilyAdviceCard() {
   } = useAqi();
 
   const [symLoading, setSymLoading] = useState(false);
-  const [customSymptom, setCustomSymptom] = useState('');
-  const [copiedNote, setCopiedNote] = useState(false);
 
   useEffect(() => {
     if (familyMembers.length > 0 && !familyMembers.some((m) => m.id === selectedMemberId)) {
@@ -120,29 +111,21 @@ function FamilyAdviceCard() {
       memberPlans[0]
     : memberPlans[0];
 
-  const handleSymptomTap = async (symLabel) => {
+  const handleSymptomCheck = async (symLabel, customTxt) => {
     if (!location) return;
     setSymLoading(true);
-    setCopiedNote(false);
     await checkSymptom({
       lat: location.lat,
       lng: location.lng,
       location_label: location.label,
       member: selectedMember,
       symptom: symLabel,
-      custom_symptom: symLabel === 'custom' ? customSymptom : '',
+      custom_symptom: customTxt,
       home_profile: homeProfile,
       commute_comparison: commuteData,
       language,
     });
     setSymLoading(false);
-  };
-
-  const handleCopyDoctorNote = () => {
-    if (!symptomResult?.doctor_summary) return;
-    navigator.clipboard?.writeText(symptomResult.doctor_summary);
-    setCopiedNote(true);
-    setTimeout(() => setCopiedNote(false), 2200);
   };
 
   const tips = activePlan?.detailed_tips || activePlan?.secondary_actions || [];
@@ -157,7 +140,6 @@ function FamilyAdviceCard() {
     cleanestWindow?.start_label ? `${cleanestWindow.start_label}–${cleanestWindow.end_label}` : null
   );
 
-  // Live Daily Safe Budget calculation (Commute dose + 8h indoor share vs member's Gemini safe_budget_ug)
   const safeBudgetUg = activePlan?.safe_budget_ug || 100;
   const roomPm = indoorData?.diy_simulation?.indoor_pm25 ?? adviceData?.calculated_data?.indoor_pm25 ?? currentAqi?.pm25 ?? 60;
   const commuteDose = commuteData?.safest_route_summary?.dose_ug ?? 0;
@@ -169,7 +151,7 @@ function FamilyAdviceCard() {
     <div className="card advice-card">
       <div className="advice-header">
         <div className="advice-header-left">
-          <h3 className="advice-title">🤖 Family 3D Air Shield</h3>
+          <h2 className="advice-title">🤖 Family 3D Air Shield</h2>
           {hasAdvice && (
             <span className={`advice-ai-tag ${adviceData?.ai_powered ? 'advice-ai-tag--live' : ''}`}>
               {adviceData?.ai_powered ? '✨ Gemini AI' : '✓ Ready'}
@@ -177,12 +159,13 @@ function FamilyAdviceCard() {
           )}
         </div>
         <button
+          type="button"
           className="advice-gen-btn"
           onClick={handleGenerate}
           disabled={loading || !location || !currentAqi || familyMembers.length === 0}
         >
           {loading ? (
-            <><span className="advice-spin" /> Analyzing...</>
+            <><span className="advice-spin" aria-hidden="true" /> Analyzing...</>
           ) : hasAdvice ? (
             '🔄 Refresh AI Shield'
           ) : (
@@ -194,24 +177,24 @@ function FamilyAdviceCard() {
       {!hasAdvice && !loading && (
         <div className="advice-empty">
           {!currentAqi ? (
-            <><span className="advice-empty-icon advice-float-icon">📍</span><p>Pick a city first</p></>
+            <><span className="advice-empty-icon advice-float-icon" aria-hidden="true">📍</span><p>Pick a city first</p></>
           ) : familyMembers.length === 0 ? (
-            <><span className="advice-empty-icon advice-float-icon">👨‍👩‍👧</span><p>Add a family member above</p></>
+            <><span className="advice-empty-icon advice-float-icon" aria-hidden="true">👨‍👩‍👧</span><p>Add a family member above</p></>
           ) : (
-            <><span className="advice-empty-icon advice-float-icon">🛡️</span><p>Tap <strong>Generate 3D Shield Plan</strong> for live shields & safe daily lung budget</p></>
+            <><span className="advice-empty-icon advice-float-icon" aria-hidden="true">🛡️</span><p>Tap <strong>Generate 3D Shield Plan</strong> for live shields &amp; safe daily lung budget</p></>
           )}
         </div>
       )}
 
       {loading && (
-        <div className="advice-loading">
-          <span className="advice-loading-icon">✨</span>
-          <p>Building 3D personal air shields & budgets...</p>
+        <div className="advice-loading" role="status">
+          <span className="advice-loading-icon" aria-hidden="true">✨</span>
+          <p>Building 3D personal air shields &amp; budgets...</p>
         </div>
       )}
 
       {hasAdvice && !loading && (
-        <div className="advice-results">
+        <div className="advice-results" aria-live="polite">
           <div className="advice-sticker-bar">
             {cleanestLabel && (
               <span className="advice-sticker advice-sticker--good">🕒 Outside: {cleanestLabel}</span>
@@ -228,7 +211,7 @@ function FamilyAdviceCard() {
             <div className="advice-person-tabs" role="tablist" aria-label="Select family member plan">
               {familyMembers.map((m, idx) => {
                 const plan = memberPlans.find((c) => c.member_name?.toLowerCase() === m.name?.toLowerCase()) || memberPlans[idx];
-                const pColor = plan ? getRiskColor(plan.risk_level) : '#94A3B8';
+                const pColor = plan ? getRiskColor(plan.risk_level) : '#64748B';
                 const active = selectedMember?.id === m.id;
                 return (
                   <button
@@ -240,9 +223,9 @@ function FamilyAdviceCard() {
                     style={active ? { borderColor: pColor, background: `${pColor}14` } : undefined}
                     onClick={() => setSelectedMemberId(m.id)}
                   >
-                    <span className="advice-person-emoji">{getMemberIcon(m.age)}</span>
+                    <span className="advice-person-emoji" aria-hidden="true">{getMemberIcon(m.age)}</span>
                     <span className="advice-person-tab-name">{m.name}</span>
-                    <span className="advice-person-dot" style={{ background: pColor }} />
+                    <span className="advice-person-dot" style={{ background: pColor }} aria-hidden="true" />
                   </button>
                 );
               })}
@@ -253,11 +236,11 @@ function FamilyAdviceCard() {
             <div className="advice-single-card" style={{ borderColor: riskColor, borderTopColor: riskColor }}>
               <div className="advice-single-head">
                 <div className="advice-single-who">
-                  <span className="advice-single-avatar" style={{ background: `${riskColor}18` }}>
+                  <span className="advice-single-avatar" style={{ background: `${riskColor}18` }} aria-hidden="true">
                     {getMemberIcon(selectedMember?.age || 30)}
                   </span>
                   <div>
-                    <h4 className="advice-single-name">{activePlan.member_name || selectedMember?.name}</h4>
+                    <h3 className="advice-single-name">{activePlan.member_name || selectedMember?.name}</h3>
                     <span className="advice-single-sub">
                       {selectedMember ? `${selectedMember.age} yrs` : ''}
                       {selectedMember?.health_condition === 'OTHER' && selectedMember?.custom_issue
@@ -273,16 +256,15 @@ function FamilyAdviceCard() {
                   className="advice-single-risk"
                   style={{ background: riskInfo.tint, color: riskColor, borderColor: `${riskColor}50` }}
                 >
-                  <span>{riskInfo.icon}</span>
+                  <span aria-hidden="true">{riskInfo.icon}</span>
                   <span>{riskInfo.label}</span>
                 </div>
               </div>
 
-              {/* ── 3D Visual Shield Diorama + Daily Lung Budget Tank ── */}
               <div className="advice-visual-stage">
                 <div className={`adv-diorama ${scene.particleClass}`} style={{ background: scene.bg }}>
-                  <div className="adv-diorama-ring" style={{ borderColor: `${riskColor}66` }} />
-                  <div className="adv-diorama-core">
+                  <div className="adv-diorama-ring" style={{ borderColor: `${riskColor}66` }} aria-hidden="true" />
+                  <div className="adv-diorama-core" aria-hidden="true">
                     <span className="adv-diorama-main">{scene.mainEmoji}</span>
                     <span className="adv-diorama-badge">{scene.badgeEmoji}</span>
                   </div>
@@ -294,7 +276,7 @@ function FamilyAdviceCard() {
                 <div className="adv-budget-box">
                   <div className="adv-budget-top">
                     <span>🫁 Daily Lung Budget</span>
-                    <strong style={{ color: overBudget ? '#DC2626' : '#059669' }}>
+                    <strong style={{ color: overBudget ? '#B91C1C' : '#15803D' }}>
                       {estDailyDose} / {safeBudgetUg} µg
                     </strong>
                   </div>
@@ -314,7 +296,6 @@ function FamilyAdviceCard() {
                 </div>
               </div>
 
-              {/* Priority Verdict + Visual Sticker Badges */}
               <div className="advice-single-main" style={{ background: riskInfo.tint }}>
                 <span className="advice-single-label">⚡ Instant Action</span>
                 <p>{activePlan.primary_action}</p>
@@ -324,7 +305,7 @@ function FamilyAdviceCard() {
                 <div className="advice-visual-stickers">
                   {stickers.map((st, sIdx) => (
                     <span key={sIdx} className="advice-vsticker">
-                      <span className="advice-vsticker-emoji">{st.emoji}</span>
+                      <span className="advice-vsticker-emoji" aria-hidden="true">{st.emoji}</span>
                       <span>{st.tag}</span>
                     </span>
                   ))}
@@ -342,73 +323,11 @@ function FamilyAdviceCard() {
                 </div>
               )}
 
-              {/* ── 1-Tap Symptom Trigger Detective & Doctor Card ── */}
-              <div className="advice-symptom-detective">
-                <div className="advice-sym-head">
-                  <span>🩺 Feeling symptoms right now? Tap 1 icon — AI finds today&apos;s trigger:</span>
-                </div>
-                <div className="advice-sym-btns">
-                  {QUICK_SYMPTOMS.map((s) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      className="advice-sym-btn"
-                      disabled={symLoading}
-                      onClick={() => handleSymptomTap(s.label)}
-                    >
-                      <span>{s.emoji}</span>
-                      <span>{s.label}</span>
-                    </button>
-                  ))}
-                  <div className="advice-sym-custom">
-                    <input
-                      type="text"
-                      className="advice-sym-input"
-                      aria-label="Describe custom symptom"
-                      placeholder="Other symptom..."
-                      value={customSymptom}
-                      onChange={(e) => setCustomSymptom(e.target.value)}
-                    />
-                    {customSymptom.trim() && (
-                      <button
-                        type="button"
-                        className="advice-sym-go"
-                        disabled={symLoading}
-                        onClick={() => handleSymptomTap('custom')}
-                      >
-                        Go
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {symLoading && (
-                  <div className="advice-sym-loading">✨ Correlating AQI spikes, home & commute dose...</div>
-                )}
-
-                {symptomResult && !symLoading && (
-                  <div className="advice-sym-result" aria-live="polite">
-                    <div className="advice-sym-res-top">
-                      <span className="advice-sym-trigger-icon">{symptomResult.trigger_emoji}</span>
-                      <div>
-                        <strong>{symptomResult.likely_trigger}</strong>
-                        <span className="advice-sym-conf">{symptomResult.confidence_pct}% match</span>
-                      </div>
-                    </div>
-                    <div className="advice-sym-rescue">
-                      {(symptomResult.rescue_stickers || []).map((r, rIdx) => (
-                        <span key={rIdx} className="advice-sym-rchip">{r.emoji} {r.action}</span>
-                      ))}
-                    </div>
-                    <div className="advice-sym-doc-row">
-                      <span className="advice-sym-doc-text">📋 {symptomResult.doctor_summary}</span>
-                      <button type="button" className="advice-sym-copy" onClick={handleCopyDoctorNote}>
-                        {copiedNote ? '✓ Copied!' : 'Copy Doctor Note'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <SymptomDetectivePanel
+                onCheckSymptom={handleSymptomCheck}
+                symptomResult={symptomResult}
+                loading={symLoading}
+              />
             </div>
           )}
         </div>

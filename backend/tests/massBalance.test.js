@@ -3,7 +3,7 @@
 // ============================================
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { calculateIndoorPM25, WINDOW_SEAL_PRESETS } from '../src/engine/massBalanceModel.js';
+import { calculateIndoorPM25 } from '../src/engine/massBalanceModel.js';
 
 describe('massBalanceModel', () => {
   it('should calculate indoor PM2.5 lower than outdoor with sealed windows and no sources', () => {

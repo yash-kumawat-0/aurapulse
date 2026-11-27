@@ -77,10 +77,6 @@ export function ViewportAqiOverlay({ basePM25 }) {
     zoomend: () => setBounds(map.getBounds()),
   });
 
-  useEffect(() => {
-    setBounds(map.getBounds());
-  }, [map, basePM25]);
-
   const cells = generateViewportAqiGrid(bounds, basePM25, 8, 6);
 
   return cells.map((cell) => (
@@ -97,19 +93,15 @@ export function ViewportAqiOverlay({ basePM25 }) {
 }
 
 export function PlaceInput({ label, value, onChange, placeholder }) {
-  const [query, setQuery] = useState(value || '');
+  const [query, setQuery] = useState('');
+  const [dirty, setDirty] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [open, setOpen] = useState(false);
   const [noMatch, setNoMatch] = useState(false);
   const timer = useRef(null);
   const wrap = useRef(null);
   const listId = `place-list-${label.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
-
-  useEffect(() => {
-    if (value) {
-      setQuery((prev) => prev || value);
-    }
-  }, [value]);
+  const displayValue = dirty ? query : (query || value || '');
 
   useEffect(() => {
     const handleOutside = (e) => {
@@ -121,9 +113,10 @@ export function PlaceInput({ label, value, onChange, placeholder }) {
 
   const onType = (e) => {
     const val = e.target.value;
+    setDirty(true);
     setQuery(val);
     if (timer.current) clearTimeout(timer.current);
-    if (val.length >= 3) {
+    if (vLong(val)) {
       timer.current = setTimeout(async () => {
         const res = await searchPlace(val);
         setSuggestions(res);
@@ -137,7 +130,12 @@ export function PlaceInput({ label, value, onChange, placeholder }) {
     }
   };
 
+  function vLong(v) {
+    return v.length >= 3;
+  }
+
   const pick = (place) => {
+    setDirty(true);
     setQuery(place.label);
     setNoMatch(false);
     setOpen(false);
@@ -151,7 +149,7 @@ export function PlaceInput({ label, value, onChange, placeholder }) {
         id={`${listId}-input`}
         className="cdc-place-input"
         placeholder={placeholder}
-        value={query}
+        value={displayValue}
         role="combobox"
         aria-expanded={open}
         aria-controls={listId}

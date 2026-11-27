@@ -18,7 +18,7 @@ describe('Frontend AQI color mapping & accessibility helpers', () => {
     assert.equal(getPm25SafetyColor(20), '#4CAF50');
     assert.equal(getPm25SafetyColor(280), '#880E4F');
     assert.equal(getRiskColor('SEVERE'), '#880E4F');
-    assert.equal(getRiskColor('UNKNOWN'), '#94A3B8');
+    assert.equal(getRiskColor('UNKNOWN'), '#64748B');
   });
 });
 

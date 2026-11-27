@@ -1,5 +1,5 @@
 // ============================================
-// Footer Component — Clean Minimal UI
+// Footer Component — Accessible Headings & Clean UI
 // ============================================
 import './Footer.css';
 
@@ -22,7 +22,6 @@ function Footer({ onSelectTab }) {
     <footer className="footer">
       <div className="footer-inner">
         <div className="footer-top">
-          {/* Brand Summary */}
           <div className="footer-brand-col">
             <div className="footer-brand-row">
               <span className="footer-brand-mark" aria-hidden="true">
@@ -40,9 +39,8 @@ function Footer({ onSelectTab }) {
             </p>
           </div>
 
-          {/* Quick Section Navigation */}
           <nav className="footer-col" aria-label="Footer navigation">
-            <h4 className="footer-col-title">Explore</h4>
+            <h2 className="footer-col-title">Explore</h2>
             <ul className="footer-nav-list">
               {QUICK_TABS.map((tab) => (
                 <li key={tab.id}>
@@ -58,9 +56,8 @@ function Footer({ onSelectTab }) {
             </ul>
           </nav>
 
-          {/* Data Sources & Repository */}
           <div className="footer-col">
-            <h4 className="footer-col-title">Sources & Code</h4>
+            <h2 className="footer-col-title">Sources & Code</h2>
             <div className="footer-sources">
               {DATA_SOURCES.map((source) => (
                 <span key={source} className="footer-source-chip">
@@ -79,7 +76,6 @@ function Footer({ onSelectTab }) {
           </div>
         </div>
 
-        {/* Clean Bottom Legal / Disclaimer Row */}
         <div className="footer-bottom">
           <p className="footer-disclaimer">
             Environmental awareness guidance only — consult a qualified healthcare

@@ -15,6 +15,8 @@
     "build:frontend": "cd frontend && npm run build",
     "build": "npm run install:all && npm run build:frontend",
     "start": "cd backend && npm start",
+    "lint": "eslint backend frontend/src frontend/tests",
+    "format:check": "prettier --check \"backend/**/*.js\" \"frontend/src/**/*.{js,jsx}\" \"frontend/tests/*.js\"",
     "test": "node --test backend/tests/*.test.js frontend/tests/*.test.js",
     "check:syntax": "node -e \"import('node:fs').then(async fs=>{const p=await import('node:path');const c=await import('node:child_process');const walk=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>['node_modules','dist'].includes(e.name)?[]:e.isDirectory()?walk(p.join(d,e.name)):e.name.endsWith('.js')?[p.join(d,e.name)]:[]);for(const f of walk('.'))c.execFileSync('node',['--check',f]);console.log('All JS syntax verified cleanly');})\""
   },
@@ -28,6 +30,13 @@
     "express-rate-limit": "^7.4.1"
   },
   "devDependencies": {
-    "concurrently": "^9.1.0"
+    "@eslint/js": "^9.18.0",
+    "concurrently": "^9.1.0",
+    "eslint": "^9.18.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "globals": "^17.5.0",
+    "prettier": "^3.8.3"
   }
 }

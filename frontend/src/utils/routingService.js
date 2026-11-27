@@ -109,12 +109,11 @@ function haversineKm(lat1, lng1, lat2, lng2) {
  * Generate synthetic alternative routes by adding waypoint offsets.
  * This ensures road modes ALWAYS have 2-3 visible alternatives on the map.
  */
-function generateSyntheticAlternatives(mainRoute, originLat, originLng, destLat, destLng) {
+function generateSyntheticAlternatives(mainRoute) {
   const coords = mainRoute.coordinates;
   if (!coords || coords.length < 4) return [];
 
   const alternatives = [];
-  const midIdx = Math.floor(coords.length / 2);
 
   // Create 1-2 offset routes by shifting the midpoint
   const offsets = [
@@ -164,7 +163,7 @@ export async function fetchRoutesForMode(originLat, originLng, destLat, destLng,
 
       // If OSRM only returns 1 route, generate synthetic alternatives
       if (osrmRoutes.length === 1) {
-        const synthAlts = generateSyntheticAlternatives(osrmRoutes[0], originLat, originLng, destLat, destLng);
+        const synthAlts = generateSyntheticAlternatives(osrmRoutes[0]);
         osrmRoutes = [osrmRoutes[0], ...synthAlts];
       }
 

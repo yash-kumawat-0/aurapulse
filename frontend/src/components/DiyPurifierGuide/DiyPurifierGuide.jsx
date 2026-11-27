@@ -102,16 +102,13 @@ function DiyPurifierGuide({
 
   const [step, setStep] = useState(0);
   const [autoPlay, setAutoPlay] = useState(false);
-  const [buildStyle, setBuildStyle] = useState(autoRecommendedStyle);
+  const [userBuildStyle, setBuildStyle] = useState(null);
   const [rotX, setRotX] = useState(-18);
   const [rotY, setRotY] = useState(-32);
   const [autoSpin, setAutoSpin] = useState(false);
 
   const dragRef = useRef({ active: false, startX: 0, startY: 0, baseRotX: -18, baseRotY: -32 });
-
-  useEffect(() => {
-    setBuildStyle(autoRecommendedStyle);
-  }, [autoRecommendedStyle, detectedVolM3]);
+  const buildStyle = userBuildStyle ?? autoRecommendedStyle;
 
   const isSingle = buildStyle === 'single';
   const beforePm = sim?.indoor_pm25 ?? 120;
@@ -186,7 +183,7 @@ function DiyPurifierGuide({
       {/* ── Minimal Visual Header ── */}
       <div className="diy3d-header">
         <div className="diy3d-header-left">
-          <h4 className="diy3d-title">🛠️ DIY Purifier 3D Builder</h4>
+          <h3 className="diy3d-title">🛠️ DIY Purifier 3D Builder</h3>
           <span className="diy3d-mini-stat">
             {autoUnits}× {isSingle ? '1-Filter Fan' : '4-Filter Cube'} · <strong>{activeCadr} m³/h</strong>
           </span>
@@ -368,7 +365,7 @@ function DiyPurifierGuide({
             <div className="diy3d-focus-visual">
               <span className="diy3d-focus-big-icon">{currentStep.icon}</span>
               <div>
-                <h5 className="diy3d-focus-title">Step {currentStep.num}: {currentStep.title}</h5>
+                <h4 className="diy3d-focus-title">Step {currentStep.num}: {currentStep.title}</h4>
                 <div className="diy3d-cue-chip">{currentStep.visualCue}</div>
               </div>
             </div>

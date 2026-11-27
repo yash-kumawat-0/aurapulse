@@ -46,25 +46,27 @@ function App() {
 
             {/* Accessible Tab Navigation */}
             <div className="container">
-              <nav className="tab-nav" role="tablist" aria-label="AuraPulse Core Workflows">
-                {tabs.map((tab) => {
-                  const selected = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      id={`tab-${tab.id}`}
-                      type="button"
-                      role="tab"
-                      aria-selected={selected}
-                      aria-controls={tab.id}
-                      className={`tab-btn ${selected ? 'tab-btn--active' : ''}`}
-                      onClick={() => handleTabSelect(tab.id)}
-                    >
-                      <span className="tab-icon" aria-hidden="true">{tab.icon}</span>
-                      <span>{tab.label}</span>
-                    </button>
-                  );
-                })}
+              <nav aria-label="AuraPulse Core Workflows">
+                <div className="tab-nav" role="tablist">
+                  {tabs.map((tab) => {
+                    const selected = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        id={`tab-${tab.id}`}
+                        type="button"
+                        role="tab"
+                        aria-selected={selected}
+                        aria-controls={tab.id}
+                        className={`tab-btn ${selected ? 'tab-btn--active' : ''}`}
+                        onClick={() => handleTabSelect(tab.id)}
+                      >
+                        <span className="tab-icon" aria-hidden="true">{tab.icon}</span>
+                        <span>{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </nav>
             </div>
 
