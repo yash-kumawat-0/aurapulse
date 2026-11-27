@@ -4,29 +4,40 @@
 
 /**
  * Catches all unhandled errors from route handlers and returns
- * a consistent JSON error response.
+ * a safe, consistent JSON error response.
  */
 export function errorHandler(err, _req, res, _next) {
-  console.error('❌ Unhandled Error:', err.message);
-  if (process.env.NODE_ENV !== 'production') {
+  const statusCode = err.statusCode || 500;
+  const isProd = process.env.NODE_ENV === 'production';
+  const isTest = process.env.NODE_ENV === 'test';
+
+  if (!isTest && (!isProd || statusCode >= 500)) {
+    console.error('❌ API Error:', err.message);
+  }
+  if (!isTest && !isProd && err.stack) {
     console.error(err.stack);
   }
 
-  const statusCode = err.statusCode || 500;
+  const safeMessage =
+    isProd && statusCode >= 500
+      ? 'Internal Server Error'
+      : err.message || 'Internal Server Error';
+
   res.status(statusCode).json({
     success: false,
     error: {
-      message: err.message || 'Internal Server Error',
-      ...(process.env.NODE_ENV !== 'production' && { stack: err.stack }),
+      message: safeMessage,
+      ...(!isProd && err.stack && { stack: err.stack }),
     },
   });
 }
 
 /**
- * Creates a custom error with a status code for use in controllers.
- * @param {string} message - Error message.
- * @param {number} statusCode - HTTP status code.
- * @returns {Error}
+ * Creates a custom error with an explicit HTTP status code.
+ *
+ * @param {string} message - User-safe validation or API error message.
+ * @param {number} [statusCode=400] - HTTP status code.
+ * @returns {Error & { statusCode: number }}
  */
 export function createApiError(message, statusCode = 400) {
   const error = new Error(message);

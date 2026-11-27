@@ -1,5 +1,5 @@
 // ============================================
-// App Root — Minimal Single-Page Layout
+// App Root — Accessible Single-Page Layout
 // ============================================
 import { useState } from 'react';
 import { UserProvider } from './context/UserContext.jsx';
@@ -37,50 +37,61 @@ function App() {
     <UserProvider>
       <AqiProvider>
         <div className="app">
+          <a href="#main-content" className="skip-link">
+            Skip to main content
+          </a>
           <Navbar />
-          <main className="app-main">
+          <main id="main-content" className="app-main" tabIndex={-1}>
             <HeroLocationBanner activeTab={activeTab} />
 
-            {/* Tab Navigation */}
+            {/* Accessible Tab Navigation */}
             <div className="container">
-              <nav className="tab-nav">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    className={`tab-btn ${activeTab === tab.id ? 'tab-btn--active' : ''}`}
-                    onClick={() => handleTabSelect(tab.id)}
-                  >
-                    <span className="tab-icon">{tab.icon}</span>
-                    {tab.label}
-                  </button>
-                ))}
+              <nav className="tab-nav" role="tablist" aria-label="AuraPulse Core Workflows">
+                {tabs.map((tab) => {
+                  const selected = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      id={`tab-${tab.id}`}
+                      type="button"
+                      role="tab"
+                      aria-selected={selected}
+                      aria-controls={tab.id}
+                      className={`tab-btn ${selected ? 'tab-btn--active' : ''}`}
+                      onClick={() => handleTabSelect(tab.id)}
+                    >
+                      <span className="tab-icon" aria-hidden="true">{tab.icon}</span>
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
               </nav>
             </div>
 
-            {/* Tab Content */}
-            <div className="container tab-content">
+            {/* Active Workflow Panel */}
+            <div className="container tab-content" aria-live="polite">
               {activeTab === 'dashboard' && (
-                <section className="tab-panel" id="dashboard">
+                <section className="tab-panel" id="dashboard" role="tabpanel" aria-labelledby="tab-dashboard">
                   <AqiSummaryCard />
                   <DiurnalTimeline />
                 </section>
               )}
 
               {activeTab === 'commute' && (
-                <section className="tab-panel" id="commute">
+                <section className="tab-panel" id="commute" role="tabpanel" aria-labelledby="tab-commute">
                   <CommuteDoseCalculator />
                 </section>
               )}
 
               {activeTab === 'family' && (
-                <section className="tab-panel" id="family">
+                <section className="tab-panel" id="family" role="tabpanel" aria-labelledby="tab-family">
                   <FamilyProfileList />
                   <FamilyAdviceCard />
                 </section>
               )}
 
               {activeTab === 'indoor' && (
-                <section className="tab-panel" id="indoor">
+                <section className="tab-panel" id="indoor" role="tabpanel" aria-labelledby="tab-indoor">
                   <IndoorAirSimulator />
                 </section>
               )}
@@ -88,12 +99,13 @@ function App() {
 
             {/* Floating Compact Corner Share Button */}
             <button
+              type="button"
               className="share-fab"
               onClick={() => setShowWhatsAppModal(true)}
               title="Share Air Quality Report"
               aria-label="Share Air Quality Report"
             >
-              <span>📱</span>
+              <span aria-hidden="true">📱</span>
               <span>Share Report</span>
             </button>
 

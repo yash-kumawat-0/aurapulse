@@ -34,8 +34,8 @@
   --bg-accent-tint: #E2EEFB;
   --bg-card: #FFFFFF;
   --text-primary: #1A1A2E;
-  --text-secondary: #64748B;
-  --text-muted: #94A3B8;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
   --border-light: #E4ECF4;
   --border-accent-soft: #D3E3F5;
 
@@ -110,7 +110,36 @@ button {
   font-family: var(--font-body);
   cursor: pointer;
   border: none;
-  outline: none;
+}
+
+:focus-visible {
+  outline: 2.5px solid #1565C0;
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  top: -48px;
+  left: 16px;
+  z-index: 999;
+  padding: 10px 16px;
+  background: #1E3A8A;
+  color: #FFFFFF;
+  font-weight: 700;
+  border-radius: 8px;
+  transition: top 0.15s ease;
+}
+.skip-link:focus {
+  top: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* --- Layout Utilities --- */

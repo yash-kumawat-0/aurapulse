@@ -8,375 +8,31 @@
 //   • Toggleable colored AQI zones right on the map
 //   • Bold Safe/Danger color-coded transport cards
 // ============================================
-import { Fragment, useState, useEffect, useRef, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Polyline, Rectangle, CircleMarker, Tooltip, useMap, useMapEvents } from 'react-leaflet';
-import L from 'leaflet';
+import { Fragment, useState, useEffect, useCallback } from 'react';
+import { MapContainer, TileLayer, Marker, Polyline, Tooltip } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useUser } from '../../context/UserContext.jsx';
 import { useAqi } from '../../context/AqiContext.jsx';
-import { searchPlace, reverseGeocode } from '../../utils/geocoder.js';
+import { reverseGeocode } from '../../utils/geocoder.js';
 import { fetchAllModesRoutes, MODE_CONFIG } from '../../utils/routingService.js';
 import { fetchMetroLines, lightenHex } from '../../utils/transitService.js';
 import {
   colorizeRoute,
   getColorLegend,
   calcRouteAvgPM25,
-  generateViewportAqiGrid,
 } from '../../utils/aqiRouteColorizer.js';
 import { fetchMultiCommuteComparison, fetchOriginCommuteBrief } from '../../services/api.js';
+import {
+  startIcon,
+  endIcon,
+  estimateLegDoseUg,
+  FitBounds,
+  ViewportAqiOverlay,
+  PlaceInput,
+  ColoredRoute,
+  TransitNetworkLayers,
+} from './CommuteMapLayers.jsx';
 import './CommuteDoseCalculator.css';
-
-// Leaflet icon fix
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-});
-const startIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-  iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41],
-});
-const endIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-  iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41],
-});
-
-function FitBounds({ coords }) {
-  const map = useMap();
-  useEffect(() => {
-    if (coords?.length > 1) {
-      try { map.fitBounds(L.latLngBounds(coords), { padding: [45, 45], maxZoom: 15 }); } catch { /* skip */ }
-    }
-  }, [map, coords]);
-  return null;
-}
-
-// ── Full-Map AQI Grid Overlay (fills entire visible map seamlessly with AQI colors) ──
-function ViewportAqiOverlay({ basePM25 }) {
-  const map = useMap();
-  const [bounds, setBounds] = useState(() => map.getBounds());
-
-  useMapEvents({
-    moveend: () => setBounds(map.getBounds()),
-    zoomend: () => setBounds(map.getBounds()),
-  });
-
-  useEffect(() => {
-    setBounds(map.getBounds());
-  }, [map, basePM25]);
-
-  const cells = generateViewportAqiGrid(bounds, basePM25, 8, 6);
-
-  return cells.map((cell) => (
-    <Rectangle
-      key={cell.id}
-      bounds={cell.bounds}
-      pathOptions={{
-        stroke: false,
-        fillColor: cell.color,
-        fillOpacity: 0.2,
-      }}
-    >
-      <Tooltip sticky>
-        AQI Zone: ~{cell.pm25} µg/m³ ({cell.label})
-      </Tooltip>
-    </Rectangle>
-  ));
-}
-
-// ── Place Search Input ──
-function PlaceInput({ label, value, onChange, placeholder }) {
-  const [query, setQuery] = useState(value || '');
-  const [suggestions, setSuggestions] = useState([]);
-  const [open, setOpen] = useState(false);
-  const [noMatch, setNoMatch] = useState(false);
-  const timer = useRef(null);
-  const wrap = useRef(null);
-
-  useEffect(() => { if (value && !query) setQuery(value); }, [value]); // eslint-disable-line
-  useEffect(() => {
-    const h = (e) => { if (wrap.current && !wrap.current.contains(e.target)) setOpen(false); };
-    document.addEventListener('mousedown', h);
-    return () => document.removeEventListener('mousedown', h);
-  }, []);
-
-  const onType = (e) => {
-    const v = e.target.value;
-    setQuery(v);
-    if (timer.current) clearTimeout(timer.current);
-    if (v.length >= 3) {
-      timer.current = setTimeout(async () => {
-        const r = await searchPlace(v);
-        setSuggestions(r);
-        setNoMatch(r.length === 0);
-        setOpen(true);
-      }, 350);
-    } else {
-      setSuggestions([]);
-      setNoMatch(false);
-      setOpen(false);
-    }
-  };
-  const pick = (p) => { setQuery(p.label); setNoMatch(false); setOpen(false); onChange({ lat: p.lat, lng: p.lng, label: p.label }); };
-
-  return (
-    <div className="cdc-place" ref={wrap}>
-      <label className="cdc-place-label">{label}</label>
-      <input className="cdc-place-input" placeholder={placeholder} value={query}
-        onChange={onType} onFocus={() => (suggestions.length > 0 || noMatch) && setOpen(true)} />
-      {open && (
-        <ul className="cdc-place-list">
-          {suggestions.length > 0 ? suggestions.map((p, i) => (
-            <li key={i}><button className="cdc-place-opt" onClick={() => pick(p)}>📍 {p.label}</button></li>
-          )) : noMatch && (
-            <li className="cdc-place-empty">No matching location found — try another landmark or city</li>
-          )}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-// ── Colored Road Route Segments on Map ──
-function ColoredRoute({ segments, weight, opacity, onClick, tooltip }) {
-  return segments.map((seg, si) => (
-    <Polyline key={si} positions={seg.points} color={seg.color}
-      weight={weight} opacity={opacity}
-      eventHandlers={onClick ? { click: onClick } : {}}>
-      {tooltip && si === Math.floor(segments.length / 2) && (
-        <Tooltip sticky>{tooltip}</Tooltip>
-      )}
-    </Polyline>
-  ));
-}
-
-// Deterministic client leg dose estimator matching backend inhaledDoseModel.js
-const LEG_PM_MULT = { DRIVE: 1.2, TWO_WHEELER: 1.4, METRO: 0.3, TRANSFER: 0.35, BUS: 0.6, WALK: 1.0, BICYCLE: 1.3 };
-const LEG_VE_LPM = { resting_in_vehicle: 9, walking_slow: 18, two_wheeler: 14, walking_brisk: 25, cycling: 35 };
-
-function estimateLegDoseUg(leg, basePm25 = 100) {
-  if (leg?.dose_ug != null) return leg.dose_ug;
-  const mult = LEG_PM_MULT[leg?.mode] || 1.0;
-  const act = leg?.activity_mode || (leg?.mode === 'WALK' ? 'walking_brisk' : 'resting_in_vehicle');
-  const ve = LEG_VE_LPM[act] || 9;
-  const dur = leg?.duration_min || 10;
-  return Math.round(((basePm25 * mult * ve * dur) / 1000) * 100) / 100;
-}
-
-// ── Metro Lines Renderer:
-//    • selectedIndex === null          -> ALL lines visible thin in light original color
-//    • selectedIndex === 'interchange' -> Highlights BOTH traveled interchange slices + transfer hub; rest thin
-//    • selectedIndex === number        -> ONLY selectedIndex highlighted bold original color; rest thin
-function TransitNetworkLayers({
-  lines,
-  selectedIndex,
-  onSelectLine,
-  origin,
-  destination,
-  firstMilePath,
-  lastMilePath,
-  interchangePlan = null,
-  basePM25 = 100,
-  evaluatedLegs = null,
-}) {
-  if (!lines?.length) return null;
-
-  const isInterchange = selectedIndex === 'interchange' && interchangePlan?.segments?.length;
-  const hasSingleSel = typeof selectedIndex === 'number' && lines[selectedIndex];
-  const selectedLine = hasSingleSel ? lines[selectedIndex] : null;
-  const activeBoardPoint = isInterchange ? interchangePlan.boardPoint : selectedLine?.boardPoint;
-  const activeAlightPoint = isInterchange ? interchangePlan.alightPoint : selectedLine?.alightPoint;
-  const activeLegsSource = isInterchange ? interchangePlan.legs : selectedLine?.autoPlan?.legs;
-
-  const renderPolylines = (line, lineIdx, weight, colorOverride, opacity, useSlice = false, interactive = true) => {
-    const segList = (useSlice && line.activeSegments?.length)
-      ? line.activeSegments
-      : (line.segments?.length ? line.segments : [line.coordinates]);
-    const color = colorOverride || line.color || '#7B1FA2';
-
-    return segList.map((coords, sIdx) => {
-      const valid = (coords || []).filter((c) => c && !isNaN(c[0]) && !isNaN(c[1]));
-      if (valid.length < 2) return null;
-      return (
-        <Polyline
-          key={`tl-${lineIdx}-${sIdx}-${weight}-${interactive ? 'i' : 'c'}`}
-          positions={valid}
-          color={color}
-          weight={weight}
-          opacity={opacity}
-          interactive={interactive}
-          eventHandlers={interactive && onSelectLine ? {
-            click: (e) => {
-              L.DomEvent?.stopPropagation?.(e);
-              onSelectLine(selectedIndex === lineIdx ? null : lineIdx);
-            },
-          } : {}}
-        >
-          {interactive && sIdx === 0 && (() => {
-            const mLeg = (selectedIndex === lineIdx && evaluatedLegs?.find((l) => l.mode === 'METRO'))
-              || line.autoPlan?.legs?.find((l) => l.mode === 'METRO');
-            const metroDoseUg = mLeg ? estimateLegDoseUg(mLeg, basePM25) : null;
-            return (
-              <Tooltip sticky>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
-                  <span style={{ width: 10, height: 10, borderRadius: 3, background: line.color, display: 'inline-block' }} />
-                  {line.name}
-                  {metroDoseUg != null && (
-                    <span style={{ color: '#15803D', marginLeft: 4 }}>
-                      · {metroDoseUg} µg inhaled
-                    </span>
-                  )}
-                </span>
-              </Tooltip>
-            );
-          })()}
-        </Polyline>
-      );
-    });
-  };
-
-  return (
-    <>
-      {/* 1) All unselected lines / non-active sections stay visible thin with crisp white rim */}
-      {lines.map((line, idx) => {
-        if (hasSingleSel && idx === selectedIndex && !line.activeSegments?.length) {
-          return null;
-        }
-        const thinColor = line.lightColor || lightenHex(line.color, 0.22);
-        return (
-          <Fragment key={`thin-wrap-${idx}`}>
-            {renderPolylines(line, idx, 7, '#FFFFFF', 0.8, false, false)}
-            {renderPolylines(line, idx, 4, thinColor, 0.92, false, true)}
-          </Fragment>
-        );
-      })}
-
-      {/* 2) Automated First-Mile & Last-Mile Feeder Paths (hover shows ONLY that leg's µg) */}
-      {(selectedLine || isInterchange) && origin && activeBoardPoint && (() => {
-        const firstLeg = evaluatedLegs?.find((l) => l.role === 'first')
-          || activeLegsSource?.find((l) => l.role === 'first');
-        if (!firstLeg) return null;
-        const pts = ((selectedLine?.isActive || isInterchange) && firstMilePath?.length > 1)
-          ? firstMilePath
-          : [[origin.lat, origin.lng], activeBoardPoint];
-        const isWalk = firstLeg.mode === 'WALK';
-        const legDose = estimateLegDoseUg(firstLeg, basePM25);
-        return (
-          <Polyline
-            positions={pts}
-            color={isWalk ? '#2E7D32' : '#0288D1'}
-            weight={5}
-            opacity={0.92}
-            dashArray={isWalk ? '5 8' : '10 6'}
-          >
-            <Tooltip sticky>
-              <strong>{isWalk ? '🚶 Walk' : '🚌 Bus'}</strong> · {firstLeg.distance_km} km (~{firstLeg.duration_min} min) · <strong>{legDose} µg inhaled</strong>
-            </Tooltip>
-          </Polyline>
-        );
-      })()}
-      {(selectedLine || isInterchange) && destination && activeAlightPoint && (() => {
-        const lastLeg = evaluatedLegs?.find((l) => l.role === 'last')
-          || activeLegsSource?.find((l) => l.role === 'last');
-        if (!lastLeg) return null;
-        const pts = ((selectedLine?.isActive || isInterchange) && lastMilePath?.length > 1)
-          ? lastMilePath
-          : [activeAlightPoint, [destination.lat, destination.lng]];
-        const isWalk = lastLeg.mode === 'WALK';
-        const legDose = estimateLegDoseUg(lastLeg, basePM25);
-        return (
-          <Polyline
-            positions={pts}
-            color={isWalk ? '#2E7D32' : '#0288D1'}
-            weight={5}
-            opacity={0.92}
-            dashArray={isWalk ? '5 8' : '10 6'}
-          >
-            <Tooltip sticky>
-              <strong>{isWalk ? '🚶 Walk' : '🚌 Bus'}</strong> · {lastLeg.distance_km} km (~{lastLeg.duration_min} min) · <strong>{legDose} µg inhaled</strong>
-            </Tooltip>
-          </Polyline>
-        );
-      })()}
-
-      {/* 3A) Interchange Highlight: BOTH traveled slices bold in official colors + Transfer Hub marker */}
-      {isInterchange && (
-        <>
-          {interchangePlan.segments.map((seg, sIdx) => (
-            <Polyline
-              key={`xfer-halo-${sIdx}`}
-              positions={seg.coords}
-              color="#FFFFFF"
-              weight={13}
-              opacity={0.94}
-            />
-          ))}
-          {interchangePlan.segments.map((seg, sIdx) => {
-            const matchedLeg = (evaluatedLegs || []).filter((l) => l.mode === 'METRO')[sIdx]
-              || (interchangePlan.legs || []).filter((l) => l.mode === 'METRO')[sIdx];
-            const metroDoseUg = matchedLeg ? estimateLegDoseUg(matchedLeg, basePM25) : null;
-            return (
-              <Polyline
-                key={`xfer-top-${sIdx}`}
-                positions={seg.coords}
-                color={seg.color}
-                weight={8}
-                opacity={1.0}
-              >
-                <Tooltip sticky>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
-                    <span style={{ width: 10, height: 10, borderRadius: 3, background: seg.color, display: 'inline-block' }} />
-                    {seg.name} · {seg.distance_km} km
-                    {metroDoseUg != null && (
-                      <span style={{ color: '#15803D' }}> · {metroDoseUg} µg inhaled</span>
-                    )}
-                  </span>
-                </Tooltip>
-              </Polyline>
-            );
-          })}
-          {interchangePlan.transferPoint && (
-            <CircleMarker
-              center={interchangePlan.transferPoint}
-              radius={8}
-              pathOptions={{ color: '#1E293B', weight: 3, fillColor: '#FFFFFF', fillOpacity: 1 }}
-            >
-              <Tooltip sticky>
-                🔄 <strong>Metro Interchange:</strong> {interchangePlan.lineAName} ➔ {interchangePlan.lineBName}
-              </Tooltip>
-            </CircleMarker>
-          )}
-        </>
-      )}
-
-      {/* 3B) Single Selected Line Highlight */}
-      {selectedLine && (() => {
-        const segList = (selectedLine.activeSegments?.length ? selectedLine.activeSegments : selectedLine.segments) || [selectedLine.coordinates];
-        return (
-          <>
-            {segList.map((coords, sIdx) => {
-              const valid = (coords || []).filter((c) => c && !isNaN(c[0]) && !isNaN(c[1]));
-              if (valid.length < 2) return null;
-              return (
-                <Polyline
-                  key={`halo-${selectedIndex}-${sIdx}`}
-                  positions={valid}
-                  color="#FFFFFF"
-                  weight={13}
-                  opacity={0.94}
-                />
-              );
-            })}
-            {renderPolylines(selectedLine, selectedIndex, 8, selectedLine.color, 1.0, true)}
-          </>
-        );
-      })()}
-    </>
-  );
-}
 
 // ========== MAIN COMPONENT ==========
 function CommuteDoseCalculator() {
@@ -486,7 +142,7 @@ function CommuteDoseCalculator() {
         setSelectedMetroLineIdx(defLineIdx);
       }
 
-      if (!modes.find((m) => m.mode === selectedMode)) setSelectedMode(modes[0].mode);
+      setSelectedMode((prev) => (modes.find((m) => m.mode === prev) ? prev : modes[0].mode));
 
       try {
         const routeParams = modes.map((m) => ({
@@ -525,9 +181,13 @@ function CommuteDoseCalculator() {
     } catch (err) {
       setError('Could not fetch routes.'); console.error(err);
     } finally { setLoading(false); }
-  }, [origin, destination, selectedMode]);
+  }, [origin, destination, language, setCommuteData]);
 
-  useEffect(() => { if (origin && destination) fetchRoutes(); }, [origin, destination]); // eslint-disable-line
+  useEffect(() => {
+    if (origin && destination) {
+      fetchRoutes();
+    }
+  }, [origin, destination, fetchRoutes]);
 
   const curMode = allModes.find((m) => m.mode === selectedMode);
   const curRoutes = curMode?.routes || [];

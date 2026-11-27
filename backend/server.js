@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cors from 'cors';
 import { errorHandler } from './src/middleware/errorHandler.js';
+import { securityHeaders } from './src/middleware/securityHeaders.js';
 import { getAiStatus } from './src/config/gemini.js';
 import apiRoutes from './src/routes/apiRoutes.js';
 
@@ -17,8 +18,10 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Required behind Render / Vercel / Railway / Cloudflare reverse proxies
+// Disable framework fingerprinting and configure reverse proxy trust
+app.disable('x-powered-by');
 app.set('trust proxy', 1);
+app.use(securityHeaders);
 
 const configuredOrigins = (process.env.FRONTEND_URL || '')
   .split(',')
@@ -35,28 +38,27 @@ const devOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173'];
 app.use(
   cors((req, callback) => {
     const origin = req.header('Origin');
+    const isWildcard = configuredOrigins.includes('*');
 
     const commonOptions = {
-      credentials: true,
+      credentials: !isWildcard,
       allowedHeaders: ['Content-Type', 'Authorization'],
     };
 
-    // Allow curl, healthchecks, and same-navigation requests with no Origin header
     if (!origin) {
-      return callback(null, { origin: true, ...commonOptions });
+      return callback(null, { origin: true, credentials: false, allowedHeaders: commonOptions.allowedHeaders });
     }
 
-    // Automatically allow same-origin browser requests (e.g. unified full-stack deploy)
     try {
       if (new URL(origin).host === req.get('host')) {
-        return callback(null, { origin: true, ...commonOptions });
+        return callback(null, { origin: true, credentials: true, allowedHeaders: commonOptions.allowedHeaders });
       }
     } catch {
       return callback(new Error('Invalid Origin header'));
     }
 
     const allowed =
-      configuredOrigins.includes('*') ||
+      isWildcard ||
       configuredOrigins.includes(origin) ||
       (process.env.NODE_ENV !== 'production' && devOrigins.includes(origin));
 
@@ -66,7 +68,7 @@ app.use(
     });
   }),
 );
-app.use(express.json());
+app.use(express.json({ limit: '100kb' }));
 
 // --- Health Check ---
 app.get('/api/health', (_req, res) => {
@@ -103,8 +105,12 @@ if (!process.env.VERCEL && fs.existsSync(frontendIndexHtml)) {
 // --- Central Error Handler ---
 app.use(errorHandler);
 
-// --- Start Server (skipped inside serverless runtimes such as Vercel) ---
-if (!process.env.VERCEL) {
+const isTestRunner =
+  process.env.NODE_ENV === 'test' ||
+  process.execArgv.some((arg) => arg.startsWith('--test')) ||
+  process.argv.some((arg) => arg.includes('.test.'));
+
+if (!process.env.VERCEL && !isTestRunner) {
   app.listen(PORT, () => {
     console.log(`🌬️  AuraPulse API running on http://localhost:${PORT}`);
   });

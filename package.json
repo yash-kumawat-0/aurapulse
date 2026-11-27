@@ -15,7 +15,8 @@
     "build:frontend": "cd frontend && npm run build",
     "build": "npm run install:all && npm run build:frontend",
     "start": "cd backend && npm start",
-    "test": "cd backend && npm test"
+    "test": "node --test backend/tests/*.test.js frontend/tests/*.test.js",
+    "check:syntax": "node -e \"import('node:fs').then(async fs=>{const p=await import('node:path');const c=await import('node:child_process');const walk=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>['node_modules','dist'].includes(e.name)?[]:e.isDirectory()?walk(p.join(d,e.name)):e.name.endsWith('.js')?[p.join(d,e.name)]:[]);for(const f of walk('.'))c.execFileSync('node',['--check',f]);console.log('All JS syntax verified cleanly');})\""
   },
   "dependencies": {
     "@google/genai": "^1.0.0",
