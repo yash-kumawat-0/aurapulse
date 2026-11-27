@@ -114,9 +114,10 @@ function IndoorAirSimulator() {
   const isUrgent = sim ? !sim.is_safe || sim.cadr_needed_for_safe > 0 : true;
   const diyAfterPm = diySimulation?.indoor_pm25 ?? Math.max(12, Math.round((sim?.indoor_pm25 || 120) * 0.25));
   const diyTotalCadr = (diyRec?.estimated_cadr || 350) * (diyRec?.units_needed || 1);
-  const dropPct = sim?.indoor_pm25 > 0
-    ? Math.max(0, Math.round(((sim.indoor_pm25 - diyAfterPm) / sim.indoor_pm25) * 100))
-    : 0;
+  const dropPct =
+    sim?.indoor_pm25 > 0
+      ? Math.max(0, Math.round(((sim.indoor_pm25 - diyAfterPm) / sim.indoor_pm25) * 100))
+      : 0;
 
   const displayedPm = fanPreviewOn ? diyAfterPm : (sim?.indoor_pm25 ?? outdoorPM);
 
@@ -125,7 +126,9 @@ function IndoorAirSimulator() {
       <div className="ia-setup-card">
         <div className="ia-setup-header">
           <div className="ia-setup-title-wrap">
-            <span className="ia-setup-icon" aria-hidden="true">🏠</span>
+            <span className="ia-setup-icon" aria-hidden="true">
+              🏠
+            </span>
             <h2 className="ia-setup-title">Indoor Air Planner</h2>
           </div>
           <div className="ia-volume-pill">
@@ -136,7 +139,9 @@ function IndoorAirSimulator() {
         <div className="ia-three-inputs">
           <div className="ia-input-box">
             <div className="ia-box-top">
-              <span className="ia-step-badge" aria-hidden="true">1</span>
+              <span className="ia-step-badge" aria-hidden="true">
+                1
+              </span>
               <span className="ia-box-label">Room Size</span>
               <button
                 type="button"
@@ -160,9 +165,13 @@ function IndoorAirSimulator() {
                     className={`ia-choice-card ${active ? 'ia-choice-card--active' : ''}`}
                     onClick={() => handleSelectRoom(r)}
                   >
-                    <span className="ia-choice-emoji" aria-hidden="true">{r.icon}</span>
+                    <span className="ia-choice-emoji" aria-hidden="true">
+                      {r.icon}
+                    </span>
                     <span className="ia-choice-name">{r.label}</span>
-                    <span className="ia-choice-meta">{r.area} ft² · {vol.toLocaleString()} ft³</span>
+                    <span className="ia-choice-meta">
+                      {r.area} ft² · {vol.toLocaleString()} ft³
+                    </span>
                   </button>
                 );
               })}
@@ -171,7 +180,9 @@ function IndoorAirSimulator() {
             {showCustomSize && (
               <div className="ia-custom-size">
                 <label className="ia-mini-slider">
-                  <span>Floor Area: <strong>{roomArea} sq ft</strong></span>
+                  <span>
+                    Floor Area: <strong>{roomArea} sq ft</strong>
+                  </span>
                   <input
                     type="range"
                     min="60"
@@ -186,7 +197,9 @@ function IndoorAirSimulator() {
                   />
                 </label>
                 <label className="ia-mini-slider">
-                  <span>Ceiling Height: <strong>{ceilingHeight} ft</strong></span>
+                  <span>
+                    Ceiling Height: <strong>{ceilingHeight} ft</strong>
+                  </span>
                   <input
                     type="range"
                     min="8"
@@ -206,7 +219,9 @@ function IndoorAirSimulator() {
 
           <div className="ia-input-box">
             <div className="ia-box-top">
-              <span className="ia-step-badge" aria-hidden="true">2</span>
+              <span className="ia-step-badge" aria-hidden="true">
+                2
+              </span>
               <span className="ia-box-label">Window Type</span>
             </div>
             <div className="ia-seal-grid" role="group" aria-label="Window Type Presets">
@@ -218,12 +233,19 @@ function IndoorAirSimulator() {
                     type="button"
                     aria-pressed={active}
                     className={`ia-choice-card ${active ? 'ia-choice-card--active' : ''}`}
-                    onClick={() => { setSealType(s.key); if (hasSimulated) setNeedsRefresh(true); }}
+                    onClick={() => {
+                      setSealType(s.key);
+                      if (hasSimulated) setNeedsRefresh(true);
+                    }}
                     style={active ? { borderColor: s.color, background: `${s.color}12` } : undefined}
                   >
-                    <span className="ia-choice-emoji" aria-hidden="true">{s.icon}</span>
+                    <span className="ia-choice-emoji" aria-hidden="true">
+                      {s.icon}
+                    </span>
                     <span className="ia-choice-name">{s.label}</span>
-                    <span className="ia-choice-meta" style={{ color: s.color, fontWeight: 700 }}>{s.desc}</span>
+                    <span className="ia-choice-meta" style={{ color: s.color, fontWeight: 700 }}>
+                      {s.desc}
+                    </span>
                   </button>
                 );
               })}
@@ -236,14 +258,19 @@ function IndoorAirSimulator() {
                 aria-label="Describe custom window setup"
                 placeholder="Describe window setup (e.g. Balcony gap, Exhaust open, Cracked frame)..."
                 value={customWindowDesc}
-                onChange={(e) => { setCustomWindowDesc(e.target.value); if (hasSimulated) setNeedsRefresh(true); }}
+                onChange={(e) => {
+                  setCustomWindowDesc(e.target.value);
+                  if (hasSimulated) setNeedsRefresh(true);
+                }}
               />
             )}
           </div>
 
           <div className="ia-input-box">
             <div className="ia-box-top">
-              <span className="ia-step-badge" aria-hidden="true">3</span>
+              <span className="ia-step-badge" aria-hidden="true">
+                3
+              </span>
               <span className="ia-box-label">Indoor Smoke / Dust</span>
             </div>
             <div className="ia-source-grid" role="group" aria-label="Indoor Smoke or Dust Sources">
@@ -255,9 +282,14 @@ function IndoorAirSimulator() {
                     type="button"
                     aria-pressed={active}
                     className={`ia-choice-card ia-choice-card--compact ${active ? 'ia-choice-card--active' : ''}`}
-                    onClick={() => { setSource(s.key); if (hasSimulated) setNeedsRefresh(true); }}
+                    onClick={() => {
+                      setSource(s.key);
+                      if (hasSimulated) setNeedsRefresh(true);
+                    }}
                   >
-                    <span className="ia-choice-emoji" aria-hidden="true">{s.icon}</span>
+                    <span className="ia-choice-emoji" aria-hidden="true">
+                      {s.icon}
+                    </span>
                     <span className="ia-choice-name">{s.label}</span>
                     <span className="ia-choice-meta">{s.rate}</span>
                   </button>
@@ -272,7 +304,10 @@ function IndoorAirSimulator() {
                 aria-label="Describe custom indoor smoke or dust source"
                 placeholder="Describe indoor source (e.g. Candles, Paint fumes, Renovation dust, Heater)..."
                 value={customSourceDesc}
-                onChange={(e) => { setCustomSourceDesc(e.target.value); if (hasSimulated) setNeedsRefresh(true); }}
+                onChange={(e) => {
+                  setCustomSourceDesc(e.target.value);
+                  if (hasSimulated) setNeedsRefresh(true);
+                }}
               />
             )}
           </div>
@@ -302,7 +337,9 @@ function IndoorAirSimulator() {
           <div className={`ia-visual-hero ${isUrgent ? 'ia-visual-hero--warn' : 'ia-visual-hero--safe'}`}>
             <div className="ia-flow-strip">
               <div className="ia-flow-node">
-                <span className="ia-flow-emoji" aria-hidden="true">🏠</span>
+                <span className="ia-flow-emoji" aria-hidden="true">
+                  🏠
+                </span>
                 <div>
                   <span className="ia-flow-lbl">Room Now</span>
                   <strong className="ia-flow-val" style={{ color: getPmColor(sim.indoor_pm25) }}>
@@ -312,12 +349,16 @@ function IndoorAirSimulator() {
               </div>
 
               <div className="ia-flow-mid">
-                <span className="ia-flow-fan" aria-hidden="true">🌀</span>
+                <span className="ia-flow-fan" aria-hidden="true">
+                  🌀
+                </span>
                 <span className="ia-flow-drop">−{dropPct}%</span>
               </div>
 
               <div className="ia-flow-node ia-flow-node--clean">
-                <span className="ia-flow-emoji ia-sparkle-float" aria-hidden="true">✨</span>
+                <span className="ia-flow-emoji ia-sparkle-float" aria-hidden="true">
+                  ✨
+                </span>
                 <div>
                   <span className="ia-flow-lbl">With DIY</span>
                   <strong className="ia-flow-val" style={{ color: '#15803D' }}>
@@ -330,7 +371,9 @@ function IndoorAirSimulator() {
             {Array.isArray(aiGuidance?.visual_badges) && aiGuidance.visual_badges.length > 0 && (
               <div className="ia-stickers-row">
                 {aiGuidance.visual_badges.map((b, idx) => (
-                  <span key={idx} className="ia-sticker-pill">{b.icon} {b.label}</span>
+                  <span key={idx} className="ia-sticker-pill">
+                    {b.icon} {b.label}
+                  </span>
                 ))}
                 {sim.ai_calibrated && (
                   <span className="ia-sticker-pill ia-sticker-pill--ai">

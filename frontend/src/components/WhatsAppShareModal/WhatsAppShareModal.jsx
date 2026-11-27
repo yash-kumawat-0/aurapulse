@@ -75,12 +75,7 @@ _Powered by AuraPulse • Google Maps Air Quality API • Gemini AI_`;
         aria-label="Close clean air bulletin"
         onClick={onClose}
       />
-      <div
-        className="whatsapp-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="whatsapp-modal-title"
-      >
+      <div className="whatsapp-modal" role="dialog" aria-modal="true" aria-labelledby="whatsapp-modal-title">
         <div className="whatsapp-header">
           <h2 id="whatsapp-modal-title">📱 Clean Air Bulletin</h2>
           <button

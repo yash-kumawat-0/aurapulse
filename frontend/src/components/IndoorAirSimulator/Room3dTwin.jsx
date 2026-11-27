@@ -102,7 +102,9 @@ function Room3dTwin({
 
           {source !== 'none' && (
             <div className="ia-r3d-source">
-              <span className="ia-r3d-src-icon" aria-hidden="true">{SOURCE_ICONS[source] || '💨'}</span>
+              <span className="ia-r3d-src-icon" aria-hidden="true">
+                {SOURCE_ICONS[source] || '💨'}
+              </span>
               <span className="ia-r3d-src-lbl">
                 {source === 'other' && customSourceDesc ? customSourceDesc.slice(0, 14) : source}
               </span>
@@ -126,7 +128,9 @@ function Room3dTwin({
 
           <div className={`ia-r3d-purifier ${fanPreviewOn ? 'ia-r3d-purifier--spin' : ''}`}>
             <div className="ia-r3d-fan-face">
-              <span className="ia-r3d-fan-icon" aria-hidden="true">🌀</span>
+              <span className="ia-r3d-fan-icon" aria-hidden="true">
+                🌀
+              </span>
             </div>
             <span className="ia-r3d-fan-lbl">{fanPreviewOn ? 'ON · Cleaning' : 'OFF'}</span>
           </div>
@@ -136,21 +140,27 @@ function Room3dTwin({
       {econ && (
         <div className="ia-econ-strip">
           <div className="ia-econ-card">
-            <span className="ia-econ-icon" aria-hidden="true">🗓️</span>
+            <span className="ia-econ-icon" aria-hidden="true">
+              🗓️
+            </span>
             <div>
               <span className="ia-econ-lbl">Filter Life</span>
               <strong>~{econ.filter_life_days} Days</strong>
             </div>
           </div>
           <div className="ia-econ-card ia-econ-card--save">
-            <span className="ia-econ-icon" aria-hidden="true">💰</span>
+            <span className="ia-econ-icon" aria-hidden="true">
+              💰
+            </span>
             <div>
               <span className="ia-econ-lbl">Saved vs Commercial</span>
               <strong>{econ.yearly_savings_estimate}</strong>
             </div>
           </div>
           <div className="ia-econ-card">
-            <span className="ia-econ-icon" aria-hidden="true">⚡</span>
+            <span className="ia-econ-icon" aria-hidden="true">
+              ⚡
+            </span>
             <div>
               <span className="ia-econ-lbl">Monthly Power</span>
               <strong>{econ.monthly_electricity_cost}</strong>
@@ -163,7 +173,9 @@ function Room3dTwin({
         <div className="ia-zero-hacks">
           <span className="ia-zero-title">₹0 Immediate Fixes:</span>
           {hacks.map((h, idx) => (
-            <span key={idx} className="ia-zero-pill">{h.emoji} {h.label}</span>
+            <span key={idx} className="ia-zero-pill">
+              {h.emoji} {h.label}
+            </span>
           ))}
         </div>
       )}

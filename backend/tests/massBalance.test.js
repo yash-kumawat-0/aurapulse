@@ -35,7 +35,7 @@ describe('massBalanceModel', () => {
 
     assert.ok(
       withPurifier.indoor_pm25 < withoutPurifier.indoor_pm25,
-      `With purifier (${withPurifier.indoor_pm25}) should be less than without (${withoutPurifier.indoor_pm25})`
+      `With purifier (${withPurifier.indoor_pm25}) should be less than without (${withoutPurifier.indoor_pm25})`,
     );
   });
 
@@ -52,7 +52,7 @@ describe('massBalanceModel', () => {
 
     assert.ok(
       withIncense.indoor_pm25 > noSource.indoor_pm25,
-      `With incense (${withIncense.indoor_pm25}) should be higher than without (${noSource.indoor_pm25})`
+      `With incense (${withIncense.indoor_pm25}) should be higher than without (${noSource.indoor_pm25})`,
     );
   });
 
@@ -69,7 +69,7 @@ describe('massBalanceModel', () => {
 
     assert.ok(
       leaky.cadr_needed_for_safe >= sealed.cadr_needed_for_safe,
-      'Leaky windows should need higher CADR'
+      'Leaky windows should need higher CADR',
     );
   });
 });

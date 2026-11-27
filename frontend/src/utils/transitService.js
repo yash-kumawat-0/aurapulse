@@ -22,10 +22,20 @@ function normalizeColor(osmColor, lineName) {
   if (osmColor) {
     if (osmColor.startsWith('#')) return osmColor;
     const named = {
-      pink: '#E91E63', red: '#E53935', blue: '#1E88E5', green: '#43A047',
-      yellow: '#EAB308', orange: '#FB8C00', purple: '#7B1FA2', violet: '#7B1FA2',
-      magenta: '#AD1457', aqua: '#00BCD4', cyan: '#00BCD4', gold: '#EAB308',
-      grey: '#78909C', gray: '#78909C',
+      pink: '#E91E63',
+      red: '#E53935',
+      blue: '#1E88E5',
+      green: '#43A047',
+      yellow: '#EAB308',
+      orange: '#FB8C00',
+      purple: '#7B1FA2',
+      violet: '#7B1FA2',
+      magenta: '#AD1457',
+      aqua: '#00BCD4',
+      cyan: '#00BCD4',
+      gold: '#EAB308',
+      grey: '#78909C',
+      gray: '#78909C',
     };
     const lowerOsm = osmColor.toLowerCase().trim();
     if (named[lowerOsm]) return named[lowerOsm];
@@ -60,7 +70,7 @@ function getCityFallbackNetwork(lat1, lng1, lat2, lng2) {
   const midLat = (lat1 + lat2) / 2;
   const midLng = (lng1 + lng2) / 2;
   const cityNet = CITY_METRO_NETWORKS.find(
-    (c) => midLat >= c.bounds.s && midLat <= c.bounds.n && midLng >= c.bounds.w && midLng <= c.bounds.e
+    (c) => midLat >= c.bounds.s && midLat <= c.bounds.n && midLng >= c.bounds.w && midLng <= c.bounds.e,
   );
   if (!cityNet) return [];
   return cityNet.lines.map((l) => ({
@@ -128,7 +138,7 @@ out body geom;`;
     if (seenNames.has(normKey)) continue;
 
     const segments = [];
-    for (const member of (el.members || [])) {
+    for (const member of el.members || []) {
       if (member.type === 'way' && member.geometry?.length) {
         segments.push(member.geometry.map((p) => [p.lat, p.lon]));
         if (member.ref) usedWayIds.add(member.ref);
@@ -212,9 +222,10 @@ function sliceLineCoords(coords, idx1, idx2) {
 function buildFeederLeg(role, gapKm) {
   if (gapKm < 0.25) return null;
   const mode = gapKm > 0.7 ? 'BUS' : 'WALK';
-  const dur = mode === 'WALK'
-    ? Math.max(3, Math.round((gapKm / 4.8) * 60))
-    : Math.max(4, Math.round((gapKm / 18) * 60) + 3);
+  const dur =
+    mode === 'WALK'
+      ? Math.max(3, Math.round((gapKm / 4.8) * 60))
+      : Math.max(4, Math.round((gapKm / 18) * 60) + 3);
   return {
     role,
     mode,
@@ -253,9 +264,17 @@ export function selectActiveMetroCorridor(metroLines, originLat, originLng, dest
 
     coords.forEach((pt, i) => {
       const dA = distKm(originLat, originLng, pt[0], pt[1]);
-      if (dA < minA) { minA = dA; ptA = pt; idxA = i; }
+      if (dA < minA) {
+        minA = dA;
+        ptA = pt;
+        idxA = i;
+      }
       const dB = distKm(destLat, destLng, pt[0], pt[1]);
-      if (dB < minB) { minB = dB; ptB = pt; idxB = i; }
+      if (dB < minB) {
+        minB = dB;
+        ptB = pt;
+        idxB = i;
+      }
     });
 
     return { index, line, minA, minB, totalDist: minA + minB, ptA, ptB, idxA, idxB, coords };
@@ -352,8 +371,14 @@ export function selectActiveMetroCorridor(metroLines, originLat, originLng, dest
 
       const subA = sliceLineCoords(a.coords, a.idxA, xferIdxA);
       const subB = sliceLineCoords(b.coords, xferIdxB, b.idxB);
-      const kmA = subA.length >= 2 ? measurePathKm(subA) : distKm(a.ptA[0], a.ptA[1], a.coords[xferIdxA][0], a.coords[xferIdxA][1]);
-      const kmB = subB.length >= 2 ? measurePathKm(subB) : distKm(b.coords[xferIdxB][0], b.coords[xferIdxB][1], b.ptB[0], b.ptB[1]);
+      const kmA =
+        subA.length >= 2
+          ? measurePathKm(subA)
+          : distKm(a.ptA[0], a.ptA[1], a.coords[xferIdxA][0], a.coords[xferIdxA][1]);
+      const kmB =
+        subB.length >= 2
+          ? measurePathKm(subB)
+          : distKm(b.coords[xferIdxB][0], b.coords[xferIdxB][1], b.ptB[0], b.ptB[1]);
 
       // Must meaningfully travel on BOTH lines (avoids pointless transfers for 200m)
       if (kmA < 0.7 || kmB < 0.7) continue;
@@ -437,8 +462,22 @@ export function selectActiveMetroCorridor(metroLines, originLat, originLng, dest
       lineAColor: a.line.color,
       lineBColor: b.line.color,
       segments: [
-        { lineIndex: a.index, name: a.line.name, color: a.line.color, coords: subA, distance_km: kmA, duration_min: durA },
-        { lineIndex: b.index, name: b.line.name, color: b.line.color, coords: subB, distance_km: kmB, duration_min: durB },
+        {
+          lineIndex: a.index,
+          name: a.line.name,
+          color: a.line.color,
+          coords: subA,
+          distance_km: kmA,
+          duration_min: durA,
+        },
+        {
+          lineIndex: b.index,
+          name: b.line.name,
+          color: b.line.color,
+          coords: subB,
+          distance_km: kmB,
+          duration_min: durB,
+        },
       ],
       transferPoint: xferPoint,
       boardPoint,
@@ -458,8 +497,8 @@ export function selectActiveMetroCorridor(metroLines, originLat, originLng, dest
     activeIndex,
     activeLine: annotatedLines[activeIndex] || null,
     interchangePlan,
-    boardPoint: interchangePlan ? interchangePlan.boardPoint : (bestSingle?.ptA || null),
-    alightPoint: interchangePlan ? interchangePlan.alightPoint : (bestSingle?.ptB || null),
+    boardPoint: interchangePlan ? interchangePlan.boardPoint : bestSingle?.ptA || null,
+    alightPoint: interchangePlan ? interchangePlan.alightPoint : bestSingle?.ptB || null,
   };
 }
 

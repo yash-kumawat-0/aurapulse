@@ -102,10 +102,20 @@ export function AqiProvider({ children }) {
   return (
     <AqiContext.Provider
       value={{
-        currentAqi, diurnalData, indoorData, commuteData, setCommuteData,
-        adviceData, symptomResult,
-        loading, error,
-        loadAqiData, loadIndoorSimulation, loadCommuteComparison, loadAdvice, checkSymptom,
+        currentAqi,
+        diurnalData,
+        indoorData,
+        commuteData,
+        setCommuteData,
+        adviceData,
+        symptomResult,
+        loading,
+        error,
+        loadAqiData,
+        loadIndoorSimulation,
+        loadCommuteComparison,
+        loadAdvice,
+        checkSymptom,
       }}
     >
       {children}

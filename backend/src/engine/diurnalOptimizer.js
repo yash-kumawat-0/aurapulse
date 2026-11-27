@@ -101,22 +101,21 @@ export function analyzeDiurnalPattern(hourlyData) {
       end_hour: (hourlyData[dirtiestWindow.startIndex + 1] || hourlyData[dirtiestWindow.startIndex]).hour + 1,
       start_label: formatHour(hourlyData[dirtiestWindow.startIndex].hour),
       end_label: formatHour(
-        ((hourlyData[dirtiestWindow.startIndex + 1] || hourlyData[dirtiestWindow.startIndex]).hour + 1)
+        (hourlyData[dirtiestWindow.startIndex + 1] || hourlyData[dirtiestWindow.startIndex]).hour + 1,
       ),
       avg_pm25: Math.round(dirtiestWindow.avgPM25),
     },
     ventilation_recommendation: {
       should_ventilate: cleanestWindow.avgPM25 <= 100,
       window: `${formatHour(cleanStart.hour)} – ${formatHour(cleanEnd.hour + 1)}`,
-      reason: cleanestWindow.avgPM25 <= 60
-        ? 'Air quality during this window is good enough for safe natural ventilation.'
-        : cleanestWindow.avgPM25 <= 100
-          ? 'Air quality is moderate. Open windows briefly (20-30 minutes) for air exchange.'
-          : 'Even the cleanest window today is unhealthy. Keep windows closed and use air filtration.',
+      reason:
+        cleanestWindow.avgPM25 <= 60
+          ? 'Air quality during this window is good enough for safe natural ventilation.'
+          : cleanestWindow.avgPM25 <= 100
+            ? 'Air quality is moderate. Open windows briefly (20-30 minutes) for air exchange.'
+            : 'Even the cleanest window today is unhealthy. Keep windows closed and use air filtration.',
     },
     daily_average_pm25: Math.round(dailyAvg),
-    morning_trap_warning: todayHours.some(
-      (h) => h.hour >= 5 && h.hour <= 8 && h.pm25 > dailyAvg * 1.3
-    ),
+    morning_trap_warning: todayHours.some((h) => h.hour >= 5 && h.hour <= 8 && h.pm25 > dailyAvg * 1.3),
   };
 }

@@ -12,15 +12,7 @@ import { createApiError } from '../middleware/errorHandler.js';
  */
 export async function generateAdvice(req, res, next) {
   try {
-    const {
-      lat,
-      lng,
-      location_label,
-      family_members,
-      home_profile,
-      commute_comparison,
-      language,
-    } = req.body;
+    const { lat, lng, location_label, family_members, home_profile, commute_comparison, language } = req.body;
 
     if (!lat || !lng) throw createApiError('lat and lng are required.', 400);
     if (!family_members || family_members.length === 0) {

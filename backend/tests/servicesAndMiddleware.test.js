@@ -10,10 +10,12 @@ describe('Backend Middleware & Security Error Handling', () => {
   it('encodes coordinate geohashes consistently for spatial caching', () => {
     const req = { query: { lat: '18.5204', lng: '73.8567' } };
     let called = false;
-    aqiCacheMiddleware(req, {}, () => { called = true; });
+    aqiCacheMiddleware(req, {}, () => {
+      called = true;
+    });
     assert.equal(called, true);
     assert.equal(req.geohash, 'geo:18.52:73.86');
-    assert.equal(encodeGeohash(28.6139, 77.2090), 'geo:28.61:77.21');
+    assert.equal(encodeGeohash(28.6139, 77.209), 'geo:28.61:77.21');
   });
 
   it('redacts raw 500 error details in production while preserving 400 validation errors', () => {

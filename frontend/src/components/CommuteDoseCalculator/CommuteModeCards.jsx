@@ -22,9 +22,10 @@ function CommuteModeCards({
         const doseVal = dose?.dose_ug ?? m.routes[0]?.estimatedDose;
         const risk = getRiskTier(doseVal);
         const modeNote = aiAnalysis?.mode_notes?.find((n) => n.mode === m.mode);
-        const rangePct = doseVal != null
-          ? Math.min(100, Math.max(8, Math.round((doseVal / Math.max(maxDose, 1)) * 100)))
-          : 0;
+        const rangePct =
+          doseVal != null
+            ? Math.min(100, Math.max(8, Math.round((doseVal / Math.max(maxDose, 1)) * 100)))
+            : 0;
 
         return (
           <button
@@ -41,7 +42,9 @@ function CommuteModeCards({
             }}
           >
             <div className="cdc-mode-top">
-              <span className="cdc-mode-icon" aria-hidden="true">{m.icon}</span>
+              <span className="cdc-mode-icon" aria-hidden="true">
+                {m.icon}
+              </span>
               <span className="cdc-mode-name">{m.label}</span>
               {safest && <span className="cdc-mode-safest-tag">BEST</span>}
             </div>
@@ -67,7 +70,10 @@ function CommuteModeCards({
               <span>• {m.routes[0]?.distanceKm || '—'} km</span>
             </div>
 
-            <div className="cdc-mode-range-track" title={`Relative exposure: ${rangePct}% of highest-dose mode`}>
+            <div
+              className="cdc-mode-range-track"
+              title={`Relative exposure: ${rangePct}% of highest-dose mode`}
+            >
               <div
                 className="cdc-mode-range-fill"
                 style={{ width: `${rangePct}%`, background: risk.color }}

@@ -99,10 +99,12 @@ async function fetchOSRMRoutes(originLat, originLng, destLat, destLng, profile) 
  */
 function haversineKm(lat1, lng1, lat2, lng2) {
   const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 /**
@@ -126,10 +128,7 @@ function generateSyntheticAlternatives(mainRoute) {
       // Gaussian-shaped offset: strongest at middle, fades at start/end
       const t = i / (coords.length - 1); // 0 to 1
       const factor = Math.exp(-Math.pow((t - 0.5) * 3, 2)); // Bell curve
-      return [
-        c[0] + offset.dlat * factor,
-        c[1] + offset.dlng * factor,
-      ];
+      return [c[0] + offset.dlat * factor, c[1] + offset.dlng * factor];
     });
 
     // Calculate slightly different distance (longer route)
@@ -172,7 +171,7 @@ export async function fetchRoutesForMode(originLat, originLng, destLat, destLng,
         if (config.speedOverride) {
           duration = Math.max(5, Math.round((r.distanceKm / config.speedOverride) * 60));
         }
-        const dose = 100 * config.pm25Multiplier * ve * duration / 1000;
+        const dose = (100 * config.pm25Multiplier * ve * duration) / 1000;
 
         // Label alternatives meaningfully
         let altLabel;
@@ -201,29 +200,33 @@ export async function fetchRoutesForMode(originLat, originLng, destLat, destLng,
     const straightKm = haversineKm(originLat, originLng, destLat, destLng);
     const routeKm = Math.round(straightKm * 1.3 * 10) / 10;
     const duration = estimateMetroTime(routeKm);
-    const dose = 100 * config.pm25Multiplier * ve * duration / 1000;
+    const dose = (100 * config.pm25Multiplier * ve * duration) / 1000;
 
     try {
       const metroLines = await fetchMetroLines(originLat, originLng, destLat, destLng);
 
       if (metroLines.length > 0) {
-        const { annotatedLines, activeIndex, activeLine, interchangePlan, boardPoint, alightPoint } = selectActiveMetroCorridor(
-          metroLines,
-          originLat,
-          originLng,
-          destLat,
-          destLng
-        );
+        const { annotatedLines, activeIndex, activeLine, interchangePlan, boardPoint, alightPoint } =
+          selectActiveMetroCorridor(metroLines, originLat, originLng, destLat, destLng);
 
-        const activePlan = interchangePlan || activeLine?.autoPlan || {
-          firstMileKm: 0,
-          metroKm: routeKm,
-          lastMileKm: 0,
-          totalKm: routeKm,
-          totalDurationMin: duration,
-          coveragePct: 100,
-          legs: [{ role: 'main', mode: 'METRO', distance_km: routeKm, duration_min: duration, activity_mode: 'resting_in_vehicle' }],
-        };
+        const activePlan = interchangePlan ||
+          activeLine?.autoPlan || {
+            firstMileKm: 0,
+            metroKm: routeKm,
+            lastMileKm: 0,
+            totalKm: routeKm,
+            totalDurationMin: duration,
+            coveragePct: 100,
+            legs: [
+              {
+                role: 'main',
+                mode: 'METRO',
+                distance_km: routeKm,
+                duration_min: duration,
+                activity_mode: 'resting_in_vehicle',
+              },
+            ],
+          };
 
         // Fetch street-following OSRM paths for first & last mile gaps (if >= 0.25 km)
         const firstLeg = activePlan.legs.find((l) => l.role === 'first');
@@ -233,9 +236,17 @@ export async function fetchRoutesForMode(originLat, originLng, destLat, destLng,
           const prof = modeKey === 'WALK' ? 'foot' : 'car';
           try {
             const res = await fetchOSRMRoutes(p1Lat, p1Lng, p2Lat, p2Lng, prof);
-            return res[0]?.coordinates || [[p1Lat, p1Lng], [p2Lat, p2Lng]];
+            return (
+              res[0]?.coordinates || [
+                [p1Lat, p1Lng],
+                [p2Lat, p2Lng],
+              ]
+            );
           } catch {
-            return [[p1Lat, p1Lng], [p2Lat, p2Lng]];
+            return [
+              [p1Lat, p1Lng],
+              [p2Lat, p2Lng],
+            ];
           }
         };
 
@@ -250,14 +261,16 @@ export async function fetchRoutesForMode(originLat, originLng, destLat, destLng,
 
         // Accurate fallback dose summing across all legs (including transfer)
         const autoDose = activePlan.legs.reduce((sum, leg) => {
-          const mult = leg.mode === 'TRANSFER' ? 0.35 : (MODE_CONFIG[leg.mode]?.pm25Multiplier || 1.0);
-          const legVe = leg.mode === 'TRANSFER' ? 18 : (veRates[leg.activity_mode] || ve);
+          const mult = leg.mode === 'TRANSFER' ? 0.35 : MODE_CONFIG[leg.mode]?.pm25Multiplier || 1.0;
+          const legVe = leg.mode === 'TRANSFER' ? 18 : veRates[leg.activity_mode] || ve;
           return sum + (100 * mult * legVe * leg.duration_min) / 1000;
         }, 0);
 
         const routeTitle = interchangePlan
           ? `${interchangePlan.lineAName} ⇄ ${interchangePlan.lineBName}`
-          : (activeLine ? activeLine.name.split('(')[0].trim() : 'Metro');
+          : activeLine
+            ? activeLine.name.split('(')[0].trim()
+            : 'Metro';
 
         const mainRoute = {
           id: 'METRO-0',
@@ -308,7 +321,7 @@ export async function fetchRoutesForMode(originLat, originLng, destLat, destLng,
     const straightKm = haversineKm(originLat, originLng, destLat, destLng);
     const routeKm = Math.round(straightKm * 1.5 * 10) / 10;
     const duration = estimateBusTime(routeKm);
-    const dose = 100 * config.pm25Multiplier * ve * duration / 1000;
+    const dose = (100 * config.pm25Multiplier * ve * duration) / 1000;
 
     try {
       const busRoutes = await fetchBusRoutes(originLat, originLng, destLat, destLng);
@@ -341,7 +354,8 @@ export async function fetchRoutesForMode(originLat, originLng, destLat, destLng,
         coordinates: r.coordinates,
         distanceKm: r.distanceKm,
         durationMin: estimateBusTime(r.distanceKm),
-        estimatedDose: Math.round(100 * config.pm25Multiplier * ve * estimateBusTime(r.distanceKm) / 1000 * 10) / 10,
+        estimatedDose:
+          Math.round(((100 * config.pm25Multiplier * ve * estimateBusTime(r.distanceKm)) / 1000) * 10) / 10,
         isTransit: true,
         transitLines: [],
       }));
@@ -360,9 +374,7 @@ export async function fetchRoutesForMode(originLat, originLng, destLat, destLng,
 export async function fetchAllModesRoutes(originLat, originLng, destLat, destLng) {
   const modeKeys = Object.keys(MODE_CONFIG);
   const results = await Promise.allSettled(
-    modeKeys.map((key) => fetchRoutesForMode(originLat, originLng, destLat, destLng, key))
+    modeKeys.map((key) => fetchRoutesForMode(originLat, originLng, destLat, destLng, key)),
   );
-  return results
-    .filter((r) => r.status === 'fulfilled' && r.value !== null)
-    .map((r) => r.value);
+  return results.filter((r) => r.status === 'fulfilled' && r.value !== null).map((r) => r.value);
 }

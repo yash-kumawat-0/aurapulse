@@ -20,37 +20,41 @@ export async function getCurrentConditions(lat, lng) {
 
   const cacheKey = `${encodeGeohash(lat, lng)}:current`;
 
-  return withCache(cacheKey, async () => {
-    try {
-      const response = await fetch(AIR_QUALITY_ENDPOINTS.currentConditions, {
-        method: 'POST',
-        headers: getGoogleHeaders(),
-        signal: AbortSignal.timeout(8000),
-        body: JSON.stringify({
-          location: { latitude: lat, longitude: lng },
-          extraComputations: [
-            'HEALTH_RECOMMENDATIONS',
-            'DOMINANT_POLLUTANT_CONCENTRATION',
-            'POLLUTANT_CONCENTRATION',
-            'LOCAL_AQI',
-            'POLLUTANT_ADDITIONAL_INFO',
-          ],
-          languageCode: 'en',
-        }),
-      });
+  return withCache(
+    cacheKey,
+    async () => {
+      try {
+        const response = await fetch(AIR_QUALITY_ENDPOINTS.currentConditions, {
+          method: 'POST',
+          headers: getGoogleHeaders(),
+          signal: AbortSignal.timeout(8000),
+          body: JSON.stringify({
+            location: { latitude: lat, longitude: lng },
+            extraComputations: [
+              'HEALTH_RECOMMENDATIONS',
+              'DOMINANT_POLLUTANT_CONCENTRATION',
+              'POLLUTANT_CONCENTRATION',
+              'LOCAL_AQI',
+              'POLLUTANT_ADDITIONAL_INFO',
+            ],
+            languageCode: 'en',
+          }),
+        });
 
-      if (!response.ok) {
-        console.warn(`Air Quality API warning (${response.status}), using simulated fallback.`);
+        if (!response.ok) {
+          console.warn(`Air Quality API warning (${response.status}), using simulated fallback.`);
+          return getSimulatedCurrentConditions(lat, lng);
+        }
+
+        const data = await response.json();
+        return normalizeCurrentConditions(data);
+      } catch (err) {
+        console.warn('Air Quality API fetch error:', err.message, '- falling back to simulation.');
         return getSimulatedCurrentConditions(lat, lng);
       }
-
-      const data = await response.json();
-      return normalizeCurrentConditions(data);
-    } catch (err) {
-      console.warn('Air Quality API fetch error:', err.message, '- falling back to simulation.');
-      return getSimulatedCurrentConditions(lat, lng);
-    }
-  }, 1800); // 30-min cache
+    },
+    1800,
+  ); // 30-min cache
 }
 
 /**
@@ -69,42 +73,43 @@ export async function getForecast(lat, lng, hours = 48) {
 
   const cacheKey = `${encodeGeohash(lat, lng)}:forecast:${hours}`;
 
-  return withCache(cacheKey, async () => {
-    try {
-      const now = new Date();
-      const end = new Date(now.getTime() + hours * 60 * 60 * 1000);
+  return withCache(
+    cacheKey,
+    async () => {
+      try {
+        const now = new Date();
+        const end = new Date(now.getTime() + hours * 60 * 60 * 1000);
 
-      const response = await fetch(AIR_QUALITY_ENDPOINTS.forecast, {
-        method: 'POST',
-        headers: getGoogleHeaders(),
-        signal: AbortSignal.timeout(8000),
-        body: JSON.stringify({
-          location: { latitude: lat, longitude: lng },
-          period: {
-            startTime: now.toISOString(),
-            endTime: end.toISOString(),
-          },
-          extraComputations: [
-            'DOMINANT_POLLUTANT_CONCENTRATION',
-            'POLLUTANT_CONCENTRATION',
-          ],
-          languageCode: 'en',
-          pageSize: hours,
-        }),
-      });
+        const response = await fetch(AIR_QUALITY_ENDPOINTS.forecast, {
+          method: 'POST',
+          headers: getGoogleHeaders(),
+          signal: AbortSignal.timeout(8000),
+          body: JSON.stringify({
+            location: { latitude: lat, longitude: lng },
+            period: {
+              startTime: now.toISOString(),
+              endTime: end.toISOString(),
+            },
+            extraComputations: ['DOMINANT_POLLUTANT_CONCENTRATION', 'POLLUTANT_CONCENTRATION'],
+            languageCode: 'en',
+            pageSize: hours,
+          }),
+        });
 
-      if (!response.ok) {
-        console.warn(`Air Quality Forecast API warning (${response.status}), using simulated fallback.`);
+        if (!response.ok) {
+          console.warn(`Air Quality Forecast API warning (${response.status}), using simulated fallback.`);
+          return getSimulatedForecast(lat, lng, hours);
+        }
+
+        const data = await response.json();
+        return normalizeForecast(data);
+      } catch (err) {
+        console.warn('Air Quality Forecast API fetch error:', err.message, '- falling back to simulation.');
         return getSimulatedForecast(lat, lng, hours);
       }
-
-      const data = await response.json();
-      return normalizeForecast(data);
-    } catch (err) {
-      console.warn('Air Quality Forecast API fetch error:', err.message, '- falling back to simulation.');
-      return getSimulatedForecast(lat, lng, hours);
-    }
-  }, 3600); // 1-hour cache for forecasts
+    },
+    3600,
+  ); // 1-hour cache for forecasts
 }
 
 /**
@@ -114,8 +119,10 @@ function getSimulatedCurrentConditions(lat, lng) {
   const hour = new Date().getHours();
   // Diurnal curve: peaks 6-9 AM, lowest 2-4:30 PM, rises 7-11 PM
   let basePM25 = 142;
-  if (hour >= 6 && hour <= 9) basePM25 = 210; // Morning inversion
-  else if (hour >= 13 && hour <= 16) basePM25 = 58; // Clean window
+  if (hour >= 6 && hour <= 9)
+    basePM25 = 210; // Morning inversion
+  else if (hour >= 13 && hour <= 16)
+    basePM25 = 58; // Clean window
   else if (hour >= 19 && hour <= 23) basePM25 = 165; // Night rush & cooling
 
   // Small variation based on coords
@@ -134,11 +141,32 @@ function getSimulatedCurrentConditions(lat, lng) {
     pm25,
     pm10,
     pollutants: [
-      { code: 'pm25', display_name: 'PM2.5', full_name: 'Fine particulate matter', concentration_ug_m3: pm25, concentration_unit: 'µg/m³' },
-      { code: 'pm10', display_name: 'PM10', full_name: 'Inhalable particulate matter', concentration_ug_m3: pm10, concentration_unit: 'µg/m³' },
-      { code: 'no2', display_name: 'NO2', full_name: 'Nitrogen dioxide', concentration_ug_m3: 45, concentration_unit: 'µg/m³' },
+      {
+        code: 'pm25',
+        display_name: 'PM2.5',
+        full_name: 'Fine particulate matter',
+        concentration_ug_m3: pm25,
+        concentration_unit: 'µg/m³',
+      },
+      {
+        code: 'pm10',
+        display_name: 'PM10',
+        full_name: 'Inhalable particulate matter',
+        concentration_ug_m3: pm10,
+        concentration_unit: 'µg/m³',
+      },
+      {
+        code: 'no2',
+        display_name: 'NO2',
+        full_name: 'Nitrogen dioxide',
+        concentration_ug_m3: 45,
+        concentration_unit: 'µg/m³',
+      },
     ],
-    health_recommendations: { generalPopulation: 'Wear N95 masks during peak morning hours. Reschedule outdoor runs to mid-afternoon.' },
+    health_recommendations: {
+      generalPopulation:
+        'Wear N95 masks during peak morning hours. Reschedule outdoor runs to mid-afternoon.',
+    },
     timestamp: new Date().toISOString(),
     is_simulated: true,
   };
@@ -164,7 +192,8 @@ function getSimulatedForecast(lat, lng, hours = 48) {
     let pm25;
     if (h >= 6 && h <= 9) pm25 = 200 + (h % 3) * 15;
     else if (h >= 10 && h <= 13) pm25 = 110 - (h - 10) * 15;
-    else if (h >= 14 && h <= 16) pm25 = 48 + (h % 2) * 8; // Cleanest
+    else if (h >= 14 && h <= 16)
+      pm25 = 48 + (h % 2) * 8; // Cleanest
     else if (h >= 17 && h <= 21) pm25 = 120 + (h - 17) * 15;
     else pm25 = 150 + (h % 4) * 10;
 

@@ -65,7 +65,8 @@ const COMMUTE_AI_SCHEMA = {
     },
     best_leave_window: {
       type: 'string',
-      description: 'Best time window to leave based on hourly PM2.5 & PBL forecast (e.g. 10:00 AM – 1:00 PM).',
+      description:
+        'Best time window to leave based on hourly PM2.5 & PBL forecast (e.g. 10:00 AM – 1:00 PM).',
     },
     departure_savings_pct: { type: 'integer' },
     headline_verdict: {
@@ -81,7 +82,10 @@ const COMMUTE_AI_SCHEMA = {
       items: {
         type: 'object',
         properties: {
-          emoji: { type: 'string', description: 'Single Unicode emoji character ONLY (e.g. 🛡️, 😷, ❄️, ⏰). Never plain text words.' },
+          emoji: {
+            type: 'string',
+            description: 'Single Unicode emoji character ONLY (e.g. 🛡️, 😷, ❄️, ⏰). Never plain text words.',
+          },
           label: { type: 'string', description: 'Short 2-5 word visual chip.' },
         },
         required: ['emoji', 'label'],
@@ -93,7 +97,10 @@ const COMMUTE_AI_SCHEMA = {
         type: 'object',
         properties: {
           mode: { type: 'string', enum: ['DRIVE', 'TWO_WHEELER', 'METRO', 'BUS', 'WALK', 'BICYCLE'] },
-          emoji: { type: 'string', description: 'Single Unicode emoji character ONLY (e.g. ✅, ⚠️, 🚨, 🚇, 😷).' },
+          emoji: {
+            type: 'string',
+            description: 'Single Unicode emoji character ONLY (e.g. ✅, ⚠️, 🚨, 🚇, 😷).',
+          },
           note: { type: 'string', description: 'Ultra-short 2-4 word card badge text.' },
         },
         required: ['mode', 'emoji', 'note'],
@@ -171,7 +178,8 @@ export async function generateOriginCommuteBrief({
   const badEnd = diurnalAnalysis?.dirtiest_window?.end_label || '9:00 AM';
   const cleanPm = diurnalAnalysis?.cleanest_window?.avg_pm25 ?? Math.round((currentAqi?.pm25 || 90) * 0.65);
   const dirtyPm = diurnalAnalysis?.dirtiest_window?.avg_pm25 ?? Math.round((currentAqi?.pm25 || 120) * 1.2);
-  const calcSavePct = dirtyPm > 0 ? Math.max(8, Math.min(72, Math.round(((dirtyPm - cleanPm) / dirtyPm) * 100))) : 25;
+  const calcSavePct =
+    dirtyPm > 0 ? Math.max(8, Math.min(72, Math.round(((dirtyPm - cleanPm) / dirtyPm) * 100))) : 25;
 
   const ctx = {
     location: originLabel || 'Current Origin',
@@ -230,7 +238,8 @@ export async function generateCommuteAiAnalysis({
   const worst = routes[routes.length - 1] || best;
   const bestDose = best?.dose_ug ?? 0;
   const worstDose = worst?.dose_ug ?? bestDose;
-  const calcReduction = worstDose > 0 ? Math.max(0, Math.round(((worstDose - bestDose) / worstDose) * 100)) : 0;
+  const calcReduction =
+    worstDose > 0 ? Math.max(0, Math.round(((worstDose - bestDose) / worstDose) * 100)) : 0;
   const cigEq = Math.round((worstDose / 22) * 10) / 10;
 
   const bestWindow = diurnalAnalysis?.cleanest_window?.start_label
@@ -238,7 +247,8 @@ export async function generateCommuteAiAnalysis({
     : '11:00 AM – 3:00 PM';
   const cleanPm = diurnalAnalysis?.cleanest_window?.avg_pm25 ?? bestDose;
   const dirtyPm = diurnalAnalysis?.dirtiest_window?.avg_pm25 ?? Math.max(cleanPm * 1.35, 100);
-  const depSavingsPct = dirtyPm > 0 ? Math.max(5, Math.min(70, Math.round(((dirtyPm - cleanPm) / dirtyPm) * 100))) : 28;
+  const depSavingsPct =
+    dirtyPm > 0 ? Math.max(5, Math.min(70, Math.round(((dirtyPm - cleanPm) / dirtyPm) * 100))) : 28;
 
   const telemetryContext = {
     trip: {
@@ -317,7 +327,12 @@ export async function generateCommuteAiAnalysis({
     mode_notes: routes.map((r, idx) => ({
       mode: r.mode,
       emoji: idx === 0 ? '✅' : idx === routes.length - 1 ? '🚨' : '⚡',
-      note: idx === 0 ? 'Lowest lung dose' : idx === routes.length - 1 ? 'Avoid open smog' : `${r.dose_ug} µg inhaled`,
+      note:
+        idx === 0
+          ? 'Lowest lung dose'
+          : idx === routes.length - 1
+            ? 'Avoid open smog'
+            : `${r.dose_ug} µg inhaled`,
     })),
     ai_powered: false,
     model: 'aurapulse-commute-fallback',

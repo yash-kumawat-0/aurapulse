@@ -2,11 +2,7 @@
 // Gemini Advice & Symptom Trigger Detective Service
 // Fresh Dynamic Telemetry + Visual 3D Shield Scenes + Symptom Diagnosis
 // ============================================
-import {
-  ADVICE_RESPONSE_SCHEMA,
-  SYMPTOM_RESPONSE_SCHEMA,
-  generateWithFailover,
-} from '../config/gemini.js';
+import { ADVICE_RESPONSE_SCHEMA, SYMPTOM_RESPONSE_SCHEMA, generateWithFailover } from '../config/gemini.js';
 
 const SYSTEM_PROMPT = `You are AuraPulse, a practical visual clean-air advisor.
 CRITICAL RULES:
@@ -67,7 +63,9 @@ ${JSON.stringify(dataContext)}
 MEMBERS:
 ${familyMembers
   .map((m) => {
-    const issue = m.custom_issue ? `${m.health_condition || 'OTHER'} (${m.custom_issue})` : (m.health_condition || 'NONE');
+    const issue = m.custom_issue
+      ? `${m.health_condition || 'OTHER'} (${m.custom_issue})`
+      : m.health_condition || 'NONE';
     return `- ${m.name} (Age: ${m.age}, Health: ${issue})`;
   })
   .join('\n')}`;
@@ -117,15 +115,25 @@ export async function diagnoseSymptomTrigger({
       age: member?.age ?? 30,
       condition: member?.custom_issue
         ? `${member?.health_condition || 'OTHER'} (${member.custom_issue})`
-        : (member?.health_condition || 'NONE'),
+        : member?.health_condition || 'NONE',
     },
     reported_symptom: activeSymptom,
     air_quality: currentAqi
-      ? { aqi: currentAqi.aqi, pm25: currentAqi.pm25, pm10: currentAqi.pm10, category: currentAqi.aqi_category }
+      ? {
+          aqi: currentAqi.aqi,
+          pm25: currentAqi.pm25,
+          pm10: currentAqi.pm10,
+          category: currentAqi.aqi_category,
+        }
       : null,
-    diurnal_peaks: diurnalAnalysis && !diurnalAnalysis.error
-      ? { cleanest: diurnalAnalysis.cleanest_window, dirtiest: diurnalAnalysis.dirtiest_window, morning_trap: diurnalAnalysis.morning_trap_warning }
-      : null,
+    diurnal_peaks:
+      diurnalAnalysis && !diurnalAnalysis.error
+        ? {
+            cleanest: diurnalAnalysis.cleanest_window,
+            dirtiest: diurnalAnalysis.dirtiest_window,
+            morning_trap: diurnalAnalysis.morning_trap_warning,
+          }
+        : null,
     indoor_room: indoorSimulation
       ? {
           indoor_pm25: indoorSimulation.indoor_pm25,
@@ -134,7 +142,10 @@ export async function diagnoseSymptomTrigger({
         }
       : null,
     commute: commuteComparison
-      ? { safest_mode: commuteComparison.safest_mode, dose_ug: commuteComparison.safest_route_summary?.dose_ug }
+      ? {
+          safest_mode: commuteComparison.safest_mode,
+          dose_ug: commuteComparison.safest_route_summary?.dose_ug,
+        }
       : null,
     language,
   };
@@ -177,7 +188,13 @@ export async function diagnoseSymptomTrigger({
   };
 }
 
-function generateFallbackAdvice({ locationLabel, currentAqi, diurnalAnalysis, familyMembers, language = 'English' }) {
+function generateFallbackAdvice({
+  locationLabel,
+  currentAqi,
+  diurnalAnalysis,
+  familyMembers,
+  language = 'English',
+}) {
   const aqiVal = currentAqi?.aqi || 180;
   const cleanestWindow = diurnalAnalysis?.cleanest_window?.start_label
     ? `${diurnalAnalysis.cleanest_window.start_label} – ${diurnalAnalysis.cleanest_window.end_label}`
@@ -189,10 +206,18 @@ function generateFallbackAdvice({ locationLabel, currentAqi, diurnalAnalysis, fa
   const familyAdvice = familyMembers.map((m) => {
     const cond = m.health_condition?.toUpperCase() || 'NONE';
     const custom = (m.custom_issue || '').trim();
-    let risk_level = custom ? 'HIGH' : (aqiVal > 160 ? 'HIGH' : 'MODERATE');
+    let risk_level = custom ? 'HIGH' : aqiVal > 160 ? 'HIGH' : 'MODERATE';
     let primary_action = custom
-      ? (isHi ? `${custom}: साफ हवा में रहें` : isTe ? `${custom}: ఇంట్లోనే ఉండండి` : `Protect against ${custom}`)
-      : (isHi ? `केवल ${cleanestWindow} में बाहर जाएं` : isTe ? `${cleanestWindow} లోనే బయటకు వెళ్ళండి` : `Outdoor time only ${cleanestWindow}`);
+      ? isHi
+        ? `${custom}: साफ हवा में रहें`
+        : isTe
+          ? `${custom}: ఇంట్లోనే ఉండండి`
+          : `Protect against ${custom}`
+      : isHi
+        ? `केवल ${cleanestWindow} में बाहर जाएं`
+        : isTe
+          ? `${cleanestWindow} లోనే బయటకు వెళ్ళండి`
+          : `Outdoor time only ${cleanestWindow}`;
     let detailed_tips = isHi
       ? ['बाहर जाने पर N95 मास्क पहनें', 'घर में हवा फिल्टर रखें']
       : isTe
@@ -201,7 +226,11 @@ function generateFallbackAdvice({ locationLabel, currentAqi, diurnalAnalysis, fa
 
     if (cond === 'ASTHMA' || cond === 'COPD') {
       risk_level = aqiVal > 150 ? 'SEVERE' : 'HIGH';
-      primary_action = isHi ? 'इनहेलर पास रखें व अंदर रहें' : isTe ? 'ఇన్హేలర్ దగ్గర ఉంచి లోపలే ఉండండి' : 'Keep inhaler close & stay filtered';
+      primary_action = isHi
+        ? 'इनहेलर पास रखें व अंदर रहें'
+        : isTe
+          ? 'ఇన్హేలర్ దగ్గర ఉంచి లోపలే ఉండండి'
+          : 'Keep inhaler close & stay filtered';
       detailed_tips = isHi
         ? ['सुबह बाहर न जाएं', 'N95 मास्क अनिवार्य', 'धुएं से दूर रहें']
         : isTe
@@ -217,7 +246,11 @@ function generateFallbackAdvice({ locationLabel, currentAqi, diurnalAnalysis, fa
           : [`Walk only ${cleanestWindow}`, 'Clean bedroom air'];
     } else if (cond === 'INFANT' || cond === 'PREGNANT' || m.age < 6) {
       risk_level = 'HIGH';
-      primary_action = isHi ? 'कमरे की खिड़की बंद रखें' : isTe ? 'గది కిటికీలు మూసి ఉంచండి' : 'Stay indoors, closed windows';
+      primary_action = isHi
+        ? 'कमरे की खिड़की बंद रखें'
+        : isTe
+          ? 'గది కిటికీలు మూసి ఉంచండి'
+          : 'Stay indoors, closed windows';
       detailed_tips = isHi
         ? ['ट्रैफिक समय बाहर न जाएं', 'गीले कपड़े से पोंछा']
         : isTe
@@ -236,7 +269,10 @@ function generateFallbackAdvice({ locationLabel, currentAqi, diurnalAnalysis, fa
       best_outdoor_time: cleanestWindow,
       primary_action,
       sticker_badges: [
-        { emoji: risk_level === 'SEVERE' ? '🏠' : '😷', tag: risk_level === 'SEVERE' ? 'Stay Inside' : 'N95 Outside' },
+        {
+          emoji: risk_level === 'SEVERE' ? '🏠' : '😷',
+          tag: risk_level === 'SEVERE' ? 'Stay Inside' : 'N95 Outside',
+        },
         { emoji: '⏰', tag: cleanestWindow },
         { emoji: '🌀', tag: 'Air Filter On' },
       ],
@@ -253,15 +289,31 @@ function generateFallbackAdvice({ locationLabel, currentAqi, diurnalAnalysis, fa
           ? `${locationLabel || 'ప్రాంతం'} AQI ${aqiVal} · సురక్షిత సమయం ${cleanestWindow}`
           : `AQI ${aqiVal} in ${locationLabel || 'area'} · Best window ${cleanestWindow}`,
       family_advice: familyAdvice,
-      ventilation_advice: isHi ? `खिड़की खोलें: ${cleanestWindow}` : isTe ? `కిటికీలు తెరవండి: ${cleanestWindow}` : `Air room ${cleanestWindow} (20m)`,
-      commute_advice: isHi ? 'मेट्रो / एसी वाहन चुनें' : isTe ? 'మెట్రో / ఏసీ వాహనం ఎంచుకోండి' : 'Prefer Metro or AC cabin',
+      ventilation_advice: isHi
+        ? `खिड़की खोलें: ${cleanestWindow}`
+        : isTe
+          ? `కిటికీలు తెరవండి: ${cleanestWindow}`
+          : `Air room ${cleanestWindow} (20m)`,
+      commute_advice: isHi
+        ? 'मेट्रो / एसी वाहन चुनें'
+        : isTe
+          ? 'మెట్రో / ఏసీ వాహనం ఎంచుకోండి'
+          : 'Prefer Metro or AC cabin',
     },
     model: 'aurapulse-expert-rule-engine',
     ai_powered: false,
   };
 }
 
-function buildDataContext({ locationLabel, currentAqi, diurnalAnalysis, indoorSimulation, commuteComparison, familyMembers, homeProfile }) {
+function buildDataContext({
+  locationLabel,
+  currentAqi,
+  diurnalAnalysis,
+  indoorSimulation,
+  commuteComparison,
+  familyMembers,
+  homeProfile,
+}) {
   const context = {
     location: locationLabel || 'Current Location',
     member_count: familyMembers.length,

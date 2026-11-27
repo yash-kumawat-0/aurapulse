@@ -132,32 +132,45 @@ export function evaluateMultiLegRoute(route, basePM25, maskType = 'none') {
   const totalDur = Math.round(evalLegs.reduce((s, l) => s + l.duration_min, 0));
   const totalDist = Math.round(evalLegs.reduce((s, l) => s + l.distance_km, 0) * 10) / 10;
   const totalCo2 = Math.round(evalLegs.reduce((s, l) => s + l.co2_kg, 0) * 100) / 100;
-  const weightedPm = totalDur > 0
-    ? Math.round((evalLegs.reduce((s, l) => s + l.effective_pm25 * l.duration_min, 0) / totalDur) * 10) / 10
-    : basePM25;
+  const weightedPm =
+    totalDur > 0
+      ? Math.round((evalLegs.reduce((s, l) => s + l.effective_pm25 * l.duration_min, 0) / totalDur) * 10) / 10
+      : basePM25;
   const tripAqi = pm25ToAqi(weightedPm);
 
-  const walkGapDose = Math.round(evalLegs.reduce((s, l) => {
-    if (l.mode === 'METRO' || l.mode === 'TRANSFER') return s + l.dose_ug;
-    const wPm = Math.round(basePM25 * PM25_MULTIPLIERS.WALK * 10) / 10;
-    const wDur = Math.max(l.duration_min, Math.round((l.distance_km / 4.8) * 60));
-    return s + calculateSegmentDose({
-      pm25Concentration: wPm,
-      durationMinutes: wDur,
-      activityMode: 'walking_brisk',
-      maskType,
-    }).dose_ug;
-  }, 0) * 100) / 100;
+  const walkGapDose =
+    Math.round(
+      evalLegs.reduce((s, l) => {
+        if (l.mode === 'METRO' || l.mode === 'TRANSFER') return s + l.dose_ug;
+        const wPm = Math.round(basePM25 * PM25_MULTIPLIERS.WALK * 10) / 10;
+        const wDur = Math.max(l.duration_min, Math.round((l.distance_km / 4.8) * 60));
+        return (
+          s +
+          calculateSegmentDose({
+            pm25Concentration: wPm,
+            durationMinutes: wDur,
+            activityMode: 'walking_brisk',
+            maskType,
+          }).dose_ug
+        );
+      }, 0) * 100,
+    ) / 100;
 
-  const n95FeederDose = Math.round(evalLegs.reduce((s, l) => {
-    if (l.mode === 'METRO' || l.mode === 'TRANSFER') return s + l.dose_ug;
-    return s + calculateSegmentDose({
-      pm25Concentration: l.effective_pm25,
-      durationMinutes: l.duration_min,
-      activityMode: ACTIVITY_BY_MODE[l.mode] || 'resting_in_vehicle',
-      maskType: 'n95_sealed',
-    }).dose_ug;
-  }, 0) * 100) / 100;
+  const n95FeederDose =
+    Math.round(
+      evalLegs.reduce((s, l) => {
+        if (l.mode === 'METRO' || l.mode === 'TRANSFER') return s + l.dose_ug;
+        return (
+          s +
+          calculateSegmentDose({
+            pm25Concentration: l.effective_pm25,
+            durationMinutes: l.duration_min,
+            activityMode: ACTIVITY_BY_MODE[l.mode] || 'resting_in_vehicle',
+            maskType: 'n95_sealed',
+          }).dose_ug
+        );
+      }, 0) * 100,
+    ) / 100;
 
   return {
     mode: route.mode,

@@ -24,7 +24,13 @@ describe('commuteLegEvaluator', () => {
   it('scores Metro feeder multi-leg chain dramatically lower than two-wheeler', () => {
     const basePm = 140;
     const bike = evaluateSingleModeRoute(
-      { mode: 'TWO_WHEELER', label: 'Two Wheeler', distance_km: 12, duration_min: 32, activity_mode: 'two_wheeler' },
+      {
+        mode: 'TWO_WHEELER',
+        label: 'Two Wheeler',
+        distance_km: 12,
+        duration_min: 32,
+        activity_mode: 'two_wheeler',
+      },
       basePm,
     );
     const metro = evaluateMultiLegRoute(

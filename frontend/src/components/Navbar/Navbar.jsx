@@ -12,7 +12,9 @@ function Navbar() {
       <nav className="navbar" aria-label="Primary navigation">
         <div className="navbar-inner">
           <a href="#main-content" className="navbar-brand">
-            <span className="navbar-brand-icon" aria-hidden="true">🍃</span>
+            <span className="navbar-brand-icon" aria-hidden="true">
+              🍃
+            </span>
             <span>AuraPulse</span>
           </a>
 

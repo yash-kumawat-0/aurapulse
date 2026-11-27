@@ -18,7 +18,11 @@ function DiurnalTimeline() {
 
   const { diurnal } = diurnalData;
   if (!diurnal || diurnal.error) {
-    return <div className="card diurnal-placeholder" role="status">⚠️ Could not load timeline</div>;
+    return (
+      <div className="card diurnal-placeholder" role="status">
+        ⚠️ Could not load timeline
+      </div>
+    );
   }
 
   const hours = (diurnal.hourly_breakdown || []).slice(0, 24);
@@ -27,11 +31,19 @@ function DiurnalTimeline() {
   return (
     <section className="card diurnal-card" aria-labelledby="diurnal-heading">
       <div className="diurnal-top">
-        <h2 id="diurnal-heading" className="diurnal-title">24-Hour Forecast</h2>
+        <h2 id="diurnal-heading" className="diurnal-title">
+          24-Hour Forecast
+        </h2>
         <div className="diurnal-legend">
-          <span className="diurnal-legend-item"><span className="diurnal-dot" style={{ background: '#4CAF50' }} aria-hidden="true" /> Safe</span>
-          <span className="diurnal-legend-item"><span className="diurnal-dot" style={{ background: '#FF9800' }} aria-hidden="true" /> Moderate</span>
-          <span className="diurnal-legend-item"><span className="diurnal-dot" style={{ background: '#F44336' }} aria-hidden="true" /> Unhealthy</span>
+          <span className="diurnal-legend-item">
+            <span className="diurnal-dot" style={{ background: '#4CAF50' }} aria-hidden="true" /> Safe
+          </span>
+          <span className="diurnal-legend-item">
+            <span className="diurnal-dot" style={{ background: '#FF9800' }} aria-hidden="true" /> Moderate
+          </span>
+          <span className="diurnal-legend-item">
+            <span className="diurnal-dot" style={{ background: '#F44336' }} aria-hidden="true" /> Unhealthy
+          </span>
         </div>
       </div>
 
@@ -48,7 +60,11 @@ function DiurnalTimeline() {
               title={`${h.hour}:00 — PM2.5: ${h.pm25} µg/m³`}
             >
               <div className="diurnal-bar" style={{ height: `${pct}%`, background: color }} />
-              {i % 4 === 0 && <span className="diurnal-hour" aria-hidden="true">{h.hour}</span>}
+              {i % 4 === 0 && (
+                <span className="diurnal-hour" aria-hidden="true">
+                  {h.hour}
+                </span>
+              )}
             </div>
           );
         })}
@@ -56,7 +72,8 @@ function DiurnalTimeline() {
 
       {diurnal.cleanest_window && (
         <div className="diurnal-rec diurnal-rec--good">
-          ✅ Best window: {diurnal.cleanest_window.start_label} – {diurnal.cleanest_window.end_label} (PM2.5 ~{diurnal.cleanest_window.avg_pm25})
+          ✅ Best window: {diurnal.cleanest_window.start_label} – {diurnal.cleanest_window.end_label} (PM2.5 ~
+          {diurnal.cleanest_window.avg_pm25})
         </div>
       )}
 

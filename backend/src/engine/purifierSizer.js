@@ -47,11 +47,7 @@ export const DIY_CONFIGS = {
  * @param {number} params.outdoorPM25 - Current outdoor PM2.5 (µg/m³).
  * @returns {object} DIY build recommendation with materials list.
  */
-export function recommendDIYPurifier({
-  roomAreaSqft = 150,
-  ceilingHeightFt = 10,
-  outdoorPM25 = 150,
-}) {
+export function recommendDIYPurifier({ roomAreaSqft = 150, ceilingHeightFt = 10, outdoorPM25 = 150 }) {
   const volumeM3 = roomAreaSqft * 0.0929 * ceilingHeightFt * 0.3048;
 
   // Target: 5 air changes per hour for effective filtration

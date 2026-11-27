@@ -61,7 +61,9 @@ function App() {
                         className={`tab-btn ${selected ? 'tab-btn--active' : ''}`}
                         onClick={() => handleTabSelect(tab.id)}
                       >
-                        <span className="tab-icon" aria-hidden="true">{tab.icon}</span>
+                        <span className="tab-icon" aria-hidden="true">
+                          {tab.icon}
+                        </span>
                         <span>{tab.label}</span>
                       </button>
                     );
@@ -111,9 +113,7 @@ function App() {
               <span>Share Report</span>
             </button>
 
-            {showWhatsAppModal && (
-              <WhatsAppShareModal onClose={() => setShowWhatsAppModal(false)} />
-            )}
+            {showWhatsAppModal && <WhatsAppShareModal onClose={() => setShowWhatsAppModal(false)} />}
           </main>
           <Footer onSelectTab={(tabId) => handleTabSelect(tabId, true)} />
         </div>

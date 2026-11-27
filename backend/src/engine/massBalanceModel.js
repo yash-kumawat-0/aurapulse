@@ -21,9 +21,9 @@
  * These represent typical infiltration rates for Indian housing.
  */
 export const WINDOW_SEAL_PRESETS = {
-  leaky_wood: { ach: 2.5, penetration: 0.90, label: 'Old Wooden (Leaky)' },
+  leaky_wood: { ach: 2.5, penetration: 0.9, label: 'Old Wooden (Leaky)' },
   standard_aluminum: { ach: 1.5, penetration: 0.85, label: 'Standard Aluminum Sliding' },
-  sealed_upvc: { ach: 0.5, penetration: 0.70, label: 'Modern UPVC/Sealed Glass' },
+  sealed_upvc: { ach: 0.5, penetration: 0.7, label: 'Modern UPVC/Sealed Glass' },
   other: { ach: 1.8, penetration: 0.85, label: 'Custom Window Setup' },
 };
 
@@ -32,9 +32,9 @@ export const WINDOW_SEAL_PRESETS = {
  */
 export const INDOOR_SOURCES = {
   none: 0,
-  incense: 800,          // Single agarbatti stick
-  mosquito_coil: 2000,   // One burning coil
-  cooking_frying: 1200,  // Frying/tempering in oil
+  incense: 800, // Single agarbatti stick
+  mosquito_coil: 2000, // One burning coil
+  cooking_frying: 1200, // Frying/tempering in oil
   smoking_cigarette: 1500,
   other: 700,
 };
@@ -99,9 +99,10 @@ export function calculateIndoorPM25({
   const volumeM3 = roomAreaM2 * ceilingHeightM;
 
   // Get seal parameters (supports custom 'other' + optional Gemini physics calibration)
-  const seal = windowSealType === 'other'
-    ? estimateCustomWindowSeal(customWindowDesc)
-    : (WINDOW_SEAL_PRESETS[windowSealType] || WINDOW_SEAL_PRESETS.standard_aluminum);
+  const seal =
+    windowSealType === 'other'
+      ? estimateCustomWindowSeal(customWindowDesc)
+      : WINDOW_SEAL_PRESETS[windowSealType] || WINDOW_SEAL_PRESETS.standard_aluminum;
   const rawAiAch = parseFloat(aiCalibration?.window_ach);
   const rawAiPen = parseFloat(aiCalibration?.window_penetration);
   const rawAiSrc = parseFloat(aiCalibration?.source_rate_ug_h);
@@ -109,16 +110,18 @@ export function calculateIndoorPM25({
   const P = Number.isFinite(rawAiPen) ? Math.min(0.98, Math.max(0.45, rawAiPen)) : seal.penetration;
   const a = Number.isFinite(rawAiAch) ? Math.min(4.5, Math.max(0.25, rawAiAch)) : seal.ach;
   const k = DEFAULT_DEPOSITION_RATE;
-  const baseSource = indoorSource === 'other'
-    ? estimateCustomSourceRate(customSourceDesc)
-    : (INDOOR_SOURCES[indoorSource] || 0);
-  const S = indoorSource === 'none'
-    ? 0
-    : (Number.isFinite(rawAiSrc) ? Math.min(4500, Math.max(0, rawAiSrc)) : baseSource);
+  const baseSource =
+    indoorSource === 'other' ? estimateCustomSourceRate(customSourceDesc) : INDOOR_SOURCES[indoorSource] || 0;
+  const S =
+    indoorSource === 'none'
+      ? 0
+      : Number.isFinite(rawAiSrc)
+        ? Math.min(4500, Math.max(0, rawAiSrc))
+        : baseSource;
 
   // Steady-state indoor PM2.5
-  const numerator = (P * a * outdoorPM25) + (S / volumeM3);
-  const denominator = a + k + (purifierCADR / volumeM3);
+  const numerator = P * a * outdoorPM25 + S / volumeM3;
+  const denominator = a + k + purifierCADR / volumeM3;
   const indoorPM25 = numerator / denominator;
 
   // Indoor-to-outdoor ratio
@@ -131,10 +134,7 @@ export function calculateIndoorPM25({
   // Target: 35 = (P * a * C_out + S/V) / (a + k + CADR_needed/V)
   // CADR_needed = V * ((P * a * C_out + S/V) / 35 - a - k)
   const targetIndoor = 35; // WHO 24-hour guideline
-  const cadrNeeded = Math.max(
-    0,
-    volumeM3 * (numerator / targetIndoor - a - k)
-  );
+  const cadrNeeded = Math.max(0, volumeM3 * (numerator / targetIndoor - a - k));
 
   return {
     indoor_pm25: Math.round(indoorPM25 * 10) / 10,
@@ -149,11 +149,12 @@ export function calculateIndoorPM25({
     purifier_cadr_applied: purifierCADR,
     cadr_needed_for_safe: Math.round(cadrNeeded),
     is_safe: indoorPM25 <= targetIndoor,
-    recommendation: indoorPM25 <= targetIndoor
-      ? 'Indoor air quality is within safe limits.'
-      : purifierCADR > 0
-        ? `Current purifier is insufficient. You need at least ${Math.round(cadrNeeded)} m³/h CADR to bring indoor PM2.5 below 35 µg/m³.`
-        : `Without a purifier, indoor PM2.5 will reach ${Math.round(indoorPM25)} µg/m³. Consider a purifier with at least ${Math.round(cadrNeeded)} m³/h CADR, or build a DIY Corsi-Rosenthal box.`,
+    recommendation:
+      indoorPM25 <= targetIndoor
+        ? 'Indoor air quality is within safe limits.'
+        : purifierCADR > 0
+          ? `Current purifier is insufficient. You need at least ${Math.round(cadrNeeded)} m³/h CADR to bring indoor PM2.5 below 35 µg/m³.`
+          : `Without a purifier, indoor PM2.5 will reach ${Math.round(indoorPM25)} µg/m³. Consider a purifier with at least ${Math.round(cadrNeeded)} m³/h CADR, or build a DIY Corsi-Rosenthal box.`,
   };
 }
 

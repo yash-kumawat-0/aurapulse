@@ -61,14 +61,7 @@ function getMemberIcon(age) {
 }
 
 function FamilyAdviceCard() {
-  const {
-    location,
-    familyMembers,
-    homeProfile,
-    language,
-    selectedMemberId,
-    setSelectedMemberId,
-  } = useUser();
+  const { location, familyMembers, homeProfile, language, selectedMemberId, setSelectedMemberId } = useUser();
   const {
     adviceData,
     currentAqi,
@@ -131,17 +124,21 @@ function FamilyAdviceCard() {
   const tips = activePlan?.detailed_tips || activePlan?.secondary_actions || [];
   const stickers = activePlan?.sticker_badges || [];
   const riskColor = activePlan ? getRiskColor(activePlan.risk_level) : '#64748B';
-  const riskInfo = activePlan ? (RISK_INFO[activePlan.risk_level] || RISK_INFO.MODERATE) : RISK_INFO.MODERATE;
+  const riskInfo = activePlan ? RISK_INFO[activePlan.risk_level] || RISK_INFO.MODERATE : RISK_INFO.MODERATE;
   const sceneKey = activePlan?.action_visual_scene || 'STAY_INDOORS_SEALED';
   const scene = SCENE_CONFIG[sceneKey] || SCENE_CONFIG.STAY_INDOORS_SEALED;
 
   const cleanestWindow = adviceData?.calculated_data?.cleanest_window;
-  const cleanestLabel = activePlan?.best_outdoor_time || (
-    cleanestWindow?.start_label ? `${cleanestWindow.start_label}–${cleanestWindow.end_label}` : null
-  );
+  const cleanestLabel =
+    activePlan?.best_outdoor_time ||
+    (cleanestWindow?.start_label ? `${cleanestWindow.start_label}–${cleanestWindow.end_label}` : null);
 
   const safeBudgetUg = activePlan?.safe_budget_ug || 100;
-  const roomPm = indoorData?.diy_simulation?.indoor_pm25 ?? adviceData?.calculated_data?.indoor_pm25 ?? currentAqi?.pm25 ?? 60;
+  const roomPm =
+    indoorData?.diy_simulation?.indoor_pm25 ??
+    adviceData?.calculated_data?.indoor_pm25 ??
+    currentAqi?.pm25 ??
+    60;
   const commuteDose = commuteData?.safest_route_summary?.dose_ug ?? 0;
   const estDailyDose = Math.round(commuteDose + roomPm * 0.45);
   const budgetPct = Math.min(100, Math.round((estDailyDose / Math.max(safeBudgetUg, 1)) * 100));
@@ -165,7 +162,9 @@ function FamilyAdviceCard() {
           disabled={loading || !location || !currentAqi || familyMembers.length === 0}
         >
           {loading ? (
-            <><span className="advice-spin" aria-hidden="true" /> Analyzing...</>
+            <>
+              <span className="advice-spin" aria-hidden="true" /> Analyzing...
+            </>
           ) : hasAdvice ? (
             '🔄 Refresh AI Shield'
           ) : (
@@ -177,18 +176,37 @@ function FamilyAdviceCard() {
       {!hasAdvice && !loading && (
         <div className="advice-empty">
           {!currentAqi ? (
-            <><span className="advice-empty-icon advice-float-icon" aria-hidden="true">📍</span><p>Pick a city first</p></>
+            <>
+              <span className="advice-empty-icon advice-float-icon" aria-hidden="true">
+                📍
+              </span>
+              <p>Pick a city first</p>
+            </>
           ) : familyMembers.length === 0 ? (
-            <><span className="advice-empty-icon advice-float-icon" aria-hidden="true">👨‍👩‍👧</span><p>Add a family member above</p></>
+            <>
+              <span className="advice-empty-icon advice-float-icon" aria-hidden="true">
+                👨‍👩‍👧
+              </span>
+              <p>Add a family member above</p>
+            </>
           ) : (
-            <><span className="advice-empty-icon advice-float-icon" aria-hidden="true">🛡️</span><p>Tap <strong>Generate 3D Shield Plan</strong> for live shields &amp; safe daily lung budget</p></>
+            <>
+              <span className="advice-empty-icon advice-float-icon" aria-hidden="true">
+                🛡️
+              </span>
+              <p>
+                Tap <strong>Generate 3D Shield Plan</strong> for live shields &amp; safe daily lung budget
+              </p>
+            </>
           )}
         </div>
       )}
 
       {loading && (
         <div className="advice-loading" role="status">
-          <span className="advice-loading-icon" aria-hidden="true">✨</span>
+          <span className="advice-loading-icon" aria-hidden="true">
+            ✨
+          </span>
           <p>Building 3D personal air shields &amp; budgets...</p>
         </div>
       )}
@@ -210,7 +228,9 @@ function FamilyAdviceCard() {
           {familyMembers.length > 0 && (
             <div className="advice-person-tabs" role="tablist" aria-label="Select family member plan">
               {familyMembers.map((m, idx) => {
-                const plan = memberPlans.find((c) => c.member_name?.toLowerCase() === m.name?.toLowerCase()) || memberPlans[idx];
+                const plan =
+                  memberPlans.find((c) => c.member_name?.toLowerCase() === m.name?.toLowerCase()) ||
+                  memberPlans[idx];
                 const pColor = plan ? getRiskColor(plan.risk_level) : '#64748B';
                 const active = selectedMember?.id === m.id;
                 return (
@@ -223,7 +243,9 @@ function FamilyAdviceCard() {
                     style={active ? { borderColor: pColor, background: `${pColor}14` } : undefined}
                     onClick={() => setSelectedMemberId(m.id)}
                   >
-                    <span className="advice-person-emoji" aria-hidden="true">{getMemberIcon(m.age)}</span>
+                    <span className="advice-person-emoji" aria-hidden="true">
+                      {getMemberIcon(m.age)}
+                    </span>
                     <span className="advice-person-tab-name">{m.name}</span>
                     <span className="advice-person-dot" style={{ background: pColor }} aria-hidden="true" />
                   </button>
@@ -236,7 +258,11 @@ function FamilyAdviceCard() {
             <div className="advice-single-card" style={{ borderColor: riskColor, borderTopColor: riskColor }}>
               <div className="advice-single-head">
                 <div className="advice-single-who">
-                  <span className="advice-single-avatar" style={{ background: `${riskColor}18` }} aria-hidden="true">
+                  <span
+                    className="advice-single-avatar"
+                    style={{ background: `${riskColor}18` }}
+                    aria-hidden="true"
+                  >
                     {getMemberIcon(selectedMember?.age || 30)}
                   </span>
                   <div>
@@ -263,7 +289,11 @@ function FamilyAdviceCard() {
 
               <div className="advice-visual-stage">
                 <div className={`adv-diorama ${scene.particleClass}`} style={{ background: scene.bg }}>
-                  <div className="adv-diorama-ring" style={{ borderColor: `${riskColor}66` }} aria-hidden="true" />
+                  <div
+                    className="adv-diorama-ring"
+                    style={{ borderColor: `${riskColor}66` }}
+                    aria-hidden="true"
+                  />
                   <div className="adv-diorama-core" aria-hidden="true">
                     <span className="adv-diorama-main">{scene.mainEmoji}</span>
                     <span className="adv-diorama-badge">{scene.badgeEmoji}</span>
@@ -290,7 +320,9 @@ function FamilyAdviceCard() {
                     />
                   </div>
                   <div className="adv-budget-foot">
-                    <span>{overBudget ? '🚨 Exceeds limit — purify/mask!' : '🛡️ Within safe daily lung quota'}</span>
+                    <span>
+                      {overBudget ? '🚨 Exceeds limit — purify/mask!' : '🛡️ Within safe daily lung quota'}
+                    </span>
                     {cleanestLabel && <strong>⏰ {cleanestLabel}</strong>}
                   </div>
                 </div>
@@ -305,7 +337,9 @@ function FamilyAdviceCard() {
                 <div className="advice-visual-stickers">
                   {stickers.map((st, sIdx) => (
                     <span key={sIdx} className="advice-vsticker">
-                      <span className="advice-vsticker-emoji" aria-hidden="true">{st.emoji}</span>
+                      <span className="advice-vsticker-emoji" aria-hidden="true">
+                        {st.emoji}
+                      </span>
                       <span>{st.tag}</span>
                     </span>
                   ))}
@@ -316,7 +350,9 @@ function FamilyAdviceCard() {
                 <div className="advice-chip-actions">
                   {tips.map((tip, idx) => (
                     <span key={idx} className="advice-action-chip">
-                      <span className="advice-chip-num" style={{ background: riskColor }}>{idx + 1}</span>
+                      <span className="advice-chip-num" style={{ background: riskColor }}>
+                        {idx + 1}
+                      </span>
                       <span>{tip}</span>
                     </span>
                   ))}

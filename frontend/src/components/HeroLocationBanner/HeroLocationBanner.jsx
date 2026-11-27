@@ -53,12 +53,16 @@ function MiniCircularGauge({ value, maxValue, label, icon, color }) {
           />
         </svg>
         <div className="hero-gauge-center">
-          <span className="hero-gauge-num" style={{ color }}>{Math.round(value)}</span>
+          <span className="hero-gauge-num" style={{ color }}>
+            {Math.round(value)}
+          </span>
           <span className="hero-gauge-unit">µg/m³</span>
         </div>
       </div>
       <div className="hero-gauge-meta">
-        <span className="hero-gauge-title">{icon} {label}</span>
+        <span className="hero-gauge-title">
+          {icon} {label}
+        </span>
         <span className="hero-gauge-status" style={{ color, background: `${color}18` }}>
           {getPmLabel(value)}
         </span>
@@ -83,7 +87,7 @@ function HeroLocationBanner({ activeTab = 'dashboard' }) {
   const lastAutoAqiRef = useRef(null);
 
   const showAirGraph = GRAPH_TABS.has(activeTab);
-  const displayQuery = userTyping ? query : (location?.label || query);
+  const displayQuery = userTyping ? query : location?.label || query;
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -103,9 +107,11 @@ function HeroLocationBanner({ activeTab = 'dashboard' }) {
 
     loadAqiData(location.lat, location.lng);
     if (location.label && /^[\d.\-,\s]+$/.test(location.label)) {
-      reverseGeocode(location.lat, location.lng).then((name) => {
-        setLocation((prev) => ({ ...prev, label: name }));
-      }).catch(() => {});
+      reverseGeocode(location.lat, location.lng)
+        .then((name) => {
+          setLocation((prev) => ({ ...prev, label: name }));
+        })
+        .catch(() => {});
     }
   }, [location, loadAqiData, setLocation]);
 
@@ -167,16 +173,16 @@ function HeroLocationBanner({ activeTab = 'dashboard' }) {
   const estimatedFallbackIndoor = outdoorPM !== null ? Math.round(outdoorPM * 0.71) : null;
   const indoorPM = sim ? sim.indoor_pm25 : estimatedFallbackIndoor;
   const maxScale = outdoorPM !== null ? Math.max(outdoorPM, indoorPM || 0, 60) : 100;
-  const deltaPct = outdoorPM && indoorPM !== null
-    ? Math.round(((outdoorPM - indoorPM) / outdoorPM) * 100)
-    : 0;
+  const deltaPct =
+    outdoorPM && indoorPM !== null ? Math.round(((outdoorPM - indoorPM) / outdoorPM) * 100) : 0;
   const safeLinePct = Math.min((35 / maxScale) * 100, 100);
 
-  const panelTag = activeTab === 'commute'
-    ? 'Home vs Outside'
-    : activeTab === 'family'
-      ? 'Family Shelter Air'
-      : `${homeProfile.room_area_sqft || 150} ft² · Auto Live`;
+  const panelTag =
+    activeTab === 'commute'
+      ? 'Home vs Outside'
+      : activeTab === 'family'
+        ? 'Family Shelter Air'
+        : `${homeProfile.room_area_sqft || 150} ft² · Auto Live`;
 
   return (
     <section className="hero">
@@ -186,8 +192,19 @@ function HeroLocationBanner({ activeTab = 'dashboard' }) {
           <h1 className="hero-title">Check your air quality</h1>
           <div className="hero-search-wrapper" ref={wrapperRef}>
             <div className="hero-search">
-              <svg className="hero-search-icon" viewBox="0 0 20 20" fill="currentColor" width="18" height="18" aria-hidden="true">
-                <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+              <svg
+                className="hero-search-icon"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                width="18"
+                height="18"
+                aria-hidden="true"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                  clipRule="evenodd"
+                />
               </svg>
               <input
                 type="text"
@@ -214,7 +231,7 @@ function HeroLocationBanner({ activeTab = 'dashboard' }) {
                   <span className="hero-spinner" aria-hidden="true" />
                 ) : (
                   <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" aria-hidden="true">
-                    <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+                    <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z" />
                   </svg>
                 )}
               </button>
@@ -222,33 +239,42 @@ function HeroLocationBanner({ activeTab = 'dashboard' }) {
 
             {showSuggestions && (
               <ul id="hero-city-suggestions" className="hero-suggestions" role="listbox">
-                {suggestions.length > 0 ? suggestions.map((place, i) => (
-                  <li key={i} role="option" aria-selected={false}>
-                    <button
-                      type="button"
-                      className="hero-suggestion-item"
-                      onClick={() => handleSelectPlace(place)}
-                    >
-                      <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14" className="hero-suggestion-pin" aria-hidden="true">
-                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                      </svg>
-                      {place.label}
-                    </button>
-                  </li>
-                )) : noMatch && (
-                  <li className="hero-suggestion-empty">
-                    No matching location found — try another city or tap GPS
-                  </li>
-                )}
+                {suggestions.length > 0
+                  ? suggestions.map((place, i) => (
+                      <li key={i} role="option" aria-selected={false}>
+                        <button
+                          type="button"
+                          className="hero-suggestion-item"
+                          onClick={() => handleSelectPlace(place)}
+                        >
+                          <svg
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            width="14"
+                            height="14"
+                            className="hero-suggestion-pin"
+                            aria-hidden="true"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          {place.label}
+                        </button>
+                      </li>
+                    ))
+                  : noMatch && (
+                      <li className="hero-suggestion-empty">
+                        No matching location found — try another city or tap GPS
+                      </li>
+                    )}
               </ul>
             )}
           </div>
 
-          {location && (
-            <p className="hero-current-loc">
-              📍 {location.label}
-            </p>
-          )}
+          {location && <p className="hero-current-loc">📍 {location.label}</p>}
         </div>
 
         {/* ── Right Side: Separate Outdoor vs Indoor Graph ONLY on Indoor Air, Commute & Family Plan ── */}
@@ -274,7 +300,9 @@ function HeroLocationBanner({ activeTab = 'dashboard' }) {
                   />
 
                   <div className="hero-graph-delta">
-                    <span className={`hero-delta-pill ${deltaPct >= 0 ? 'hero-delta-pill--good' : 'hero-delta-pill--bad'}`}>
+                    <span
+                      className={`hero-delta-pill ${deltaPct >= 0 ? 'hero-delta-pill--good' : 'hero-delta-pill--bad'}`}
+                    >
                       {deltaPct >= 0 ? `↓ ${deltaPct}%` : `↑ ${Math.abs(deltaPct)}%`}
                     </span>
                     <span className="hero-delta-caption">
@@ -297,9 +325,16 @@ function HeroLocationBanner({ activeTab = 'dashboard' }) {
                     <div className="hero-scale-track">
                       <div
                         className="hero-scale-fill"
-                        style={{ width: `${Math.min((outdoorPM / maxScale) * 100, 100)}%`, background: getPmColor(outdoorPM) }}
+                        style={{
+                          width: `${Math.min((outdoorPM / maxScale) * 100, 100)}%`,
+                          background: getPmColor(outdoorPM),
+                        }}
                       />
-                      <span className="hero-safe-marker" style={{ left: `${safeLinePct}%` }} title="Safe Limit: 35 µg/m³" />
+                      <span
+                        className="hero-safe-marker"
+                        style={{ left: `${safeLinePct}%` }}
+                        title="Safe Limit: 35 µg/m³"
+                      />
                     </div>
                   </div>
                   <div className="hero-scale-row">
@@ -307,20 +342,34 @@ function HeroLocationBanner({ activeTab = 'dashboard' }) {
                     <div className="hero-scale-track">
                       <div
                         className="hero-scale-fill"
-                        style={{ width: `${Math.min((indoorPM / maxScale) * 100, 100)}%`, background: getPmColor(indoorPM) }}
+                        style={{
+                          width: `${Math.min((indoorPM / maxScale) * 100, 100)}%`,
+                          background: getPmColor(indoorPM),
+                        }}
                       />
-                      <span className="hero-safe-marker" style={{ left: `${safeLinePct}%` }} title="Safe Limit: 35 µg/m³" />
+                      <span
+                        className="hero-safe-marker"
+                        style={{ left: `${safeLinePct}%` }}
+                        title="Safe Limit: 35 µg/m³"
+                      />
                     </div>
                   </div>
                   <div className="hero-scale-legend">
                     <span>Safe limit: 35 µg/m³</span>
-                    <span>I/O: {sim ? `${sim.io_ratio_percent}%` : `${Math.round((indoorPM / Math.max(outdoorPM, 1)) * 100)}%`}</span>
+                    <span>
+                      I/O:{' '}
+                      {sim
+                        ? `${sim.io_ratio_percent}%`
+                        : `${Math.round((indoorPM / Math.max(outdoorPM, 1)) * 100)}%`}
+                    </span>
                   </div>
                 </div>
               </>
             ) : (
               <div className="hero-graph-empty">
-                {loading ? '⏳ Loading live Outdoor vs Indoor comparison...' : '📍 Detecting location or search a city'}
+                {loading
+                  ? '⏳ Loading live Outdoor vs Indoor comparison...'
+                  : '📍 Detecting location or search a city'}
               </div>
             )}
           </div>

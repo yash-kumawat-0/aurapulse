@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 import { resolveApiKeys, getAiStatus } from '../src/config/gemini.js';
 import { calculateIndoorPM25 } from '../src/engine/massBalanceModel.js';
 import { generateIndoorAiShoppingAndPlan } from '../src/services/geminiIndoorService.js';
-import { generateCommuteAiAnalysis, generateOriginCommuteBrief } from '../src/services/geminiCommuteService.js';
+import {
+  generateCommuteAiAnalysis,
+  generateOriginCommuteBrief,
+} from '../src/services/geminiCommuteService.js';
 import { diagnoseSymptomTrigger } from '../src/services/geminiAdviceService.js';
 
 describe('Env multi-key failover, custom inputs, calibration & visual diagnostics', () => {
@@ -60,7 +63,7 @@ describe('Env multi-key failover, custom inputs, calibration & visual diagnostic
       const result = await generateIndoorAiShoppingAndPlan({
         locationLabel: 'Pune, Maharashtra, India',
         lat: 18.5915,
-        lng: 73.7200,
+        lng: 73.72,
         outdoorPm25: 150,
         simulation: { room_volume_m3: 42.5, indoor_pm25: 98, cadr_needed_for_safe: 215 },
         diySimulation: { indoor_pm25: 22 },
@@ -112,8 +115,22 @@ describe('Env multi-key failover, custom inputs, calibration & visual diagnostic
         destinationLabel: 'Viman Nagar, Pune',
         originAqi: { aqi: 185, pm25: 95, aqi_category: 'Unhealthy' },
         routes: [
-          { mode: 'METRO', label: 'Pink Line ⇄ Aqua Line', distance_km: 26, duration_min: 55, dose_ug: 34, estimated_aqi: 82 },
-          { mode: 'TWO_WHEELER', label: 'Two Wheeler', distance_km: 24, duration_min: 62, dose_ug: 110, estimated_aqi: 210 },
+          {
+            mode: 'METRO',
+            label: 'Pink Line ⇄ Aqua Line',
+            distance_km: 26,
+            duration_min: 55,
+            dose_ug: 34,
+            estimated_aqi: 82,
+          },
+          {
+            mode: 'TWO_WHEELER',
+            label: 'Two Wheeler',
+            distance_km: 24,
+            duration_min: 62,
+            dose_ug: 110,
+            estimated_aqi: 210,
+          },
         ],
       });
       assert.equal(res.recommended_mode, 'METRO');

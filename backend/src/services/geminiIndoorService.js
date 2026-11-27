@@ -16,20 +16,44 @@ const INDOOR_AI_SCHEMA = {
       type: 'object',
       description: 'Realistic mass-balance calibration adjusted for custom window/source setup.',
       properties: {
-        window_ach: { type: 'number', description: 'Air exchange per hour between 0.3 (sealed) and 3.5 (wide open/gap).' },
-        window_penetration: { type: 'number', description: 'PM2.5 penetration factor between 0.55 and 0.95.' },
-        source_rate_ug_h: { type: 'number', description: 'Indoor emission ug/h (0 if none, 400-3500 depending on custom source).' },
-        ai_adjusted_label: { type: 'string', description: 'Ultra-short 2-4 word physical label e.g. Balcony Draft 2.4 ACH.' },
+        window_ach: {
+          type: 'number',
+          description: 'Air exchange per hour between 0.3 (sealed) and 3.5 (wide open/gap).',
+        },
+        window_penetration: {
+          type: 'number',
+          description: 'PM2.5 penetration factor between 0.55 and 0.95.',
+        },
+        source_rate_ug_h: {
+          type: 'number',
+          description: 'Indoor emission ug/h (0 if none, 400-3500 depending on custom source).',
+        },
+        ai_adjusted_label: {
+          type: 'string',
+          description: 'Ultra-short 2-4 word physical label e.g. Balcony Draft 2.4 ACH.',
+        },
       },
       required: ['window_ach', 'window_penetration', 'source_rate_ug_h', 'ai_adjusted_label'],
     },
     economics: {
       type: 'object',
       properties: {
-        filter_life_days: { type: 'integer', description: 'Realistic days MERV-13 filter lasts at current PM2.5 before turning grey.' },
-        commercial_purifier_yearly_cost: { type: 'string', description: 'Annualized commercial HEPA cost in local currency (e.g. ₹18,000/yr).' },
-        yearly_savings_estimate: { type: 'string', description: 'Money saved vs commercial purifier in local currency (e.g. ₹14,800/yr).' },
-        monthly_electricity_cost: { type: 'string', description: 'Monthly fan power cost at local tariff (e.g. ₹95/mo).' },
+        filter_life_days: {
+          type: 'integer',
+          description: 'Realistic days MERV-13 filter lasts at current PM2.5 before turning grey.',
+        },
+        commercial_purifier_yearly_cost: {
+          type: 'string',
+          description: 'Annualized commercial HEPA cost in local currency (e.g. ₹18,000/yr).',
+        },
+        yearly_savings_estimate: {
+          type: 'string',
+          description: 'Money saved vs commercial purifier in local currency (e.g. ₹14,800/yr).',
+        },
+        monthly_electricity_cost: {
+          type: 'string',
+          description: 'Monthly fan power cost at local tariff (e.g. ₹95/mo).',
+        },
       },
       required: [
         'filter_life_days',
@@ -168,7 +192,11 @@ function normalizePlatformLinks(rawParts = []) {
 
 function isLikelyIndia(locationLabel, lat, lng) {
   const lbl = String(locationLabel || '').toLowerCase();
-  if (/india|pune|mumbai|delhi|bengaluru|bangalore|hyderabad|chennai|kolkata|noida|gurgaon|jaipur|ahmedabad/.test(lbl)) {
+  if (
+    /india|pune|mumbai|delhi|bengaluru|bangalore|hyderabad|chennai|kolkata|noida|gurgaon|jaipur|ahmedabad/.test(
+      lbl,
+    )
+  ) {
     return true;
   }
   const la = parseFloat(lat);
@@ -203,9 +231,9 @@ export async function generateIndoorAiShoppingAndPlan({
       ceiling_height_ft: ceilingHeightFt,
       volume_m3: simulation?.room_volume_m3,
       window_seal_type: windowSealType,
-      custom_window_desc: windowSealType === 'other' ? (customWindowDesc || 'Custom opening') : null,
+      custom_window_desc: windowSealType === 'other' ? customWindowDesc || 'Custom opening' : null,
       indoor_source: indoorSource,
-      custom_source_desc: indoorSource === 'other' ? (customSourceDesc || 'Custom emission') : null,
+      custom_source_desc: indoorSource === 'other' ? customSourceDesc || 'Custom emission' : null,
     },
     baseline_air_quality: {
       outdoor_pm25_ug_m3: outdoorPm25,
@@ -238,11 +266,13 @@ export async function generateIndoorAiShoppingAndPlan({
 
   const india = isLikelyIndia(locationLabel, lat, lng);
   const fanEst = india ? `₹${850 * fanCount} – ₹${1450 * fanCount}` : `$${18 * fanCount} – $${28 * fanCount}`;
-  const filterEst = india ? `₹${280 * filterCount} – ₹${520 * filterCount}` : `$${12 * filterCount} – $${18 * filterCount}`;
+  const filterEst = india
+    ? `₹${280 * filterCount} – ₹${520 * filterCount}`
+    : `$${12 * filterCount} – $${18 * filterCount}`;
   const tapeEst = india ? '₹120 – ₹220' : '$5 – $9';
   const totalEst = india
-    ? `~₹${(850 * fanCount) + (280 * filterCount) + 120} – ₹${(1450 * fanCount) + (520 * filterCount) + 220}`
-    : `~$${(18 * fanCount) + (12 * filterCount) + 5} – $${(28 * fanCount) + (18 * filterCount) + 9}`;
+    ? `~₹${850 * fanCount + 280 * filterCount + 120} – ₹${1450 * fanCount + 520 * filterCount + 220}`
+    : `~$${18 * fanCount + 12 * filterCount + 5} – $${28 * fanCount + 18 * filterCount + 9}`;
 
   const pmLoad = Math.max(25, simulation?.indoor_pm25 || outdoorPm25 || 120);
   const filterLifeDays = Math.max(20, Math.min(180, Math.round(7500 / pmLoad)));
@@ -253,7 +283,12 @@ export async function generateIndoorAiShoppingAndPlan({
       ? [{ icon: '🪟', label: customWindowDesc ? customWindowDesc.slice(0, 22) : 'Seal Window Gaps' }]
       : []),
     ...(indoorSource !== 'none'
-      ? [{ icon: '🚭', label: customSourceDesc ? `Stop ${customSourceDesc.slice(0, 18)}` : 'Stop Indoor Smoke' }]
+      ? [
+          {
+            icon: '🚭',
+            label: customSourceDesc ? `Stop ${customSourceDesc.slice(0, 18)}` : 'Stop Indoor Smoke',
+          },
+        ]
       : [{ icon: '✨', label: `Drops to ~${Math.round(diySimulation?.indoor_pm25 || 25)} µg/m³` }]),
   ];
 
@@ -266,12 +301,28 @@ export async function generateIndoorAiShoppingAndPlan({
       estimated_price: fanEst,
       platform_links: india
         ? [
-            { platform_name: 'Amazon.in', estimated_price: `₹${900 * fanCount}`, search_query: `${fanSize} inch box fan high velocity` },
-            { platform_name: 'Flipkart', estimated_price: `₹${850 * fanCount}`, search_query: `square box fan high airflow` },
+            {
+              platform_name: 'Amazon.in',
+              estimated_price: `₹${900 * fanCount}`,
+              search_query: `${fanSize} inch box fan high velocity`,
+            },
+            {
+              platform_name: 'Flipkart',
+              estimated_price: `₹${850 * fanCount}`,
+              search_query: `square box fan high airflow`,
+            },
           ]
         : [
-            { platform_name: 'Amazon', estimated_price: `$${22 * fanCount}`, search_query: `${fanSize} inch box fan` },
-            { platform_name: 'Home Depot', estimated_price: `$${24 * fanCount}`, search_query: `${fanSize} inch box fan` },
+            {
+              platform_name: 'Amazon',
+              estimated_price: `$${22 * fanCount}`,
+              search_query: `${fanSize} inch box fan`,
+            },
+            {
+              platform_name: 'Home Depot',
+              estimated_price: `$${24 * fanCount}`,
+              search_query: `${fanSize} inch box fan`,
+            },
           ],
     },
     {
@@ -282,12 +333,28 @@ export async function generateIndoorAiShoppingAndPlan({
       estimated_price: filterEst,
       platform_links: india
         ? [
-            { platform_name: 'Amazon.in', estimated_price: `₹${350 * filterCount}`, search_query: `HEPA MERV 13 replacement air filter panel` },
-            { platform_name: 'Flipkart', estimated_price: `₹${320 * filterCount}`, search_query: `HEPA replacement air purifier filter` },
+            {
+              platform_name: 'Amazon.in',
+              estimated_price: `₹${350 * filterCount}`,
+              search_query: `HEPA MERV 13 replacement air filter panel`,
+            },
+            {
+              platform_name: 'Flipkart',
+              estimated_price: `₹${320 * filterCount}`,
+              search_query: `HEPA replacement air purifier filter`,
+            },
           ]
         : [
-            { platform_name: 'Amazon', estimated_price: `$${14 * filterCount}`, search_query: `${fanSize}x${fanSize}x1 MERV 13 air filter` },
-            { platform_name: 'Walmart', estimated_price: `$${13 * filterCount}`, search_query: `${fanSize}x${fanSize}x1 MERV 13 filter` },
+            {
+              platform_name: 'Amazon',
+              estimated_price: `$${14 * filterCount}`,
+              search_query: `${fanSize}x${fanSize}x1 MERV 13 air filter`,
+            },
+            {
+              platform_name: 'Walmart',
+              estimated_price: `$${13 * filterCount}`,
+              search_query: `${fanSize}x${fanSize}x1 MERV 13 filter`,
+            },
           ],
     },
     {
@@ -298,7 +365,11 @@ export async function generateIndoorAiShoppingAndPlan({
       estimated_price: tapeEst,
       platform_links: india
         ? [
-            { platform_name: 'Amazon.in', estimated_price: '₹150', search_query: 'heavy duty silver duct tape 48mm' },
+            {
+              platform_name: 'Amazon.in',
+              estimated_price: '₹150',
+              search_query: 'heavy duty silver duct tape 48mm',
+            },
             { platform_name: 'Flipkart', estimated_price: '₹135', search_query: 'heavy duty duct tape' },
           ]
         : [
@@ -320,7 +391,13 @@ export async function generateIndoorAiShoppingAndPlan({
       monthly_electricity_cost: india ? '₹95/mo' : '$4/mo',
     },
     zero_cost_hacks: [
-      { emoji: '🩹', label: windowSealType === 'other' && customWindowDesc ? `Seal ${customWindowDesc.slice(0, 16)}` : 'Wet Towel Door Gap' },
+      {
+        emoji: '🩹',
+        label:
+          windowSealType === 'other' && customWindowDesc
+            ? `Seal ${customWindowDesc.slice(0, 16)}`
+            : 'Wet Towel Door Gap',
+      },
       { emoji: '📏', label: 'Keep Bed 1m From Wall' },
       { emoji: '⏰', label: 'Ventilate Only 2–4 PM' },
     ],

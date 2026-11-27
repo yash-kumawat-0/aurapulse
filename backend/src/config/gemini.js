@@ -243,11 +243,18 @@ export const ADVICE_RESPONSE_SCHEMA = {
           risk_level: { type: 'string', enum: ['LOW', 'MODERATE', 'HIGH', 'SEVERE'] },
           action_visual_scene: {
             type: 'string',
-            enum: ['STAY_INDOORS_SEALED', 'MASK_UP_OUTSIDE', 'SAFE_GREEN_WALK', 'RUN_AIR_PURIFIER', 'KEEP_INHALER_READY'],
+            enum: [
+              'STAY_INDOORS_SEALED',
+              'MASK_UP_OUTSIDE',
+              'SAFE_GREEN_WALK',
+              'RUN_AIR_PURIFIER',
+              'KEEP_INHALER_READY',
+            ],
           },
           safe_budget_ug: {
             type: 'integer',
-            description: 'Daily personal safe inhaled PM2.5 budget in ug (e.g. 60 for asthma/infant, 130 for healthy adult).',
+            description:
+              'Daily personal safe inhaled PM2.5 budget in ug (e.g. 60 for asthma/infant, 130 for healthy adult).',
           },
           best_outdoor_time: {
             type: 'string',
@@ -301,8 +308,14 @@ export const ADVICE_RESPONSE_SCHEMA = {
 export const SYMPTOM_RESPONSE_SCHEMA = {
   type: 'object',
   properties: {
-    trigger_emoji: { type: 'string', description: 'Single Unicode emoji matching root cause (🌫️, 🕯️, 🛵, 🪟).' },
-    likely_trigger: { type: 'string', description: 'Crisp cause label under 10 words grounded in live telemetry.' },
+    trigger_emoji: {
+      type: 'string',
+      description: 'Single Unicode emoji matching root cause (🌫️, 🕯️, 🛵, 🪟).',
+    },
+    likely_trigger: {
+      type: 'string',
+      description: 'Crisp cause label under 10 words grounded in live telemetry.',
+    },
     trigger_source: {
       type: 'string',
       enum: ['OUTDOOR_SPIKE', 'INDOOR_SMOKE_LEAK', 'COMMUTE_EXPOSURE', 'MULTI_FACTOR'],
@@ -321,10 +334,18 @@ export const SYMPTOM_RESPONSE_SCHEMA = {
     },
     doctor_summary: {
       type: 'string',
-      description: 'Concise clinical summary (1-2 short sentences) stating PM2.5 levels, exposure & trigger for a doctor/school note.',
+      description:
+        'Concise clinical summary (1-2 short sentences) stating PM2.5 levels, exposure & trigger for a doctor/school note.',
     },
   },
-  required: ['trigger_emoji', 'likely_trigger', 'trigger_source', 'confidence_pct', 'rescue_stickers', 'doctor_summary'],
+  required: [
+    'trigger_emoji',
+    'likely_trigger',
+    'trigger_source',
+    'confidence_pct',
+    'rescue_stickers',
+    'doctor_summary',
+  ],
 };
 
 export default genAI;

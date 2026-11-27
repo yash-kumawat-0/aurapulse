@@ -25,13 +25,8 @@ function getAgeGroup(age) {
 }
 
 function FamilyProfileList() {
-  const {
-    familyMembers,
-    addFamilyMember,
-    removeFamilyMember,
-    selectedMemberId,
-    setSelectedMemberId,
-  } = useUser();
+  const { familyMembers, addFamilyMember, removeFamilyMember, selectedMemberId, setSelectedMemberId } =
+    useUser();
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
@@ -80,7 +75,9 @@ function FamilyProfileList() {
         <form className="family-form" onSubmit={handleAdd}>
           <div className="family-form-row">
             <div className="family-form-field">
-              <label className="family-form-label" htmlFor="member-name-input">Name</label>
+              <label className="family-form-label" htmlFor="member-name-input">
+                Name
+              </label>
               <input
                 id="member-name-input"
                 type="text"
@@ -91,7 +88,9 @@ function FamilyProfileList() {
               />
             </div>
             <div className="family-form-field family-form-field--small">
-              <label className="family-form-label" htmlFor="member-age-input">Age</label>
+              <label className="family-form-label" htmlFor="member-age-input">
+                Age
+              </label>
               <input
                 id="member-age-input"
                 type="number"
@@ -140,7 +139,9 @@ function FamilyProfileList() {
             </div>
           )}
 
-          <button type="submit" className="family-form-submit">+ Add to Family</button>
+          <button type="submit" className="family-form-submit">
+            + Add to Family
+          </button>
         </form>
       )}
 
@@ -150,9 +151,7 @@ function FamilyProfileList() {
           const ageGroup = getAgeGroup(m.age);
           const isVulnerable = m.health_condition !== 'NONE' || m.age < 6 || m.age > 65;
           const isSelected = selectedMemberId === m.id;
-          const badgeLabel = m.health_condition === 'OTHER' && m.custom_issue
-            ? m.custom_issue
-            : cond.label;
+          const badgeLabel = m.health_condition === 'OTHER' && m.custom_issue ? m.custom_issue : cond.label;
 
           return (
             <article
@@ -171,7 +170,9 @@ function FamilyProfileList() {
                 </div>
                 <div className="family-member-info">
                   <span className="family-member-name">{m.name}</span>
-                  <span className="family-member-age">{m.age} yrs · {ageGroup.label}</span>
+                  <span className="family-member-age">
+                    {m.age} yrs · {ageGroup.label}
+                  </span>
                 </div>
                 <div className="family-member-cond" style={{ background: cond.bg, color: cond.color }}>
                   <span aria-hidden="true">{cond.emoji}</span> {badgeLabel}
@@ -198,7 +199,9 @@ function FamilyProfileList() {
 
       {familyMembers.length === 0 && (
         <div className="family-empty">
-          <span className="family-empty-icon" aria-hidden="true">👨‍👩‍👧‍👦</span>
+          <span className="family-empty-icon" aria-hidden="true">
+            👨‍👩‍👧‍👦
+          </span>
           <p>Add family members for personalized plans</p>
         </div>
       )}

@@ -12,7 +12,7 @@ describe('diurnalOptimizer', () => {
     const hours = Array.from({ length: 24 }, (_, h) => ({
       hour: h,
       dateLabel: 'Today',
-      pm25: (h >= 6 && h <= 8) ? 240 : (h >= 14 && h <= 16 ? 45 : 110),
+      pm25: h >= 6 && h <= 8 ? 240 : h >= 14 && h <= 16 ? 45 : 110,
     }));
 
     const result = analyzeDiurnalPattern(hours);

@@ -75,7 +75,9 @@ function SymptomDetectivePanel({ onCheckSymptom, symptomResult, loading }) {
       {symptomResult && !loading && (
         <div className="advice-sym-result" aria-live="polite">
           <div className="advice-sym-res-top">
-            <span className="advice-sym-trigger-icon" aria-hidden="true">{symptomResult.trigger_emoji}</span>
+            <span className="advice-sym-trigger-icon" aria-hidden="true">
+              {symptomResult.trigger_emoji}
+            </span>
             <div>
               <strong>{symptomResult.likely_trigger}</strong>
               <span className="advice-sym-conf">{symptomResult.confidence_pct}% match</span>
@@ -83,7 +85,9 @@ function SymptomDetectivePanel({ onCheckSymptom, symptomResult, loading }) {
           </div>
           <div className="advice-sym-rescue">
             {(symptomResult.rescue_stickers || []).map((r, rIdx) => (
-              <span key={rIdx} className="advice-sym-rchip">{r.emoji} {r.action}</span>
+              <span key={rIdx} className="advice-sym-rchip">
+                {r.emoji} {r.action}
+              </span>
             ))}
           </div>
           <div className="advice-sym-doc-row">

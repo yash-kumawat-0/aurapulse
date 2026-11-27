@@ -23,7 +23,7 @@ describe('inhaledDoseModel', () => {
 
     assert.ok(
       cycling.dose_ug > sitting.dose_ug,
-      `Cycling (${cycling.dose_ug}) should inhale more than sitting (${sitting.dose_ug})`
+      `Cycling (${cycling.dose_ug}) should inhale more than sitting (${sitting.dose_ug})`,
     );
   });
 
@@ -44,14 +44,20 @@ describe('inhaledDoseModel', () => {
 
     assert.ok(
       n95.dose_ug < noMask.dose_ug * 0.1,
-      `N95 dose (${n95.dose_ug}) should be < 10% of unmasked (${noMask.dose_ug})`
+      `N95 dose (${n95.dose_ug}) should be < 10% of unmasked (${noMask.dose_ug})`,
     );
   });
 
   it('should correctly identify safer route in comparison', () => {
     const result = compareCommuteDoses({
       routeA: { pm25: 200, durationMin: 25, activityMode: 'two_wheeler', distanceKm: 12, label: 'Scooter' },
-      routeB: { pm25: 60, durationMin: 32, activityMode: 'resting_in_vehicle', distanceKm: 15, label: 'Metro' },
+      routeB: {
+        pm25: 60,
+        durationMin: 32,
+        activityMode: 'resting_in_vehicle',
+        distanceKm: 15,
+        label: 'Metro',
+      },
       maskType: 'none',
     });
 

@@ -57,7 +57,7 @@ export function calculateSegmentDose({
   const mask = MASK_TYPES[maskType] || MASK_TYPES.none;
 
   // Dose (µg) = C (µg/m³) × V_E (L/min) × t (min) × (1 - η) × (1m³/1000L)
-  const doseUg = pm25Concentration * activity.ve * durationMinutes * (1 - mask.efficiency) / 1000;
+  const doseUg = (pm25Concentration * activity.ve * durationMinutes * (1 - mask.efficiency)) / 1000;
 
   return {
     dose_ug: Math.round(doseUg * 100) / 100,
@@ -96,7 +96,7 @@ export function compareCommuteDoses({ routeA, routeB, maskType = 'none' }) {
 
   // CO2 emission estimates (kg per km)
   const CO2_FACTORS = {
-    two_wheeler: 0.05,       // ~50g/km for 125cc scooter
+    two_wheeler: 0.05, // ~50g/km for 125cc scooter
     resting_in_vehicle: 0.02, // Metro/bus per passenger
     walking_slow: 0,
     walking_brisk: 0,
@@ -108,9 +108,8 @@ export function compareCommuteDoses({ routeA, routeB, maskType = 'none' }) {
   const co2B = (CO2_FACTORS[routeB.activityMode || 'resting_in_vehicle'] || 0.02) * (routeB.distanceKm || 0);
   const co2SavedKg = Math.round((co2A - co2B) * 100) / 100;
 
-  const doseDiffPercent = doseA.dose_ug > 0
-    ? Math.round(((doseA.dose_ug - doseB.dose_ug) / doseA.dose_ug) * 100)
-    : 0;
+  const doseDiffPercent =
+    doseA.dose_ug > 0 ? Math.round(((doseA.dose_ug - doseB.dose_ug) / doseA.dose_ug) * 100) : 0;
 
   const saferRoute = doseA.dose_ug <= doseB.dose_ug ? 'A' : 'B';
   const timeDiffMin = Math.round(routeB.durationMin - routeA.durationMin);

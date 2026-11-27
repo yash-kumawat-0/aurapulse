@@ -46,12 +46,20 @@ app.use(
     };
 
     if (!origin) {
-      return callback(null, { origin: true, credentials: false, allowedHeaders: commonOptions.allowedHeaders });
+      return callback(null, {
+        origin: true,
+        credentials: false,
+        allowedHeaders: commonOptions.allowedHeaders,
+      });
     }
 
     try {
       if (new URL(origin).host === req.get('host')) {
-        return callback(null, { origin: true, credentials: true, allowedHeaders: commonOptions.allowedHeaders });
+        return callback(null, {
+          origin: true,
+          credentials: true,
+          allowedHeaders: commonOptions.allowedHeaders,
+        });
       }
     } catch {
       return callback(new Error('Invalid Origin header'));

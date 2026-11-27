@@ -61,11 +61,17 @@ export function UserProvider({ children }) {
   return (
     <UserContext.Provider
       value={{
-        location, setLocation,
-        language, setLanguage,
-        familyMembers, addFamilyMember, removeFamilyMember,
-        selectedMemberId, setSelectedMemberId,
-        homeProfile, setHomeProfile,
+        location,
+        setLocation,
+        language,
+        setLanguage,
+        familyMembers,
+        addFamilyMember,
+        removeFamilyMember,
+        selectedMemberId,
+        setSelectedMemberId,
+        homeProfile,
+        setHomeProfile,
         detectLocation,
       }}
     >

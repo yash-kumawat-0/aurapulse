@@ -81,7 +81,7 @@ describe('Frontend transit datasets & spatial color helpers', () => {
     const fakeBounds = {
       getSouth: () => 18.48,
       getNorth: () => 18.58,
-      getWest: () => 73.80,
+      getWest: () => 73.8,
       getEast: () => 73.92,
     };
     const cells = generateViewportAqiGrid(fakeBounds, 110, 4, 4);

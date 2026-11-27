@@ -17,12 +17,10 @@ export async function computeRoutes(origin, destination, modes = ['DRIVE', 'TRAN
   }
 
   const results = await Promise.allSettled(
-    modes.map((mode) => computeSingleRoute(origin, destination, mode))
+    modes.map((mode) => computeSingleRoute(origin, destination, mode)),
   );
 
-  const successful = results
-    .filter((r) => r.status === 'fulfilled')
-    .map((r) => r.value);
+  const successful = results.filter((r) => r.status === 'fulfilled').map((r) => r.value);
 
   return successful.length >= 2 ? successful : getSimulatedRoutes(origin, destination, modes);
 }
@@ -77,7 +75,8 @@ function getSimulatedRoutes(origin, destination, modes) {
  * Computes a single route for one travel mode.
  */
 async function computeSingleRoute(origin, destination, travelMode) {
-  const fieldMask = 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.legs.steps.distanceMeters,routes.legs.steps.staticDuration';
+  const fieldMask =
+    'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.legs.steps.distanceMeters,routes.legs.steps.staticDuration';
 
   const body = {
     origin: {

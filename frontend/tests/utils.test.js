@@ -2,7 +2,12 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { getAqiInfo, getPm25SafetyColor, getRiskColor } from '../src/utils/aqiColorMapper.js';
 import { formatHour, formatPM25, formatCO2 } from '../src/utils/formatters.js';
-import { getPM25Color, colorizeRoute, calcRouteAvgPM25, getColorLegend } from '../src/utils/aqiRouteColorizer.js';
+import {
+  getPM25Color,
+  colorizeRoute,
+  calcRouteAvgPM25,
+  getColorLegend,
+} from '../src/utils/aqiRouteColorizer.js';
 
 describe('Frontend AQI color mapping & accessibility helpers', () => {
   it('maps CPCB AQI thresholds cleanly across all 6 bands', () => {

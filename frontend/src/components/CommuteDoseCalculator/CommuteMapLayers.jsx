@@ -35,8 +35,22 @@ export const endIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
-const LEG_PM_MULT = { DRIVE: 1.2, TWO_WHEELER: 1.4, METRO: 0.3, TRANSFER: 0.35, BUS: 0.6, WALK: 1.0, BICYCLE: 1.3 };
-const LEG_VE_LPM = { resting_in_vehicle: 9, walking_slow: 18, two_wheeler: 14, walking_brisk: 25, cycling: 35 };
+const LEG_PM_MULT = {
+  DRIVE: 1.2,
+  TWO_WHEELER: 1.4,
+  METRO: 0.3,
+  TRANSFER: 0.35,
+  BUS: 0.6,
+  WALK: 1.0,
+  BICYCLE: 1.3,
+};
+const LEG_VE_LPM = {
+  resting_in_vehicle: 9,
+  walking_slow: 18,
+  two_wheeler: 14,
+  walking_brisk: 25,
+  cycling: 35,
+};
 
 /**
  * Estimates inhaled PM2.5 (µg) for a transit or road leg.
@@ -101,7 +115,7 @@ export function PlaceInput({ label, value, onChange, placeholder }) {
   const timer = useRef(null);
   const wrap = useRef(null);
   const listId = `place-list-${label.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
-  const displayValue = dirty ? query : (query || value || '');
+  const displayValue = dirty ? query : query || value || '';
 
   useEffect(() => {
     const handleOutside = (e) => {
@@ -144,7 +158,9 @@ export function PlaceInput({ label, value, onChange, placeholder }) {
 
   return (
     <div className="cdc-place" ref={wrap}>
-      <label className="cdc-place-label" htmlFor={`${listId}-input`}>{label}</label>
+      <label className="cdc-place-label" htmlFor={`${listId}-input`}>
+        {label}
+      </label>
       <input
         id={`${listId}-input`}
         className="cdc-place-input"
@@ -159,15 +175,17 @@ export function PlaceInput({ label, value, onChange, placeholder }) {
       />
       {open && (
         <ul id={listId} className="cdc-place-list" role="listbox">
-          {suggestions.length > 0 ? suggestions.map((p, i) => (
-            <li key={i} role="option" aria-selected={false}>
-              <button type="button" className="cdc-place-opt" onClick={() => pick(p)}>
-                📍 {p.label}
-              </button>
-            </li>
-          )) : noMatch && (
-            <li className="cdc-place-empty">No matching location found — try another landmark or city</li>
-          )}
+          {suggestions.length > 0
+            ? suggestions.map((p, i) => (
+                <li key={i} role="option" aria-selected={false}>
+                  <button type="button" className="cdc-place-opt" onClick={() => pick(p)}>
+                    📍 {p.label}
+                  </button>
+                </li>
+              ))
+            : noMatch && (
+                <li className="cdc-place-empty">No matching location found — try another landmark or city</li>
+              )}
         </ul>
       )}
     </div>
@@ -184,9 +202,7 @@ export function ColoredRoute({ segments, weight, opacity, onClick, tooltip }) {
       opacity={opacity}
       eventHandlers={onClick ? { click: onClick } : {}}
     >
-      {tooltip && si === Math.floor(segments.length / 2) && (
-        <Tooltip sticky>{tooltip}</Tooltip>
-      )}
+      {tooltip && si === Math.floor(segments.length / 2) && <Tooltip sticky>{tooltip}</Tooltip>}
     </Polyline>
   ));
 }
@@ -212,10 +228,21 @@ export function TransitNetworkLayers({
   const activeAlightPoint = isInterchange ? interchangePlan.alightPoint : selectedLine?.alightPoint;
   const activeLegsSource = isInterchange ? interchangePlan.legs : selectedLine?.autoPlan?.legs;
 
-  const renderPolylines = (line, lineIdx, weight, colorOverride, opacity, useSlice = false, interactive = true) => {
-    const segList = (useSlice && line.activeSegments?.length)
-      ? line.activeSegments
-      : (line.segments?.length ? line.segments : [line.coordinates]);
+  const renderPolylines = (
+    line,
+    lineIdx,
+    weight,
+    colorOverride,
+    opacity,
+    useSlice = false,
+    interactive = true,
+  ) => {
+    const segList =
+      useSlice && line.activeSegments?.length
+        ? line.activeSegments
+        : line.segments?.length
+          ? line.segments
+          : [line.coordinates];
     const color = colorOverride || line.color || '#7B1FA2';
 
     return segList.map((coords, sIdx) => {
@@ -229,31 +256,44 @@ export function TransitNetworkLayers({
           weight={weight}
           opacity={opacity}
           interactive={interactive}
-          eventHandlers={interactive && onSelectLine ? {
-            click: (e) => {
-              L.DomEvent?.stopPropagation?.(e);
-              onSelectLine(selectedIndex === lineIdx ? null : lineIdx);
-            },
-          } : {}}
+          eventHandlers={
+            interactive && onSelectLine
+              ? {
+                  click: (e) => {
+                    L.DomEvent?.stopPropagation?.(e);
+                    onSelectLine(selectedIndex === lineIdx ? null : lineIdx);
+                  },
+                }
+              : {}
+          }
         >
-          {interactive && sIdx === 0 && (() => {
-            const mLeg = (selectedIndex === lineIdx && evaluatedLegs?.find((l) => l.mode === 'METRO'))
-              || line.autoPlan?.legs?.find((l) => l.mode === 'METRO');
-            const metroDoseUg = mLeg ? estimateLegDoseUg(mLeg, basePM25) : null;
-            return (
-              <Tooltip sticky>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
-                  <span style={{ width: 10, height: 10, borderRadius: 3, background: line.color, display: 'inline-block' }} />
-                  {line.name}
-                  {metroDoseUg != null && (
-                    <span style={{ color: '#15803D', marginLeft: 4 }}>
-                      · {metroDoseUg} µg inhaled
-                    </span>
-                  )}
-                </span>
-              </Tooltip>
-            );
-          })()}
+          {interactive &&
+            sIdx === 0 &&
+            (() => {
+              const mLeg =
+                (selectedIndex === lineIdx && evaluatedLegs?.find((l) => l.mode === 'METRO')) ||
+                line.autoPlan?.legs?.find((l) => l.mode === 'METRO');
+              const metroDoseUg = mLeg ? estimateLegDoseUg(mLeg, basePM25) : null;
+              return (
+                <Tooltip sticky>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
+                    <span
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: 3,
+                        background: line.color,
+                        display: 'inline-block',
+                      }}
+                    />
+                    {line.name}
+                    {metroDoseUg != null && (
+                      <span style={{ color: '#15803D', marginLeft: 4 }}>· {metroDoseUg} µg inhaled</span>
+                    )}
+                  </span>
+                </Tooltip>
+              );
+            })()}
         </Polyline>
       );
     });
@@ -274,53 +314,64 @@ export function TransitNetworkLayers({
         );
       })}
 
-      {(selectedLine || isInterchange) && origin && activeBoardPoint && (() => {
-        const firstLeg = evaluatedLegs?.find((l) => l.role === 'first')
-          || activeLegsSource?.find((l) => l.role === 'first');
-        if (!firstLeg) return null;
-        const pts = ((selectedLine?.isActive || isInterchange) && firstMilePath?.length > 1)
-          ? firstMilePath
-          : [[origin.lat, origin.lng], activeBoardPoint];
-        const isWalk = firstLeg.mode === 'WALK';
-        const legDose = estimateLegDoseUg(firstLeg, basePM25);
-        return (
-          <Polyline
-            positions={pts}
-            color={isWalk ? '#2E7D32' : '#0288D1'}
-            weight={5}
-            opacity={0.92}
-            dashArray={isWalk ? '5 8' : '10 6'}
-          >
-            <Tooltip sticky>
-              <strong>{isWalk ? '🚶 Walk' : '🚌 Bus'}</strong> · {firstLeg.distance_km} km (~{firstLeg.duration_min} min) · <strong>{legDose} µg inhaled</strong>
-            </Tooltip>
-          </Polyline>
-        );
-      })()}
+      {(selectedLine || isInterchange) &&
+        origin &&
+        activeBoardPoint &&
+        (() => {
+          const firstLeg =
+            evaluatedLegs?.find((l) => l.role === 'first') ||
+            activeLegsSource?.find((l) => l.role === 'first');
+          if (!firstLeg) return null;
+          const pts =
+            (selectedLine?.isActive || isInterchange) && firstMilePath?.length > 1
+              ? firstMilePath
+              : [[origin.lat, origin.lng], activeBoardPoint];
+          const isWalk = firstLeg.mode === 'WALK';
+          const legDose = estimateLegDoseUg(firstLeg, basePM25);
+          return (
+            <Polyline
+              positions={pts}
+              color={isWalk ? '#2E7D32' : '#0288D1'}
+              weight={5}
+              opacity={0.92}
+              dashArray={isWalk ? '5 8' : '10 6'}
+            >
+              <Tooltip sticky>
+                <strong>{isWalk ? '🚶 Walk' : '🚌 Bus'}</strong> · {firstLeg.distance_km} km (~
+                {firstLeg.duration_min} min) · <strong>{legDose} µg inhaled</strong>
+              </Tooltip>
+            </Polyline>
+          );
+        })()}
 
-      {(selectedLine || isInterchange) && destination && activeAlightPoint && (() => {
-        const lastLeg = evaluatedLegs?.find((l) => l.role === 'last')
-          || activeLegsSource?.find((l) => l.role === 'last');
-        if (!lastLeg) return null;
-        const pts = ((selectedLine?.isActive || isInterchange) && lastMilePath?.length > 1)
-          ? lastMilePath
-          : [activeAlightPoint, [destination.lat, destination.lng]];
-        const isWalk = lastLeg.mode === 'WALK';
-        const legDose = estimateLegDoseUg(lastLeg, basePM25);
-        return (
-          <Polyline
-            positions={pts}
-            color={isWalk ? '#2E7D32' : '#0288D1'}
-            weight={5}
-            opacity={0.92}
-            dashArray={isWalk ? '5 8' : '10 6'}
-          >
-            <Tooltip sticky>
-              <strong>{isWalk ? '🚶 Walk' : '🚌 Bus'}</strong> · {lastLeg.distance_km} km (~{lastLeg.duration_min} min) · <strong>{legDose} µg inhaled</strong>
-            </Tooltip>
-          </Polyline>
-        );
-      })()}
+      {(selectedLine || isInterchange) &&
+        destination &&
+        activeAlightPoint &&
+        (() => {
+          const lastLeg =
+            evaluatedLegs?.find((l) => l.role === 'last') || activeLegsSource?.find((l) => l.role === 'last');
+          if (!lastLeg) return null;
+          const pts =
+            (selectedLine?.isActive || isInterchange) && lastMilePath?.length > 1
+              ? lastMilePath
+              : [activeAlightPoint, [destination.lat, destination.lng]];
+          const isWalk = lastLeg.mode === 'WALK';
+          const legDose = estimateLegDoseUg(lastLeg, basePM25);
+          return (
+            <Polyline
+              positions={pts}
+              color={isWalk ? '#2E7D32' : '#0288D1'}
+              weight={5}
+              opacity={0.92}
+              dashArray={isWalk ? '5 8' : '10 6'}
+            >
+              <Tooltip sticky>
+                <strong>{isWalk ? '🚶 Walk' : '🚌 Bus'}</strong> · {lastLeg.distance_km} km (~
+                {lastLeg.duration_min} min) · <strong>{legDose} µg inhaled</strong>
+              </Tooltip>
+            </Polyline>
+          );
+        })()}
 
       {isInterchange && (
         <>
@@ -334,8 +385,9 @@ export function TransitNetworkLayers({
             />
           ))}
           {interchangePlan.segments.map((seg, sIdx) => {
-            const matchedLeg = (evaluatedLegs || []).filter((l) => l.mode === 'METRO')[sIdx]
-              || (interchangePlan.legs || []).filter((l) => l.mode === 'METRO')[sIdx];
+            const matchedLeg =
+              (evaluatedLegs || []).filter((l) => l.mode === 'METRO')[sIdx] ||
+              (interchangePlan.legs || []).filter((l) => l.mode === 'METRO')[sIdx];
             const metroDoseUg = matchedLeg ? estimateLegDoseUg(matchedLeg, basePM25) : null;
             return (
               <Polyline
@@ -347,7 +399,15 @@ export function TransitNetworkLayers({
               >
                 <Tooltip sticky>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
-                    <span style={{ width: 10, height: 10, borderRadius: 3, background: seg.color, display: 'inline-block' }} />
+                    <span
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: 3,
+                        background: seg.color,
+                        display: 'inline-block',
+                      }}
+                    />
                     {seg.name} · {seg.distance_km} km
                     {metroDoseUg != null && (
                       <span style={{ color: '#15803D' }}> · {metroDoseUg} µg inhaled</span>
@@ -364,34 +424,38 @@ export function TransitNetworkLayers({
               pathOptions={{ color: '#1E293B', weight: 3, fillColor: '#FFFFFF', fillOpacity: 1 }}
             >
               <Tooltip sticky>
-                🔄 <strong>Metro Interchange:</strong> {interchangePlan.lineAName} ➔ {interchangePlan.lineBName}
+                🔄 <strong>Metro Interchange:</strong> {interchangePlan.lineAName} ➔{' '}
+                {interchangePlan.lineBName}
               </Tooltip>
             </CircleMarker>
           )}
         </>
       )}
 
-      {selectedLine && (() => {
-        const segList = (selectedLine.activeSegments?.length ? selectedLine.activeSegments : selectedLine.segments) || [selectedLine.coordinates];
-        return (
-          <>
-            {segList.map((coords, sIdx) => {
-              const valid = (coords || []).filter((c) => c && !isNaN(c[0]) && !isNaN(c[1]));
-              if (valid.length < 2) return null;
-              return (
-                <Polyline
-                  key={`halo-${selectedIndex}-${sIdx}`}
-                  positions={valid}
-                  color="#FFFFFF"
-                  weight={13}
-                  opacity={0.94}
-                />
-              );
-            })}
-            {renderPolylines(selectedLine, selectedIndex, 8, selectedLine.color, 1.0, true)}
-          </>
-        );
-      })()}
+      {selectedLine &&
+        (() => {
+          const segList = (selectedLine.activeSegments?.length
+            ? selectedLine.activeSegments
+            : selectedLine.segments) || [selectedLine.coordinates];
+          return (
+            <>
+              {segList.map((coords, sIdx) => {
+                const valid = (coords || []).filter((c) => c && !isNaN(c[0]) && !isNaN(c[1]));
+                if (valid.length < 2) return null;
+                return (
+                  <Polyline
+                    key={`halo-${selectedIndex}-${sIdx}`}
+                    positions={valid}
+                    color="#FFFFFF"
+                    weight={13}
+                    opacity={0.94}
+                  />
+                );
+              })}
+              {renderPolylines(selectedLine, selectedIndex, 8, selectedLine.color, 1.0, true)}
+            </>
+          );
+        })()}
     </>
   );
 }

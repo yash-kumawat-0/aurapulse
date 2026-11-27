@@ -88,17 +88,10 @@ function getMinimalSteps(isSingleFilter, beforePm, afterPm) {
 
 const STEP_VISUAL_CLASS = [0, 1, 3, 4, 6];
 
-function DiyPurifierGuide({
-  sim,
-  diySimulation,
-  diyRec,
-  isUrgent,
-  roomVolumeM3,
-  aiGuidance,
-}) {
+function DiyPurifierGuide({ sim, diySimulation, diyRec, isUrgent, roomVolumeM3, aiGuidance }) {
   const detectedVolM3 = roomVolumeM3 ?? sim?.room_volume_m3 ?? 42.5;
   const autoNeedCadr = Math.max(sim?.cadr_needed_for_safe || 0, Math.round(detectedVolM3 * 5));
-  const autoRecommendedStyle = (detectedVolM3 < 30 && autoNeedCadr <= 180) ? 'single' : 'cube';
+  const autoRecommendedStyle = detectedVolM3 < 30 && autoNeedCadr <= 180 ? 'single' : 'cube';
 
   const [step, setStep] = useState(0);
   const [autoPlay, setAutoPlay] = useState(false);
@@ -112,21 +105,22 @@ function DiyPurifierGuide({
 
   const isSingle = buildStyle === 'single';
   const beforePm = sim?.indoor_pm25 ?? 120;
-  const unitCadr = isSingle ? 180 : (detectedVolM3 > 75 ? 450 : 350);
+  const unitCadr = isSingle ? 180 : detectedVolM3 > 75 ? 450 : 350;
   const autoUnits = Math.max(1, Math.ceil(autoNeedCadr / unitCadr));
   const activeCadr = unitCadr * autoUnits;
 
   const backendAfter = diySimulation?.indoor_pm25;
-  const afterPm = (!isSingle && backendAfter !== undefined && autoUnits === (diyRec?.units_needed || 1))
-    ? backendAfter
-    : Math.max(
-        5,
-        Math.round(
-          (((sim?.indoor_pm25 || 120) * ((sim?.ach_rate || 1.5) + 0.3)) /
-            ((sim?.ach_rate || 1.5) + 0.3 + activeCadr / Math.max(detectedVolM3, 10))) *
-            10,
-        ) / 10,
-      );
+  const afterPm =
+    !isSingle && backendAfter !== undefined && autoUnits === (diyRec?.units_needed || 1)
+      ? backendAfter
+      : Math.max(
+          5,
+          Math.round(
+            (((sim?.indoor_pm25 || 120) * ((sim?.ach_rate || 1.5) + 0.3)) /
+              ((sim?.ach_rate || 1.5) + 0.3 + activeCadr / Math.max(detectedVolM3, 10))) *
+              10,
+          ) / 10,
+        );
 
   const steps = getMinimalSteps(isSingle, beforePm, afterPm);
   const currentStep = steps[step] || steps[0];
@@ -148,10 +142,18 @@ function DiyPurifierGuide({
 
   const applyPreset = (preset) => {
     setAutoSpin(false);
-    if (preset === 'iso') { setRotX(-18); setRotY(-32); }
-    else if (preset === 'front') { setRotX(-4); setRotY(0); }
-    else if (preset === 'top') { setRotX(-62); setRotY(-15); }
-    else if (preset === 'spin') { setAutoSpin((s) => !s); }
+    if (preset === 'iso') {
+      setRotX(-18);
+      setRotY(-32);
+    } else if (preset === 'front') {
+      setRotX(-4);
+      setRotY(0);
+    } else if (preset === 'top') {
+      setRotX(-62);
+      setRotY(-15);
+    } else if (preset === 'spin') {
+      setAutoSpin((s) => !s);
+    }
   };
 
   const handlePointerDown = (e) => {
@@ -168,7 +170,9 @@ function DiyPurifierGuide({
     setRotX(Math.max(-75, Math.min(25, dragRef.current.baseRotX - dy * 0.45)));
   };
 
-  const handlePointerUp = () => { dragRef.current.active = false; };
+  const handlePointerUp = () => {
+    dragRef.current.active = false;
+  };
 
   const togglePlayMovie = () => {
     if (!autoPlay && step >= steps.length - 1) setStep(0);
@@ -179,7 +183,10 @@ function DiyPurifierGuide({
   const aiParts = Array.isArray(aiGuidance?.diy_parts) ? aiGuidance.diy_parts : null;
 
   return (
-    <section className={`diy3d-wrap ${isUrgent ? 'diy3d-wrap--urgent' : 'diy3d-wrap--optional'}`} aria-label="3D DIY Purifier Builder">
+    <section
+      className={`diy3d-wrap ${isUrgent ? 'diy3d-wrap--urgent' : 'diy3d-wrap--optional'}`}
+      aria-label="3D DIY Purifier Builder"
+    >
       {/* ── Minimal Visual Header ── */}
       <div className="diy3d-header">
         <div className="diy3d-header-left">
@@ -193,14 +200,22 @@ function DiyPurifierGuide({
           <button
             type="button"
             className={`diy3d-mode-btn ${!isSingle ? 'diy3d-mode-btn--active' : ''}`}
-            onClick={() => { setBuildStyle('cube'); setStep(0); setAutoPlay(false); }}
+            onClick={() => {
+              setBuildStyle('cube');
+              setStep(0);
+              setAutoPlay(false);
+            }}
           >
             📦 4-Filter Cube
           </button>
           <button
             type="button"
             className={`diy3d-mode-btn ${isSingle ? 'diy3d-mode-btn--active' : ''}`}
-            onClick={() => { setBuildStyle('single'); setStep(0); setAutoPlay(false); }}
+            onClick={() => {
+              setBuildStyle('single');
+              setStep(0);
+              setAutoPlay(false);
+            }}
           >
             💨 1-Filter Fan
           </button>
@@ -219,13 +234,21 @@ function DiyPurifierGuide({
           >
             <div className="diy3d-stage-pill">
               <span className="diy3d-step-bounce">{currentStep.icon}</span>
-              <span>Step {currentStep.num}/{steps.length} · {currentStep.title}</span>
+              <span>
+                Step {currentStep.num}/{steps.length} · {currentStep.title}
+              </span>
             </div>
 
             <div className="diy3d-cam-overlay" onPointerDown={(e) => e.stopPropagation()}>
-              <button type="button" className="diy3d-cam-btn" onClick={() => applyPreset('iso')}>3D</button>
-              <button type="button" className="diy3d-cam-btn" onClick={() => applyPreset('front')}>Front</button>
-              <button type="button" className="diy3d-cam-btn" onClick={() => applyPreset('top')}>Top</button>
+              <button type="button" className="diy3d-cam-btn" onClick={() => applyPreset('iso')}>
+                3D
+              </button>
+              <button type="button" className="diy3d-cam-btn" onClick={() => applyPreset('front')}>
+                Front
+              </button>
+              <button type="button" className="diy3d-cam-btn" onClick={() => applyPreset('top')}>
+                Top
+              </button>
               <button
                 type="button"
                 className={`diy3d-cam-btn ${autoSpin ? 'diy3d-cam-btn--on' : ''}`}
@@ -326,9 +349,7 @@ function DiyPurifierGuide({
             </div>
 
             {visualStep === 6 && (
-              <div className="diy3d-clean-badge">
-                ✨ Clean · ~{Math.round(afterPm)} µg/m³
-              </div>
+              <div className="diy3d-clean-badge">✨ Clean · ~{Math.round(afterPm)} µg/m³</div>
             )}
           </div>
         </div>
@@ -344,7 +365,10 @@ function DiyPurifierGuide({
                   role="tab"
                   aria-selected={idx === step}
                   className={`diy3d-step-pill ${idx === step ? 'diy3d-step-pill--active' : ''} ${idx < step ? 'diy3d-step-pill--done' : ''}`}
-                  onClick={() => { setAutoPlay(false); setStep(idx); }}
+                  onClick={() => {
+                    setAutoPlay(false);
+                    setStep(idx);
+                  }}
                 >
                   <span className="diy3d-tl-badge">{idx < step ? '✓' : s.num}</span>
                   <span className="diy3d-step-name">{s.title}</span>
@@ -365,21 +389,24 @@ function DiyPurifierGuide({
             <div className="diy3d-focus-visual">
               <span className="diy3d-focus-big-icon">{currentStep.icon}</span>
               <div>
-                <h4 className="diy3d-focus-title">Step {currentStep.num}: {currentStep.title}</h4>
+                <h4 className="diy3d-focus-title">
+                  Step {currentStep.num}: {currentStep.title}
+                </h4>
                 <div className="diy3d-cue-chip">{currentStep.visualCue}</div>
               </div>
             </div>
 
-            <div className="diy3d-focus-why">
-              💡 {currentStep.hint}
-            </div>
+            <div className="diy3d-focus-why">💡 {currentStep.hint}</div>
 
             <div className="diy3d-card-nav">
               <button
                 type="button"
                 className="diy3d-nav-btn"
                 disabled={step === 0}
-                onClick={() => { setAutoPlay(false); setStep((s) => Math.max(0, s - 1)); }}
+                onClick={() => {
+                  setAutoPlay(false);
+                  setStep((s) => Math.max(0, s - 1));
+                }}
               >
                 ← Prev
               </button>
@@ -390,7 +417,10 @@ function DiyPurifierGuide({
                 type="button"
                 className="diy3d-nav-btn diy3d-nav-btn--next"
                 disabled={step === steps.length - 1}
-                onClick={() => { setAutoPlay(false); setStep((s) => Math.min(steps.length - 1, s + 1)); }}
+                onClick={() => {
+                  setAutoPlay(false);
+                  setStep((s) => Math.min(steps.length - 1, s + 1));
+                }}
               >
                 Next →
               </button>
@@ -409,9 +439,7 @@ function DiyPurifierGuide({
             {aiGuidance?.total_diy_estimate && (
               <span className="diy3d-parts-total">Est: {aiGuidance.total_diy_estimate}</span>
             )}
-            {aiGuidance?.ai_powered && (
-              <span className="diy3d-parts-ai">✨ Gemini AI Prices</span>
-            )}
+            {aiGuidance?.ai_powered && <span className="diy3d-parts-ai">✨ Gemini AI Prices</span>}
           </div>
         </div>
 
@@ -422,7 +450,9 @@ function DiyPurifierGuide({
               return (
                 <div key={idx} className="diy3d-part-tile">
                   <div className="diy3d-part-top">
-                    <span className="diy3d-part-name">{icon} {part.title}</span>
+                    <span className="diy3d-part-name">
+                      {icon} {part.title}
+                    </span>
                     <span className="diy3d-part-price">{part.estimated_price}</span>
                   </div>
                   <div className="diy3d-part-links">

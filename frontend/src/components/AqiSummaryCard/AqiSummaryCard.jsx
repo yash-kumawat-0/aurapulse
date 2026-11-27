@@ -31,7 +31,9 @@ function AqiSummaryCard() {
             {info.emoji} {info.label}
           </span>
           <div className="aqi-meta">
-            <span>PM2.5: <strong>{Math.round(currentAqi.pm25)}</strong> µg/m³</span>
+            <span>
+              PM2.5: <strong>{Math.round(currentAqi.pm25)}</strong> µg/m³
+            </span>
             <span className="aqi-sep">•</span>
             <span>{currentAqi.dominant_pollutant}</span>
             <span className="aqi-sep">•</span>

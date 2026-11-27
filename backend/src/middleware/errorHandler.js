@@ -19,9 +19,7 @@ export function errorHandler(err, _req, res, _next) {
   }
 
   const safeMessage =
-    isProd && statusCode >= 500
-      ? 'Internal Server Error'
-      : err.message || 'Internal Server Error';
+    isProd && statusCode >= 500 ? 'Internal Server Error' : err.message || 'Internal Server Error';
 
   res.status(statusCode).json({
     success: false,

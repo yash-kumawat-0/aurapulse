@@ -24,11 +24,7 @@ class ErrorBoundary extends Component {
           <div className="app-fallback-card">
             <h1>Something paused unexpectedly</h1>
             <p>Your air quality session encountered an unexpected glitch.</p>
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="app-fallback-btn"
-            >
+            <button type="button" onClick={() => window.location.reload()} className="app-fallback-btn">
               Reload AuraPulse
             </button>
           </div>

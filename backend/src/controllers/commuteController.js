@@ -66,15 +66,7 @@ export async function compareCommutes(req, res, next) {
  */
 export async function multiCompare(req, res, next) {
   try {
-    const {
-      origin,
-      routes,
-      mask_type,
-      origin_label,
-      destination_label,
-      language,
-      skip_ai,
-    } = req.body;
+    const { origin, routes, mask_type, origin_label, destination_label, language, skip_ai } = req.body;
 
     if (!origin?.latitude || !origin?.longitude) {
       throw createApiError('origin with latitude and longitude is required.', 400);
@@ -90,11 +82,11 @@ export async function multiCompare(req, res, next) {
     const basePM25 = originAqi.pm25 || 100;
     const diurnalAnalysis = forecastData?.hourly ? analyzeDiurnalPattern(forecastData.hourly) : null;
 
-    const results = routes.map((route) => (
+    const results = routes.map((route) =>
       Array.isArray(route.legs) && route.legs.length > 0
         ? evaluateMultiLegRoute(route, basePM25, mask_type || 'none')
-        : evaluateSingleModeRoute(route, basePM25, mask_type || 'none')
-    ));
+        : evaluateSingleModeRoute(route, basePM25, mask_type || 'none'),
+    );
 
     results.sort((a, b) => a.dose_ug - b.dose_ug);
     if (results.length > 0) results[0].is_safest = true;
@@ -182,9 +174,12 @@ export async function calculateMultiLegCommute(req, res, next) {
     const totalDistance = Math.round(evaluatedLegs.reduce((s, l) => s + l.distance_km, 0) * 10) / 10;
     const totalCo2 = Math.round(evaluatedLegs.reduce((s, l) => s + l.co2_kg, 0) * 100) / 100;
 
-    const weightedPm = totalDuration > 0
-      ? Math.round((evaluatedLegs.reduce((s, l) => s + l.effective_pm25 * l.duration_min, 0) / totalDuration) * 10) / 10
-      : basePM25;
+    const weightedPm =
+      totalDuration > 0
+        ? Math.round(
+            (evaluatedLegs.reduce((s, l) => s + l.effective_pm25 * l.duration_min, 0) / totalDuration) * 10,
+          ) / 10
+        : basePM25;
     const estimatedTripAqi = pm25ToAqi(weightedPm);
 
     const legsWithShare = evaluatedLegs.map((l) => ({

@@ -13,7 +13,7 @@
  * PM2.5 → Color mapping (WHO + US EPA breakpoints)
  */
 const PM25_COLOR_SCALE = [
-  { max: 12,   color: '#4CAF50', label: 'Good' },
+  { max: 12, color: '#4CAF50', label: 'Good' },
   { max: 35.4, color: '#8BC34A', label: 'Moderate' },
   { max: 55.4, color: '#FFEB3B', label: 'USG' },
   { max: 150.4, color: '#FF9800', label: 'Unhealthy' },
@@ -95,7 +95,7 @@ function calcTurnDensity(coords, index, windowSize = 3) {
     count++;
   }
 
-  return count > 0 ? Math.min(1, (totalAngle / count) / (Math.PI / 4)) : 0;
+  return count > 0 ? Math.min(1, totalAngle / count / (Math.PI / 4)) : 0;
 }
 
 /**
@@ -195,7 +195,10 @@ export function generateViewportAqiGrid(bounds, basePM25 = 100, cols = 7, rows =
 
       cells.push({
         id: `cell-${r}-${c}`,
-        bounds: [[sLat, wLng], [nLat, eLng]],
+        bounds: [
+          [sLat, wLng],
+          [nLat, eLng],
+        ],
         pm25,
         color: getPM25Color(pm25),
         label: getPM25Label(pm25),
@@ -244,10 +247,28 @@ export function generateMapAqiZones(origin, destination, basePM25 = 100) {
 
     const corridorOffsets = [
       { lat: midLat, lng: midLng, mult: 1.15, area: 'Mid-Corridor', radius: 1400 },
-      { lat: (origin.lat + midLat) / 2 + 0.008, lng: (origin.lng + midLng) / 2 - 0.007, mult: 0.82, area: 'Breezy Pocket', radius: 1150 },
-      { lat: (destination.lat + midLat) / 2 - 0.006, lng: (destination.lng + midLng) / 2 + 0.008, mult: 1.25, area: 'Junction Zone', radius: 1200 },
+      {
+        lat: (origin.lat + midLat) / 2 + 0.008,
+        lng: (origin.lng + midLng) / 2 - 0.007,
+        mult: 0.82,
+        area: 'Breezy Pocket',
+        radius: 1150,
+      },
+      {
+        lat: (destination.lat + midLat) / 2 - 0.006,
+        lng: (destination.lng + midLng) / 2 + 0.008,
+        mult: 1.25,
+        area: 'Junction Zone',
+        radius: 1200,
+      },
       { lat: destination.lat, lng: destination.lng, mult: 0.96, area: 'Destination Area', radius: 1200 },
-      { lat: destination.lat + 0.015, lng: destination.lng + 0.014, mult: 1.22, area: 'Ring Road Sector', radius: 1250 },
+      {
+        lat: destination.lat + 0.015,
+        lng: destination.lng + 0.014,
+        mult: 1.22,
+        area: 'Ring Road Sector',
+        radius: 1250,
+      },
     ];
 
     corridorOffsets.forEach((c, i) => {

@@ -52,7 +52,13 @@ export async function addFamilyMember(req, res, next) {
     if (!supabase) {
       return res.status(201).json({
         success: true,
-        data: { id: `mock-${Date.now()}`, user_id: userId, name: cleanName, age: parsedAge, health_condition: cleanCond },
+        data: {
+          id: `mock-${Date.now()}`,
+          user_id: userId,
+          name: cleanName,
+          age: parsedAge,
+          health_condition: cleanCond,
+        },
       });
     }
 

@@ -10,12 +10,7 @@ const QUICK_TABS = [
   { id: 'indoor', label: 'Indoor Air' },
 ];
 
-const DATA_SOURCES = [
-  'Google Air Quality',
-  'Open-Meteo',
-  'OSM & OSRM',
-  'Gemini AI',
-];
+const DATA_SOURCES = ['Google Air Quality', 'Open-Meteo', 'OSM & OSRM', 'Gemini AI'];
 
 function Footer({ onSelectTab }) {
   return (
@@ -34,8 +29,8 @@ function Footer({ onSelectTab }) {
               </span>
             </div>
             <p className="footer-tagline">
-              Hyper-local air quality tracking, inhaled commute dose comparison,
-              and personalized clean-air guidance.
+              Hyper-local air quality tracking, inhaled commute dose comparison, and personalized clean-air
+              guidance.
             </p>
           </div>
 
@@ -44,11 +39,7 @@ function Footer({ onSelectTab }) {
             <ul className="footer-nav-list">
               {QUICK_TABS.map((tab) => (
                 <li key={tab.id}>
-                  <button
-                    type="button"
-                    className="footer-nav-btn"
-                    onClick={() => onSelectTab?.(tab.id)}
-                  >
+                  <button type="button" className="footer-nav-btn" onClick={() => onSelectTab?.(tab.id)}>
                     {tab.label}
                   </button>
                 </li>
@@ -78,8 +69,8 @@ function Footer({ onSelectTab }) {
 
         <div className="footer-bottom">
           <p className="footer-disclaimer">
-            Environmental awareness guidance only — consult a qualified healthcare
-            professional for medical advice.
+            Environmental awareness guidance only — consult a qualified healthcare professional for medical
+            advice.
           </p>
           <span className="footer-copy">© {new Date().getFullYear()} AuraPulse</span>
         </div>

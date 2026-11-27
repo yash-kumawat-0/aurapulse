@@ -7,12 +7,12 @@ const redisUrl = process.env.UPSTASH_REDIS_URL;
 const redisToken = process.env.UPSTASH_REDIS_TOKEN;
 
 if (!redisUrl || !redisToken) {
-  console.warn('⚠️  UPSTASH_REDIS_URL or UPSTASH_REDIS_TOKEN not set. Caching will fall through to live API calls.');
+  console.warn(
+    '⚠️  UPSTASH_REDIS_URL or UPSTASH_REDIS_TOKEN not set. Caching will fall through to live API calls.',
+  );
 }
 
-export const redis = redisUrl && redisToken
-  ? new Redis({ url: redisUrl, token: redisToken })
-  : null;
+export const redis = redisUrl && redisToken ? new Redis({ url: redisUrl, token: redisToken }) : null;
 
 /**
  * Wraps a data-fetching function with geohash-based caching.
