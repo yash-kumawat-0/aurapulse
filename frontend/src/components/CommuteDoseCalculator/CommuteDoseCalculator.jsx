@@ -23,7 +23,7 @@ import {
   calcRouteAvgPM25,
   generateViewportAqiGrid,
 } from '../../utils/aqiRouteColorizer.js';
-import { fetchMultiCommuteComparison } from '../../services/api.js';
+import { fetchMultiCommuteComparison, fetchOriginCommuteBrief } from '../../services/api.js';
 import './CommuteDoseCalculator.css';
 
 // Leaflet icon fix
@@ -394,9 +394,32 @@ function CommuteDoseCalculator() {
   const [doseByMode, setDoseByMode] = useState({});
   const [safestMode, setSafestMode] = useState(null);
   const [aiAnalysis, setAiAnalysis] = useState(null);
+  const [originBrief, setOriginBrief] = useState(null);
+  const [briefLoading, setBriefLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [detectingGPS, setDetectingGPS] = useState(false);
+
+  // Auto-run Gemini departure & street smog brief as soon as Start location loads
+  useEffect(() => {
+    if (!origin?.lat || !origin?.lng) return undefined;
+    let active = true;
+    setBriefLoading(true);
+    fetchOriginCommuteBrief({
+      lat: origin.lat,
+      lng: origin.lng,
+      origin_label: origin.label,
+      language,
+    })
+      .then((res) => {
+        if (active && res?.data?.brief) setOriginBrief(res.data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setBriefLoading(false);
+      });
+    return () => { active = false; };
+  }, [origin?.lat, origin?.lng, origin?.label, language]);
 
   // Auto-set origin from user's detected location
   useEffect(() => {
@@ -584,6 +607,40 @@ function CommuteDoseCalculator() {
         {error && <div className="cdc-status cdc-status--err">⚠️ {error}</div>}
       </div>
 
+      {/* ── Live Origin Departure Window Brief (Runs Immediately on Start Location) ── */}
+      {(originBrief?.brief || briefLoading) && allModes.length === 0 && (
+        <div className="cdc-origin-brief">
+          <div className="cdc-brief-left">
+            <span className="cdc-brief-clock cdc-shield-pulse">⏰</span>
+            <div>
+              <div className="cdc-brief-top">
+                <strong>
+                  {originBrief?.brief?.best_leave_window
+                    ? `Best Leave: ${originBrief.brief.best_leave_window}`
+                    : 'Checking Best Departure Time...'}
+                </strong>
+                {originBrief?.brief?.departure_savings_pct > 0 && (
+                  <span className="cdc-save-badge">−{originBrief.brief.departure_savings_pct}% smog</span>
+                )}
+                {originBrief?.brief?.ai_powered && (
+                  <span className="cdc-ai-pill">✨ Gemini AI</span>
+                )}
+              </div>
+              {originBrief?.brief?.headline_verdict && (
+                <div className="cdc-ai-verdict">{originBrief.brief.headline_verdict}</div>
+              )}
+              {Array.isArray(originBrief?.brief?.origin_stickers) && (
+                <div className="cdc-ai-tips">
+                  {originBrief.brief.origin_stickers.map((st, idx) => (
+                    <span key={idx} className="cdc-ai-tip-chip">{st.emoji || st.icon} {st.label}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Visual Animated Safe Recommendation Strip ── */}
       {safestMode && allModes.length > 1 && (
         <div className="cdc-recommend-wrap">
@@ -598,6 +655,12 @@ function CommuteDoseCalculator() {
                 {aiAnalysis?.reduction_vs_worst_pct > 0 && (
                   <span className="cdc-save-badge">−{aiAnalysis.reduction_vs_worst_pct}% smog</span>
                 )}
+                {aiAnalysis?.cigarette_equivalent > 0 && (
+                  <span className="cdc-cig-pill">🚬 Saves {aiAnalysis.cigarette_equivalent} cigs</span>
+                )}
+                {aiAnalysis?.best_leave_window && (
+                  <span className="cdc-leave-pill">⏰ Leave {aiAnalysis.best_leave_window}</span>
+                )}
                 {aiAnalysis?.ai_powered && (
                   <span className="cdc-ai-pill">✨ Gemini AI</span>
                 )}
@@ -610,7 +673,7 @@ function CommuteDoseCalculator() {
               {Array.isArray(aiAnalysis?.action_stickers) && aiAnalysis.action_stickers.length > 0 && (
                 <div className="cdc-ai-tips">
                   {aiAnalysis.action_stickers.map((st, idx) => (
-                    <span key={idx} className="cdc-ai-tip-chip">{st.icon} {st.label}</span>
+                    <span key={idx} className="cdc-ai-tip-chip">{st.emoji || st.icon} {st.label}</span>
                   ))}
                 </div>
               )}
@@ -619,7 +682,7 @@ function CommuteDoseCalculator() {
         </div>
       )}
 
-      {/* ── Bold Safe/Danger 6-Mode Transport Cards with Bottom-Edge Direct Comparison Range ── */}
+      {/* ── Bold Safe/Danger 6-Mode Transport Cards with Gemini Mode Stickers ── */}
       {allModes.length > 0 && (
         <div className="cdc-modes">
           {allModes.map((m) => {
@@ -628,6 +691,7 @@ function CommuteDoseCalculator() {
             const dose = doseByMode[m.mode];
             const doseVal = dose?.dose_ug ?? m.routes[0]?.estimatedDose;
             const risk = getRiskTier(doseVal);
+            const modeNote = aiAnalysis?.mode_notes?.find((n) => n.mode === m.mode);
             const rangePct = doseVal != null
               ? Math.min(100, Math.max(8, Math.round((doseVal / Math.max(maxDose, 1)) * 100)))
               : 0;
@@ -659,6 +723,13 @@ function CommuteDoseCalculator() {
                     {risk.icon} {risk.label}
                   </span>
                 </div>
+
+                {modeNote && (
+                  <div className="cdc-mode-ai-note">
+                    <span>{modeNote.emoji || '📊'}</span>
+                    <span>{modeNote.note}</span>
+                  </div>
+                )}
 
                 <div className="cdc-mode-foot">
                   <span>⏱️ {m.routes[0]?.durationMin || '—'} min</span>
@@ -1016,10 +1087,10 @@ function CommuteDoseCalculator() {
               </div>
             </div>
 
-            {safeTip && (
+            {(aiAnalysis?.safe_tip_sticker || safeTip) && (
               <div className="cdc-safe-suggest">
                 <span>🛡️</span>
-                <span>{safeTip}</span>
+                <span>{aiAnalysis?.safe_tip_sticker || safeTip}</span>
               </div>
             )}
           </div>

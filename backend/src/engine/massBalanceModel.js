@@ -91,22 +91,30 @@ export function calculateIndoorPM25({
   indoorSource = 'none',
   customWindowDesc = '',
   customSourceDesc = '',
+  aiCalibration = null,
 }) {
   // Convert room dimensions to metric (m³)
   const roomAreaM2 = roomAreaSqft * 0.0929;
   const ceilingHeightM = ceilingHeightFt * 0.3048;
   const volumeM3 = roomAreaM2 * ceilingHeightM;
 
-  // Get seal parameters (supports custom 'other' input dynamically)
+  // Get seal parameters (supports custom 'other' + optional Gemini physics calibration)
   const seal = windowSealType === 'other'
     ? estimateCustomWindowSeal(customWindowDesc)
     : (WINDOW_SEAL_PRESETS[windowSealType] || WINDOW_SEAL_PRESETS.standard_aluminum);
-  const P = seal.penetration;
-  const a = seal.ach;
+  const rawAiAch = parseFloat(aiCalibration?.window_ach);
+  const rawAiPen = parseFloat(aiCalibration?.window_penetration);
+  const rawAiSrc = parseFloat(aiCalibration?.source_rate_ug_h);
+
+  const P = Number.isFinite(rawAiPen) ? Math.min(0.98, Math.max(0.45, rawAiPen)) : seal.penetration;
+  const a = Number.isFinite(rawAiAch) ? Math.min(4.5, Math.max(0.25, rawAiAch)) : seal.ach;
   const k = DEFAULT_DEPOSITION_RATE;
-  const S = indoorSource === 'other'
+  const baseSource = indoorSource === 'other'
     ? estimateCustomSourceRate(customSourceDesc)
     : (INDOOR_SOURCES[indoorSource] || 0);
+  const S = indoorSource === 'none'
+    ? 0
+    : (Number.isFinite(rawAiSrc) ? Math.min(4500, Math.max(0, rawAiSrc)) : baseSource);
 
   // Steady-state indoor PM2.5
   const numerator = (P * a * outdoorPM25) + (S / volumeM3);

@@ -1,5 +1,5 @@
 // ============================================
-// Indoor Air Controller (Dynamic Inputs + AI Prices/Links)
+// Indoor Air Controller (Calibrated Gemini Physics + Economics + Shopping)
 // ============================================
 import { calculateIndoorPM25, recommendPurifierSize } from '../engine/massBalanceModel.js';
 import { recommendDIYPurifier } from '../engine/purifierSizer.js';
@@ -37,7 +37,7 @@ export async function simulateIndoorAir(req, res, next) {
     const src = indoor_source || 'none';
     const outPm = parseFloat(outdoor_pm25);
 
-    const simulation = calculateIndoorPM25({
+    const baseSim = calculateIndoorPM25({
       outdoorPM25: outPm,
       roomAreaSqft: area,
       ceilingHeightFt: height,
@@ -54,10 +54,9 @@ export async function simulateIndoorAir(req, res, next) {
       ceilingHeightFt: height,
       outdoorPM25: outPm,
     });
-
     const diyTotalCadr = diyRec.estimated_cadr * diyRec.units_needed;
 
-    const diySimulation = calculateIndoorPM25({
+    const baseDiySim = calculateIndoorPM25({
       outdoorPM25: outPm,
       roomAreaSqft: area,
       ceilingHeightFt: height,
@@ -68,24 +67,14 @@ export async function simulateIndoorAir(req, res, next) {
       customSourceDesc: custom_source_desc,
     });
 
-    const sourceFreeSimulation = calculateIndoorPM25({
-      outdoorPM25: outPm,
-      roomAreaSqft: area,
-      ceilingHeightFt: height,
-      windowSealType: seal,
-      purifierCADR: parseFloat(purifier_cadr) || 0,
-      indoorSource: 'none',
-      customWindowDesc: custom_window_desc,
-    });
-
     const aiIndoorGuidance = !skip_ai
       ? await generateIndoorAiShoppingAndPlan({
           locationLabel: location_label,
           lat,
           lng,
           outdoorPm25: outPm,
-          simulation,
-          diySimulation,
+          simulation: baseSim,
+          diySimulation: baseDiySim,
           diyRec,
           roomAreaSqft: area,
           ceilingHeightFt: height,
@@ -96,6 +85,51 @@ export async function simulateIndoorAir(req, res, next) {
           language: language || 'English',
         })
       : null;
+
+    const aiCal = aiIndoorGuidance?.calibrated_physics || null;
+
+    const simulation = aiCal
+      ? {
+          ...calculateIndoorPM25({
+            outdoorPM25: outPm,
+            roomAreaSqft: area,
+            ceilingHeightFt: height,
+            windowSealType: seal,
+            purifierCADR: parseFloat(purifier_cadr) || 0,
+            indoorSource: src,
+            customWindowDesc: custom_window_desc,
+            customSourceDesc: custom_source_desc,
+            aiCalibration: aiCal,
+          }),
+          ai_calibrated: true,
+          ai_seal_note: aiCal.ai_adjusted_label || null,
+        }
+      : { ...baseSim, ai_calibrated: false };
+
+    const diySimulation = aiCal
+      ? calculateIndoorPM25({
+          outdoorPM25: outPm,
+          roomAreaSqft: area,
+          ceilingHeightFt: height,
+          windowSealType: seal,
+          purifierCADR: diyTotalCadr,
+          indoorSource: src,
+          customWindowDesc: custom_window_desc,
+          customSourceDesc: custom_source_desc,
+          aiCalibration: aiCal,
+        })
+      : baseDiySim;
+
+    const sourceFreeSimulation = calculateIndoorPM25({
+      outdoorPM25: outPm,
+      roomAreaSqft: area,
+      ceilingHeightFt: height,
+      windowSealType: seal,
+      purifierCADR: parseFloat(purifier_cadr) || 0,
+      indoorSource: 'none',
+      customWindowDesc: custom_window_desc,
+      aiCalibration: aiCal ? { ...aiCal, source_rate_ug_h: 0 } : null,
+    });
 
     res.json({
       success: true,

@@ -241,17 +241,49 @@ export const ADVICE_RESPONSE_SCHEMA = {
         properties: {
           member_name: { type: 'string' },
           risk_level: { type: 'string', enum: ['LOW', 'MODERATE', 'HIGH', 'SEVERE'] },
+          action_visual_scene: {
+            type: 'string',
+            enum: ['STAY_INDOORS_SEALED', 'MASK_UP_OUTSIDE', 'SAFE_GREEN_WALK', 'RUN_AIR_PURIFIER', 'KEEP_INHALER_READY'],
+          },
+          safe_budget_ug: {
+            type: 'integer',
+            description: 'Daily personal safe inhaled PM2.5 budget in ug (e.g. 60 for asthma/infant, 130 for healthy adult).',
+          },
+          best_outdoor_time: {
+            type: 'string',
+            description: 'Compact safe window chip e.g. 2-4 PM.',
+          },
           primary_action: {
             type: 'string',
-            description: 'Short direct visual headline (under 10 words).',
+            description: 'Short direct visual headline (under 9 words).',
+          },
+          sticker_badges: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                emoji: { type: 'string', description: 'Single Unicode emoji (e.g. 😷, 🪟, 💨, ⏰, 💊).' },
+                tag: { type: 'string', description: 'Ultra-short 2-4 word visual badge.' },
+              },
+              required: ['emoji', 'tag'],
+            },
           },
           detailed_tips: {
             type: 'array',
             items: { type: 'string' },
-            description: '2-3 ultra-concise scannable chips (under 8 words each).',
+            description: '2-3 ultra-concise scannable chips (under 7 words each).',
           },
         },
-        required: ['member_name', 'risk_level', 'primary_action', 'detailed_tips'],
+        required: [
+          'member_name',
+          'risk_level',
+          'action_visual_scene',
+          'safe_budget_ug',
+          'best_outdoor_time',
+          'primary_action',
+          'sticker_badges',
+          'detailed_tips',
+        ],
       },
     },
     ventilation_advice: {
@@ -264,6 +296,35 @@ export const ADVICE_RESPONSE_SCHEMA = {
     },
   },
   required: ['overall_summary', 'family_advice', 'ventilation_advice', 'commute_advice'],
+};
+
+export const SYMPTOM_RESPONSE_SCHEMA = {
+  type: 'object',
+  properties: {
+    trigger_emoji: { type: 'string', description: 'Single Unicode emoji matching root cause (🌫️, 🕯️, 🛵, 🪟).' },
+    likely_trigger: { type: 'string', description: 'Crisp cause label under 10 words grounded in live telemetry.' },
+    trigger_source: {
+      type: 'string',
+      enum: ['OUTDOOR_SPIKE', 'INDOOR_SMOKE_LEAK', 'COMMUTE_EXPOSURE', 'MULTI_FACTOR'],
+    },
+    confidence_pct: { type: 'integer' },
+    rescue_stickers: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          emoji: { type: 'string', description: 'Single Unicode emoji ONLY.' },
+          action: { type: 'string', description: 'Immediate 2-5 word rescue step.' },
+        },
+        required: ['emoji', 'action'],
+      },
+    },
+    doctor_summary: {
+      type: 'string',
+      description: 'Concise clinical summary (1-2 short sentences) stating PM2.5 levels, exposure & trigger for a doctor/school note.',
+    },
+  },
+  required: ['trigger_emoji', 'likely_trigger', 'trigger_source', 'confidence_pct', 'rescue_stickers', 'doctor_summary'],
 };
 
 export default genAI;

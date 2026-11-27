@@ -48,6 +48,13 @@ export function fetchIndoorSimulation(params) {
 }
 
 // --- Commute Endpoints ---
+export function fetchOriginCommuteBrief(params) {
+  return request('/commute/location-brief', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  });
+}
+
 export function fetchCommuteComparison(params) {
   return request('/commute/compare', {
     method: 'POST',
@@ -69,9 +76,16 @@ export function fetchMultiLegCommute(params) {
   });
 }
 
-// --- Gemini Advice Endpoint ---
+// --- Gemini Advice & Symptom Trigger Detective ---
 export function fetchAdvice(params) {
   return request('/advice/generate', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  });
+}
+
+export function fetchSymptomCheck(params) {
+  return request('/advice/symptom-check', {
     method: 'POST',
     body: JSON.stringify(params),
   });

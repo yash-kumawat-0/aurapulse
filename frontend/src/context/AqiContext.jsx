@@ -4,7 +4,14 @@
 // so one failing doesn't break the other.
 // ============================================
 import { createContext, useContext, useState, useCallback } from 'react';
-import { fetchCurrentAqi, fetchDiurnal, fetchIndoorSimulation, fetchCommuteComparison, fetchAdvice } from '../services/api.js';
+import {
+  fetchCurrentAqi,
+  fetchDiurnal,
+  fetchIndoorSimulation,
+  fetchCommuteComparison,
+  fetchAdvice,
+  fetchSymptomCheck,
+} from '../services/api.js';
 
 const AqiContext = createContext(null);
 
@@ -14,6 +21,7 @@ export function AqiProvider({ children }) {
   const [indoorData, setIndoorData] = useState(null);
   const [commuteData, setCommuteData] = useState(null);
   const [adviceData, setAdviceData] = useState(null);
+  const [symptomResult, setSymptomResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -80,12 +88,24 @@ export function AqiProvider({ children }) {
     }
   }, []);
 
+  const checkSymptom = useCallback(async (params) => {
+    try {
+      const result = await fetchSymptomCheck(params);
+      setSymptomResult(result.data);
+      return result.data;
+    } catch (err) {
+      setError(err.message);
+      return null;
+    }
+  }, []);
+
   return (
     <AqiContext.Provider
       value={{
-        currentAqi, diurnalData, indoorData, commuteData, setCommuteData, adviceData,
+        currentAqi, diurnalData, indoorData, commuteData, setCommuteData,
+        adviceData, symptomResult,
         loading, error,
-        loadAqiData, loadIndoorSimulation, loadCommuteComparison, loadAdvice,
+        loadAqiData, loadIndoorSimulation, loadCommuteComparison, loadAdvice, checkSymptom,
       }}
     >
       {children}

@@ -525,3 +525,268 @@
   .ia-ranges-panel { padding: 14px; gap: 10px; border-radius: 14px; }
   .ia-range-item { padding: 11px 12px; }
 }
+
+/* ── 3D Room Air Twin + Economics + ₹0 Hacks ── */
+.ia-room3d-card {
+  background: var(--bg-primary);
+  border-radius: 16px;
+  border: 1.5px solid #BFDBFE;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 4px 16px rgba(21, 101, 192, 0.06);
+}
+.ia-room3d-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.ia-room3d-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.98rem;
+  font-weight: 800;
+}
+.ia-room3d-pill {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+.ia-room3d-toggle {
+  display: inline-flex;
+  gap: 4px;
+  background: #F1F5F9;
+  padding: 4px;
+  border-radius: 10px;
+}
+.ia-toggle-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #475569;
+  background: transparent;
+  transition: all 0.16s ease;
+}
+.ia-toggle-btn--off {
+  background: #FEE2E2;
+  color: #B91C1C;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.15);
+}
+.ia-toggle-btn--on {
+  background: #059669;
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25);
+}
+
+.ia-room3d-stage {
+  position: relative;
+  height: 196px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1.5px solid #CBD5E1;
+  transition: background 0.5s ease;
+}
+.ia-room3d-stage--smog {
+  background: radial-gradient(circle at 30% 40%, rgba(249, 115, 22, 0.22), rgba(220, 38, 38, 0.16)), #FFF7ED;
+}
+.ia-room3d-stage--clean {
+  background: radial-gradient(circle at 75% 65%, rgba(16, 185, 129, 0.22), rgba(56, 189, 248, 0.14)), #F0FDF4;
+}
+
+.ia-r3d-perspective {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  perspective: 680px;
+}
+.ia-r3d-wall-back {
+  position: absolute;
+  inset: 14px 28px 46px 28px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1.5px solid rgba(148, 163, 184, 0.45);
+  border-radius: 8px;
+  transform: translateZ(-20px);
+}
+.ia-r3d-floor {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 0;
+  height: 54px;
+  background: linear-gradient(180deg, #E2E8F0 0%, #CBD5E1 100%);
+  transform: rotateX(48deg);
+  transform-origin: bottom;
+  border-top: 2px solid #94A3B8;
+}
+
+.ia-r3d-window {
+  position: absolute;
+  left: 38px;
+  top: 28px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 3;
+}
+.ia-r3d-window--leaky {
+  background: #FEF2F2;
+  border: 2px dashed #EF4444;
+  color: #B91C1C;
+}
+.ia-r3d-window--tight {
+  background: #ECFDF5;
+  border: 2px solid #10B981;
+  color: #065F46;
+}
+.ia-r3d-out { font-size: 0.7rem; opacity: 0.85; }
+
+.ia-r3d-source {
+  position: absolute;
+  left: 44px;
+  bottom: 24px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1.5px solid #F97316;
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: #C2410C;
+  animation: iaFloatSmoke 2.2s ease-in-out infinite;
+}
+@keyframes iaFloatSmoke {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.ia-dust-speck {
+  position: absolute;
+  border-radius: 50%;
+  z-index: 2;
+  transition: all 0.5s ease;
+  animation: iaSwirl 3.6s ease-in-out infinite;
+}
+.ia-dust-speck--dirty {
+  background: radial-gradient(circle, #DC2626, #EA580C);
+  opacity: 0.72;
+  box-shadow: 0 0 6px rgba(234, 88, 12, 0.45);
+}
+.ia-dust-speck--clean {
+  background: radial-gradient(circle, #0EA5E9, #10B981);
+  opacity: 0.34;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+}
+@keyframes iaSwirl {
+  0%, 100% { transform: translate(0px, 0px); }
+  33% { transform: translate(12px, -10px); }
+  66% { transform: translate(-8px, 8px); }
+}
+
+.ia-r3d-purifier {
+  position: absolute;
+  right: 36px;
+  bottom: 22px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.ia-r3d-fan-face {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: #FFFFFF;
+  border: 2.5px solid #0284C7;
+  box-shadow: 0 6px 14px rgba(2, 132, 199, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.65rem;
+}
+.ia-r3d-purifier--spin .ia-r3d-fan-icon {
+  display: inline-block;
+  animation: iaSpinFan 0.8s linear infinite;
+}
+.ia-r3d-fan-lbl {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  color: #0369A1;
+  border: 1px solid #BAE6FD;
+}
+
+.ia-econ-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.ia-econ-card {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+}
+.ia-econ-card--save {
+  background: #ECFDF5;
+  border-color: #86EFAC;
+}
+.ia-econ-icon { font-size: 1.3rem; }
+.ia-econ-lbl {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+.ia-econ-card strong {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.ia-zero-hacks {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.ia-zero-title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #0369A1;
+}
+.ia-zero-pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1E3A8A;
+}
+
+@media (max-width: 640px) {
+  .ia-econ-strip { grid-template-columns: 1fr; }
+  .ia-room3d-stage { height: 176px; }
+  .ia-r3d-window { left: 22px; }
+  .ia-r3d-purifier { right: 20px; }
+}

@@ -2,8 +2,9 @@
 // Commute Controller
 // ============================================
 import { computeRoutes } from '../services/googleRoutesService.js';
-import { getCurrentConditions } from '../services/googleAirQualityService.js';
-import { generateCommuteAiAnalysis } from '../services/geminiCommuteService.js';
+import { getCurrentConditions, getForecast } from '../services/googleAirQualityService.js';
+import { analyzeDiurnalPattern } from '../engine/diurnalOptimizer.js';
+import { generateCommuteAiAnalysis, generateOriginCommuteBrief } from '../services/geminiCommuteService.js';
 import { compareCommuteDoses, calculateSegmentDose } from '../engine/inhaledDoseModel.js';
 import { createApiError } from '../middleware/errorHandler.js';
 
@@ -179,9 +180,13 @@ export async function multiCompare(req, res, next) {
       throw createApiError('At least one route is required.', 400);
     }
 
-    // Get current air quality at origin
-    const originAqi = await getCurrentConditions(origin.latitude, origin.longitude);
+    // Get current air quality & 48h hourly forecast at origin in parallel
+    const [originAqi, forecastData] = await Promise.all([
+      getCurrentConditions(origin.latitude, origin.longitude),
+      getForecast(origin.latitude, origin.longitude, 48).catch(() => null),
+    ]);
     const basePM25 = originAqi.pm25 || 100;
+    const diurnalAnalysis = forecastData?.hourly ? analyzeDiurnalPattern(forecastData.hourly) : null;
 
     // CO2 emission factors (kg per km)
     const CO2_FACTORS = {
@@ -313,6 +318,7 @@ export async function multiCompare(req, res, next) {
           originLabel: origin_label || origin?.label,
           destinationLabel: destination_label,
           originAqi,
+          diurnalAnalysis,
           routes: results,
           language: language || 'English',
         })
@@ -501,6 +507,49 @@ export async function calculateMultiLegCommute(req, res, next) {
         worst_leg: worstLeg,
         health_status: healthStatus,
         safer_options: saferOptions.sort((a, b) => a.new_dose_ug - b.new_dose_ug),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * POST /api/v1/commute/location-brief
+ * Instant live Gemini departure timing & street exposure brief
+ * as soon as user selects a Start location.
+ */
+export async function getOriginCommuteBrief(req, res, next) {
+  try {
+    const { lat, lng, origin_label, language } = req.body;
+    if (!lat || !lng) {
+      throw createApiError('lat and lng are required.', 400);
+    }
+
+    const latitude = parseFloat(lat);
+    const longitude = parseFloat(lng);
+
+    const [currentAqi, forecastData] = await Promise.all([
+      getCurrentConditions(latitude, longitude),
+      getForecast(latitude, longitude, 48).catch(() => null),
+    ]);
+
+    const diurnalAnalysis = forecastData?.hourly ? analyzeDiurnalPattern(forecastData.hourly) : null;
+    const brief = await generateOriginCommuteBrief({
+      originLabel: origin_label,
+      currentAqi,
+      diurnalAnalysis,
+      language: language || 'English',
+    });
+
+    res.json({
+      success: true,
+      data: {
+        aqi: currentAqi.aqi,
+        pm25: currentAqi.pm25,
+        diurnal_cleanest: diurnalAnalysis?.cleanest_window || null,
+        diurnal_dirtiest: diurnalAnalysis?.dirtiest_window || null,
+        brief,
       },
     });
   } catch (err) {

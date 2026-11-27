@@ -1,7 +1,7 @@
 // ============================================
 // IndoorAirSimulator — Minimal 3 Inputs (+ Other)
-// Visual Animated Results + Safe Range Scale +
-// 3D DIY Purifier Guide with Integrated Store Links
+// Interactive 3D Air-Flow Room Chamber + Live Toggle,
+// Economics/Filter Countdown, ₹0 Instant Hacks & 3D DIY Store Guide
 // ============================================
 import { useState, useEffect, useRef } from 'react';
 import { useUser } from '../../context/UserContext.jsx';
@@ -32,6 +32,21 @@ const SOURCES = [
   { key: 'other', label: 'Other', icon: '✏️', rate: 'Custom' },
 ];
 
+const PARTICLES = [
+  { x: 14, y: 22, d: '0s', s: 7 },
+  { x: 26, y: 58, d: '0.4s', s: 9 },
+  { x: 38, y: 34, d: '0.8s', s: 6 },
+  { x: 48, y: 74, d: '1.1s', s: 8 },
+  { x: 56, y: 18, d: '0.2s', s: 7 },
+  { x: 64, y: 48, d: '1.4s', s: 9 },
+  { x: 74, y: 28, d: '0.6s', s: 6 },
+  { x: 82, y: 66, d: '0.9s', s: 8 },
+  { x: 20, y: 80, d: '1.3s', s: 7 },
+  { x: 42, y: 14, d: '0.5s', s: 6 },
+  { x: 68, y: 78, d: '0.7s', s: 7 },
+  { x: 86, y: 40, d: '1.2s', s: 6 },
+];
+
 function getPmColor(pm) {
   if (pm <= 12) return '#10B981';
   if (pm <= 35) return '#22C55E';
@@ -48,32 +63,8 @@ function getPmLabel(pm) {
   return 'Hazardous';
 }
 
-function PmRangeRow({ label, value, maxRange }) {
-  const safeVal = 35;
-  const pct = Math.min(Math.max((value / maxRange) * 100, 3), 100);
-  const safePct = Math.min(Math.max((safeVal / maxRange) * 100, 8), 90);
-  const color = getPmColor(value);
-
-  return (
-    <div className="ia-range-item">
-      <div className="ia-range-top">
-        <span className="ia-range-name">{label}</span>
-        <span className="ia-range-pill" style={{ color, background: `${color}16` }}>
-          <strong>{Math.round(value)}</strong> µg/m³ · {getPmLabel(value)}
-        </span>
-      </div>
-      <div className="ia-range-track">
-        <div className="ia-range-fill" style={{ width: `${pct}%`, background: color }} />
-        <div className="ia-range-thumb" style={{ left: `${pct}%`, borderColor: color }} />
-        <div className="ia-range-safe-line" style={{ left: `${safePct}%` }} title="Safe Limit: 35 µg/m³" />
-      </div>
-      <div className="ia-range-scale-foot">
-        <span>0</span>
-        <span className="ia-safe-foot-lbl">Safe ≤ 35 µg/m³</span>
-        <span>{Math.round(maxRange)}</span>
-      </div>
-    </div>
-  );
+function getSourceIcon(src) {
+  return SOURCES.find((s) => s.key === src)?.icon || '💨';
 }
 
 function IndoorAirSimulator() {
@@ -94,6 +85,7 @@ function IndoorAirSimulator() {
   const [hasSimulated, setHasSimulated] = useState(false);
   const [needsRefresh, setNeedsRefresh] = useState(false);
   const [simulating, setSimulating] = useState(false);
+  const [fanPreviewOn, setFanPreviewOn] = useState(true);
 
   const resultsRef = useRef(null);
 
@@ -131,6 +123,7 @@ function IndoorAirSimulator() {
     await loadIndoorSimulation(params);
     setSimulating(false);
     setHasSimulated(true);
+    setFanPreviewOn(true);
     setNeedsRefresh(false);
     setTimeout(() => {
       resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -149,16 +142,17 @@ function IndoorAirSimulator() {
 
   const outdoorPM = sim?.outdoor_pm25 ?? currentAqi?.pm25 ?? 150;
   const isUrgent = sim ? !sim.is_safe || sim.cadr_needed_for_safe > 0 : true;
-  const effectiveCadrNeed = sim ? Math.max(sim.cadr_needed_for_safe, autoTargetCadr) : autoTargetCadr;
-  const maxRange = Math.max(outdoorPM, sim?.indoor_pm25 || 0, 120);
-
   const diyAfterPm = diySimulation?.indoor_pm25 ?? Math.max(12, Math.round((sim?.indoor_pm25 || 120) * 0.25));
   const diyTotalCadr = (diyRec?.estimated_cadr || 350) * (diyRec?.units_needed || 1);
-  const cadrMax = Math.max(effectiveCadrNeed, diyTotalCadr, 450);
-  const cadrNeedPct = Math.min(Math.max(((sim?.cadr_needed_for_safe || 0) / cadrMax) * 100, 6), 92);
   const dropPct = sim?.indoor_pm25 > 0
     ? Math.max(0, Math.round(((sim.indoor_pm25 - diyAfterPm) / sim.indoor_pm25) * 100))
     : 0;
+
+  const displayedPm = fanPreviewOn ? diyAfterPm : (sim?.indoor_pm25 ?? outdoorPM);
+  const activeColor = getPmColor(displayedPm);
+  const isLeaky = sealType === 'leaky_wood' || sealType === 'other';
+  const econ = aiGuidance?.economics;
+  const hacks = Array.isArray(aiGuidance?.zero_cost_hacks) ? aiGuidance.zero_cost_hacks : [];
 
   return (
     <div className="ia-shell">
@@ -328,10 +322,10 @@ function IndoorAirSimulator() {
             disabled={simulating || (!currentAqi && !location)}
           >
             {simulating
-              ? '⏳ Calculating + Checking Local Prices...'
+              ? '⏳ Calibrating 3D Room + AI Prices...'
               : hasSimulated
                 ? needsRefresh
-                  ? '🔄 Update Simulation'
+                  ? '🔄 Update 3D Simulation'
                   : '🔬 Re-simulate Room'
                 : '🔬 Simulate Indoor Air'}
           </button>
@@ -342,17 +336,17 @@ function IndoorAirSimulator() {
       </div>
 
       {/* ══════════════════════════════════════════
-          PART 2: VISUAL ANIMATED RESULTS
+          PART 2: INTERACTIVE 3D ROOM + FILTER ECONOMICS
           ══════════════════════════════════════════ */}
       {hasSimulated && sim && (
         <div ref={resultsRef} id="ia-results" className="ia-results-container">
-          {/* Animated Visual Room Transformation + Stickers */}
+          {/* Animated Before -> DIY Transformation Strip + Gemini Stickers */}
           <div className={`ia-visual-hero ${isUrgent ? 'ia-visual-hero--warn' : 'ia-visual-hero--safe'}`}>
             <div className="ia-flow-strip">
               <div className="ia-flow-node">
                 <span className="ia-flow-emoji">🏠</span>
                 <div>
-                  <span className="ia-flow-lbl">Now</span>
+                  <span className="ia-flow-lbl">Room Now</span>
                   <strong className="ia-flow-val" style={{ color: getPmColor(sim.indoor_pm25) }}>
                     {Math.round(sim.indoor_pm25)} µg/m³
                   </strong>
@@ -380,55 +374,123 @@ function IndoorAirSimulator() {
                 {aiGuidance.visual_badges.map((b, idx) => (
                   <span key={idx} className="ia-sticker-pill">{b.icon} {b.label}</span>
                 ))}
-                {aiGuidance?.ai_powered && (
-                  <span className="ia-sticker-pill ia-sticker-pill--ai">✨ Gemini AI</span>
+                {sim.ai_calibrated && (
+                  <span className="ia-sticker-pill ia-sticker-pill--ai">
+                    ✨ AI Calibrated{sim.ai_seal_note ? ` · ${sim.ai_seal_note}` : ''}
+                  </span>
                 )}
               </div>
             )}
           </div>
 
-          {/* Key Numbers Container — Visual Safe Scale Bars */}
-          <div className="ia-ranges-panel" aria-label="Air Quality Ranges and Safe Limit Marker">
-            <div className="ia-ranges-head">
-              <span>📊 Live Room Ranges</span>
-              <span className="ia-ranges-vol">{volumeM3} m³</span>
+          {/* Interactive 3D Clean-Room Twin Chamber */}
+          <div className="ia-room3d-card">
+            <div className="ia-room3d-top">
+              <div className="ia-room3d-title">
+                <span>🧊 3D Room Air Twin</span>
+                <span className="ia-room3d-pill" style={{ color: activeColor, background: `${activeColor}18` }}>
+                  {Math.round(displayedPm)} µg/m³ · {getPmLabel(displayedPm)}
+                </span>
+              </div>
+
+              <div className="ia-room3d-toggle" role="group" aria-label="Toggle 3D room purifier">
+                <button
+                  type="button"
+                  className={`ia-toggle-btn ${!fanPreviewOn ? 'ia-toggle-btn--off' : ''}`}
+                  onClick={() => setFanPreviewOn(false)}
+                >
+                  🌫️ Fan OFF
+                </button>
+                <button
+                  type="button"
+                  className={`ia-toggle-btn ${fanPreviewOn ? 'ia-toggle-btn--on' : ''}`}
+                  onClick={() => setFanPreviewOn(true)}
+                >
+                  ✨ DIY ON ({diyTotalCadr} m³/h)
+                </button>
+              </div>
             </div>
 
-            <div className="ia-ranges-grid">
-              <PmRangeRow label="🌍 Outdoor Air" value={outdoorPM} maxRange={maxRange} />
-              <PmRangeRow label="🏠 Room Now" value={sim.indoor_pm25} maxRange={maxRange} />
-              <PmRangeRow label="✨ With DIY Purifier" value={diyAfterPm} maxRange={maxRange} />
+            <div className={`ia-room3d-stage ${fanPreviewOn ? 'ia-room3d-stage--clean' : 'ia-room3d-stage--smog'}`}>
+              <div className="ia-r3d-perspective">
+                <div className="ia-r3d-wall-back" />
+                <div className="ia-r3d-floor" />
 
-              <div className="ia-range-item">
-                <div className="ia-range-top">
-                  <span className="ia-range-name">🌀 Purifier Output</span>
-                  <span className="ia-range-pill" style={{ color: '#1D4ED8', background: '#EFF6FF' }}>
-                    DIY <strong>{diyTotalCadr}</strong> m³/h
-                  </span>
+                {/* Left Window Leak Visualization */}
+                <div className={`ia-r3d-window ${isLeaky ? 'ia-r3d-window--leaky' : 'ia-r3d-window--tight'}`}>
+                  <span>{sealType === 'sealed_upvc' ? '✨ Sealed' : '🪟 Draft'}</span>
+                  <span className="ia-r3d-out">Out: {Math.round(outdoorPM)}</span>
                 </div>
-                <div className="ia-range-track">
-                  <div
-                    className="ia-range-fill"
+
+                {/* Indoor Smoke / Candle / Coil Source */}
+                {source !== 'none' && (
+                  <div className="ia-r3d-source">
+                    <span className="ia-r3d-src-icon">{getSourceIcon(source)}</span>
+                    <span className="ia-r3d-src-lbl">{source === 'other' && customSourceDesc ? customSourceDesc.slice(0, 14) : source}</span>
+                  </div>
+                )}
+
+                {/* Animated Airborne Particles Clearing Live */}
+                {PARTICLES.map((pt, idx) => (
+                  <span
+                    key={idx}
+                    className={`ia-dust-speck ${fanPreviewOn ? 'ia-dust-speck--clean' : 'ia-dust-speck--dirty'}`}
                     style={{
-                      width: `${Math.min(Math.max((diyTotalCadr / cadrMax) * 100, 6), 100)}%`,
-                      background: '#2563EB',
+                      left: `${pt.x}%`,
+                      top: `${pt.y}%`,
+                      width: `${fanPreviewOn ? Math.max(4, pt.s - 3) : pt.s + 2}px`,
+                      height: `${fanPreviewOn ? Math.max(4, pt.s - 3) : pt.s + 2}px`,
+                      animationDelay: pt.d,
                     }}
                   />
-                  <div
-                    className="ia-range-safe-line"
-                    style={{ left: `${cadrNeedPct}%` }}
-                    title={`Needed CADR: ${sim.cadr_needed_for_safe} m³/h`}
-                  />
-                </div>
-                <div className="ia-range-scale-foot">
-                  <span>0</span>
-                  <span className="ia-safe-foot-lbl ia-safe-foot-lbl--blue">
-                    Need {sim.cadr_needed_for_safe} m³/h
-                  </span>
-                  <span>{cadrMax}</span>
+                ))}
+
+                {/* Corner 3D Purifier Fan Spinning */}
+                <div className={`ia-r3d-purifier ${fanPreviewOn ? 'ia-r3d-purifier--spin' : ''}`}>
+                  <div className="ia-r3d-fan-face">
+                    <span className="ia-r3d-fan-icon">🌀</span>
+                  </div>
+                  <span className="ia-r3d-fan-lbl">{fanPreviewOn ? 'ON · Cleaning' : 'OFF'}</span>
                 </div>
               </div>
             </div>
+
+            {/* Filter Clock + Exact Money Saved Economics Strip */}
+            {econ && (
+              <div className="ia-econ-strip">
+                <div className="ia-econ-card">
+                  <span className="ia-econ-icon">🗓️</span>
+                  <div>
+                    <span className="ia-econ-lbl">Filter Life</span>
+                    <strong>~{econ.filter_life_days} Days</strong>
+                  </div>
+                </div>
+                <div className="ia-econ-card ia-econ-card--save">
+                  <span className="ia-econ-icon">💰</span>
+                  <div>
+                    <span className="ia-econ-lbl">Saved vs Commercial</span>
+                    <strong>{econ.yearly_savings_estimate}</strong>
+                  </div>
+                </div>
+                <div className="ia-econ-card">
+                  <span className="ia-econ-icon">⚡</span>
+                  <div>
+                    <span className="ia-econ-lbl">Monthly Power</span>
+                    <strong>{econ.monthly_electricity_cost}</strong>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Instant Zero-Cost Hacks */}
+            {hacks.length > 0 && (
+              <div className="ia-zero-hacks">
+                <span className="ia-zero-title">₹0 Immediate Fixes:</span>
+                {hacks.map((h, idx) => (
+                  <span key={idx} className="ia-zero-pill">{h.emoji} {h.label}</span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* 3D DIY Purifier Builder WITH Integrated Needed Parts, Local Prices & Store Links */}

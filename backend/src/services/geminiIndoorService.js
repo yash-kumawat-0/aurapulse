@@ -1,7 +1,8 @@
 // ============================================
-// Gemini Indoor Air & Regional DIY Shopping Service
-// Responds dynamically to fresh room, custom window/source
-// inputs, generating prices, verified store links & stickers.
+// Gemini Indoor Air, Calibrated Physics, Economics & Regional DIY Service
+// Evaluates fresh room setup, custom "Other" window/source inputs,
+// calibrates mass-balance parameters, estimates filter lifespan + ₹/yr saved,
+// and returns verified local store purchase links.
 // ============================================
 import { generateWithFailover } from '../config/gemini.js';
 
@@ -11,13 +12,50 @@ const INDOOR_AI_SCHEMA = {
     location_detected: { type: 'string' },
     currency_code: { type: 'string' },
     currency_symbol: { type: 'string' },
+    calibrated_physics: {
+      type: 'object',
+      description: 'Realistic mass-balance calibration adjusted for custom window/source setup.',
+      properties: {
+        window_ach: { type: 'number', description: 'Air exchange per hour between 0.3 (sealed) and 3.5 (wide open/gap).' },
+        window_penetration: { type: 'number', description: 'PM2.5 penetration factor between 0.55 and 0.95.' },
+        source_rate_ug_h: { type: 'number', description: 'Indoor emission ug/h (0 if none, 400-3500 depending on custom source).' },
+        ai_adjusted_label: { type: 'string', description: 'Ultra-short 2-4 word physical label e.g. Balcony Draft 2.4 ACH.' },
+      },
+      required: ['window_ach', 'window_penetration', 'source_rate_ug_h', 'ai_adjusted_label'],
+    },
+    economics: {
+      type: 'object',
+      properties: {
+        filter_life_days: { type: 'integer', description: 'Realistic days MERV-13 filter lasts at current PM2.5 before turning grey.' },
+        commercial_purifier_yearly_cost: { type: 'string', description: 'Annualized commercial HEPA cost in local currency (e.g. ₹18,000/yr).' },
+        yearly_savings_estimate: { type: 'string', description: 'Money saved vs commercial purifier in local currency (e.g. ₹14,800/yr).' },
+        monthly_electricity_cost: { type: 'string', description: 'Monthly fan power cost at local tariff (e.g. ₹95/mo).' },
+      },
+      required: [
+        'filter_life_days',
+        'commercial_purifier_yearly_cost',
+        'yearly_savings_estimate',
+        'monthly_electricity_cost',
+      ],
+    },
+    zero_cost_hacks: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          emoji: { type: 'string', description: 'Single Unicode emoji ONLY (📏, 🩹, ⏰, 🪴).' },
+          label: { type: 'string', description: 'Short 2-5 word zero-cost fix tailored to room.' },
+        },
+        required: ['emoji', 'label'],
+      },
+    },
     visual_badges: {
       type: 'array',
       items: {
         type: 'object',
         properties: {
-          icon: { type: 'string' },
-          label: { type: 'string', description: 'Short 2-5 word visual sticker (e.g., Seal Balcony Gap, 215 m³/h Needed).' },
+          icon: { type: 'string', description: 'Single Unicode emoji ONLY (🛡️, 🕯️, ⚡, 🪟, 💨).' },
+          label: { type: 'string', description: 'Short 2-5 word visual sticker.' },
         },
         required: ['icon', 'label'],
       },
@@ -54,17 +92,21 @@ const INDOOR_AI_SCHEMA = {
     'location_detected',
     'currency_code',
     'currency_symbol',
+    'calibrated_physics',
+    'economics',
+    'zero_cost_hacks',
     'visual_badges',
     'total_diy_estimate',
     'diy_parts',
   ],
 };
 
-const SYSTEM_PROMPT = `You are AuraPulse's indoor clean-air hardware & local shopping advisor.
-React dynamically to the user's EXACT location, room size, custom window setup (if any), and custom indoor pollution source (if any):
-1. Infer city/country & local currency accurately.
-2. Output 2–4 punchy visual action stickers (short 2–5 word tags with emoji icons) tailored directly to their custom window/source setup.
-3. Estimate current local prices and 2–3 real online store platforms operating in that city/country (e.g. Amazon India, Flipkart, JioMart in India; Amazon, Home Depot, Walmart in USA) for the exact Box Fan, MERV-13/HEPA Filter count, and Duct Tape/Cardboard with specific search_query strings.`;
+const SYSTEM_PROMPT = `You are AuraPulse's indoor clean-air physicist, hardware economist, and shopping advisor.
+React dynamically to the user's EXACT location, room size, window setup (especially custom "Other" text), indoor pollution source (especially custom "Other" text), and outdoor PM2.5:
+1. Calibrate realistic mass-balance physics (window_ach 0.3–3.5, penetration 0.55–0.95, source_rate_ug_h 0–3500; strictly 0 if indoor_source is none).
+2. Calculate realistic filter lifespan in days (clogging faster when outdoor/indoor PM2.5 is high), commercial HEPA yearly savings, and monthly electricity cost in local currency.
+3. Generate 3 zero_cost_hacks and 2–4 punchy visual_badges using ONLY real Unicode emojis (never English icon words).
+4. Price Box Fan, MERV-13/HEPA Filters, and Duct Tape/Cardboard for 2–3 real regional platforms (Amazon India, Flipkart, JioMart in India; Amazon, Home Depot, Walmart in USA) with search_query strings.`;
 
 export function buildVerifiedPlatformUrl(platformName, searchQuery) {
   const name = String(platformName || '').toLowerCase();
@@ -160,13 +202,15 @@ export async function generateIndoorAiShoppingAndPlan({
       floor_area_sqft: roomAreaSqft,
       ceiling_height_ft: ceilingHeightFt,
       volume_m3: simulation?.room_volume_m3,
-      window_seal: windowSealType === 'other' && customWindowDesc ? customWindowDesc : windowSealType,
-      indoor_source: indoorSource === 'other' && customSourceDesc ? customSourceDesc : indoorSource,
+      window_seal_type: windowSealType,
+      custom_window_desc: windowSealType === 'other' ? (customWindowDesc || 'Custom opening') : null,
+      indoor_source: indoorSource,
+      custom_source_desc: indoorSource === 'other' ? (customSourceDesc || 'Custom emission') : null,
     },
-    air_quality: {
+    baseline_air_quality: {
       outdoor_pm25_ug_m3: outdoorPm25,
-      current_indoor_pm25_ug_m3: simulation?.indoor_pm25,
-      with_diy_pm25_ug_m3: diySimulation?.indoor_pm25,
+      baseline_indoor_pm25: simulation?.indoor_pm25,
+      baseline_with_diy_pm25: diySimulation?.indoor_pm25,
       cadr_needed_m3_h: simulation?.cadr_needed_for_safe,
     },
     diy_hardware: { fan_count: fanCount, fan_size_inch: fanSize, filter_count: filterCount },
@@ -174,13 +218,16 @@ export async function generateIndoorAiShoppingAndPlan({
   };
 
   const aiRes = await generateWithFailover({
-    contents: `Generate location pricing, live shopping links, and crisp visual action stickers in ${language}:\n${JSON.stringify(inputContext)}`,
+    contents: `Calibrate room physics, compute filter lifespan & commercial savings, and generate local prices/links + ₹0 fixes in ${language}:\n${JSON.stringify(inputContext)}`,
     systemInstruction: SYSTEM_PROMPT,
     responseSchema: INDOOR_AI_SCHEMA,
     temperature: 0.35,
   });
 
   if (aiRes.ok && aiRes.data) {
+    if (indoorSource === 'none' && aiRes.data.calibrated_physics) {
+      aiRes.data.calibrated_physics.source_rate_ug_h = 0;
+    }
     return {
       ...aiRes.data,
       diy_parts: normalizePlatformLinks(aiRes.data.diy_parts),
@@ -196,6 +243,9 @@ export async function generateIndoorAiShoppingAndPlan({
   const totalEst = india
     ? `~₹${(850 * fanCount) + (280 * filterCount) + 120} – ₹${(1450 * fanCount) + (520 * filterCount) + 220}`
     : `~$${(18 * fanCount) + (12 * filterCount) + 5} – $${(28 * fanCount) + (18 * filterCount) + 9}`;
+
+  const pmLoad = Math.max(25, simulation?.indoor_pm25 || outdoorPm25 || 120);
+  const filterLifeDays = Math.max(20, Math.min(180, Math.round(7500 / pmLoad)));
 
   const badges = [
     { icon: '🌀', label: `Need ${simulation?.cadr_needed_for_safe || 200} m³/h` },
@@ -262,6 +312,18 @@ export async function generateIndoorAiShoppingAndPlan({
     location_detected: locationLabel || (india ? 'India' : 'United States'),
     currency_code: india ? 'INR' : 'USD',
     currency_symbol: india ? '₹' : '$',
+    calibrated_physics: null,
+    economics: {
+      filter_life_days: filterLifeDays,
+      commercial_purifier_yearly_cost: india ? '₹18,500/yr' : '$260/yr',
+      yearly_savings_estimate: india ? '₹15,200/yr' : '$195/yr',
+      monthly_electricity_cost: india ? '₹95/mo' : '$4/mo',
+    },
+    zero_cost_hacks: [
+      { emoji: '🩹', label: windowSealType === 'other' && customWindowDesc ? `Seal ${customWindowDesc.slice(0, 16)}` : 'Wet Towel Door Gap' },
+      { emoji: '📏', label: 'Keep Bed 1m From Wall' },
+      { emoji: '⏰', label: 'Ventilate Only 2–4 PM' },
+    ],
     visual_badges: badges,
     total_diy_estimate: totalEst,
     diy_parts: fallbackParts,
