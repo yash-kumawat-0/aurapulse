@@ -88,13 +88,23 @@
   font-size: 0.9rem;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 640px) {
+  .aqi-card {
+    padding: 14px;
+  }
+
+  .aqi-main {
+    gap: 14px;
+    align-items: flex-start;
+  }
+
   .aqi-number {
-    font-size: 2rem;
-    min-width: 56px;
+    font-size: 2.1rem;
+    min-width: 58px;
   }
 
   .aqi-meta {
-    font-size: 0.75rem;
+    font-size: 0.84rem;
+    gap: 6px;
   }
 }

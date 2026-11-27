@@ -35,11 +35,24 @@
 
 .navbar-lang-select {
   font-family: var(--font-body);
-  font-size: 0.8rem;
-  padding: var(--space-xs) var(--space-sm);
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 6px 10px;
+  min-height: 36px;
   border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
   background: var(--bg-primary);
   color: var(--text-secondary);
   cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .navbar-inner {
+    padding: 0 12px;
+    height: 50px;
+  }
+
+  .navbar-brand {
+    font-size: 1.12rem;
+  }
 }

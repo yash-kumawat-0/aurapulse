@@ -114,3 +114,45 @@
 .whatsapp-copy-btn:hover {
   background: var(--border-light);
 }
+
+@media (max-width: 640px) {
+  .whatsapp-overlay {
+    align-items: flex-end;
+  }
+
+  .whatsapp-modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 88vh;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .whatsapp-header,
+  .whatsapp-body {
+    padding: 14px 16px;
+  }
+
+  .whatsapp-close-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .whatsapp-preview {
+    padding: 14px;
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+
+  .whatsapp-actions {
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px 16px calc(16px + env(safe-area-inset-bottom));
+  }
+
+  .whatsapp-share-btn,
+  .whatsapp-copy-btn {
+    width: 100%;
+    min-height: 46px;
+    justify-content: center;
+  }
+}

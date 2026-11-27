@@ -441,9 +441,31 @@
   .cdc-bars-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
-  .cdc-search-row { flex-direction: column; align-items: stretch; }
+  .cdc { gap: 12px; }
+  .cdc-search-row { flex-direction: column; align-items: stretch; gap: 10px; }
   .cdc-arrow { display: none; }
-  .cdc-map { height: 360px; }
-  .cdc-modes { grid-template-columns: repeat(2, 1fr); }
-  .cdc-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .cdc-place-input { font-size: 1rem; min-height: 44px; padding: 10px 12px; }
+  .cdc-detect-btn { width: 44px; height: 44px; min-width: 44px; }
+  .cdc-place-opt { min-height: 44px; padding: 11px 14px; }
+  .cdc-recommend { padding: 11px 12px; font-size: 0.88rem; align-items: flex-start; }
+  .cdc-modes { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .cdc-mode { padding: 11px 11px 14px; gap: 6px; border-radius: 12px; }
+  .cdc-mode-icon { font-size: 1.2rem; }
+  .cdc-mode-name { font-size: 0.88rem; }
+  .cdc-mode-dose { font-size: 1.08rem; }
+  .cdc-mode-foot { font-size: 0.78rem; gap: 6px; }
+  .cdc-alts-row { -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .cdc-alts-row::-webkit-scrollbar { display: none; }
+  .cdc-metro-chip { padding: 7px 11px; font-size: 0.8rem; min-height: 36px; }
+  .cdc-map { height: 320px; }
+  .cdc-aqi-toggle { top: 10px; right: 10px; padding: 6px 11px; font-size: 0.76rem; min-height: 34px; }
+  .cdc-legend { padding: 10px 12px; gap: 8px; }
+  .cdc-legend-group { gap: 6px; }
+  .cdc-stats--compact { padding: 14px; }
+  .cdc-est-highlight { padding: 11px 12px; }
+  .cdc-chain-pills { gap: 5px; }
+  .cdc-chain-pill { font-size: 0.8rem; padding: 4px 9px; }
+  .cdc-safe-suggest { padding: 9px 11px; font-size: 0.84rem; align-items: flex-start; }
+  .cdc-stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .cdc-bar-row { grid-template-columns: 94px 1fr 48px; gap: 6px; padding: 6px 4px; min-height: 34px; }
 }

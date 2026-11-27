@@ -105,3 +105,33 @@
   color: var(--text-muted);
   font-size: 0.9rem;
 }
+
+@media (max-width: 640px) {
+  .diurnal-legend {
+    gap: 10px;
+    font-size: 0.78rem;
+    flex-wrap: wrap;
+  }
+
+  .diurnal-chart {
+    height: 112px;
+    overflow-x: auto;
+    gap: 2px;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .diurnal-bar-wrap {
+    min-width: 10px;
+  }
+
+  .diurnal-hour {
+    font-size: 0.68rem;
+  }
+
+  .diurnal-rec {
+    padding: 10px 12px;
+    font-size: 0.86rem;
+    line-height: 1.45;
+  }
+}

@@ -401,9 +401,19 @@
 }
 
 @media (max-width: 640px) {
-  .ia-setup-card, .ia-results-container { padding: 16px; }
-  .ia-room-grid { grid-template-columns: repeat(2, 1fr); }
-  .ia-seal-grid { grid-template-columns: 1fr; }
-  .ia-source-grid { grid-template-columns: repeat(2, 1fr); }
-  .ia-custom-size { grid-template-columns: 1fr; }
+  .ia-shell { gap: 14px; }
+  .ia-setup-card, .ia-results-container { padding: 14px; gap: 14px; border-radius: 16px; }
+  .ia-setup-icon { width: 40px; height: 40px; font-size: 1.3rem; }
+  .ia-setup-title { font-size: 1.08rem; }
+  .ia-input-box { padding: 13px; border-radius: 14px; gap: 10px; }
+  .ia-room-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .ia-seal-grid { grid-template-columns: 1fr; gap: 8px; }
+  .ia-source-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .ia-choice-card { min-height: 68px; padding: 10px 8px; }
+  .ia-custom-size { grid-template-columns: 1fr; gap: 10px; }
+  .ia-sim-action-row { flex-direction: column; align-items: stretch; gap: 10px; }
+  .ia-simulate-cta { width: 100%; justify-content: center; min-height: 48px; padding: 13px 18px; }
+  .ia-one-line { padding: 12px 14px; font-size: 0.96rem; align-items: flex-start; }
+  .ia-ranges-panel { padding: 14px; gap: 10px; }
+  .ia-range-item { padding: 12px 12px 24px; }
 }

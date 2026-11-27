@@ -573,8 +573,30 @@
 @media (max-width: 900px) {
   .diy3d-studio { grid-template-columns: 1fr; }
 }
-@media (max-width: 540px) {
-  .diy3d-wrap { padding: 16px; }
-  .diy3d-stage { height: 350px; }
-  .diy3d-scale-wrap { transform: scale(1.06); }
+@media (max-width: 640px) {
+  .diy3d-wrap { padding: 14px; gap: 12px; border-radius: 16px; }
+  .diy3d-header-left { min-width: 0; width: 100%; }
+  .diy3d-mode-switch { width: 100%; }
+  .diy3d-mode-btn { flex: 1; text-align: center; min-height: 38px; padding: 7px 10px; }
+  .diy3d-stage { height: 320px; border-radius: 16px; }
+  .diy3d-stage-callout { font-size: 0.78rem; padding: 6px 10px; top: 10px; left: 10px; right: 10px; }
+  .diy3d-scale-wrap { transform: scale(1.0); }
+  .diy3d-player { flex-direction: column; align-items: stretch; gap: 8px; }
+  .diy3d-play-btn { width: 100%; min-height: 44px; text-align: center; }
+  .diy3d-prev-next { justify-content: space-between; }
+  .diy3d-nav-btn { min-height: 40px; padding: 8px 14px; }
+  .diy3d-stepper {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .diy3d-stepper::-webkit-scrollbar { display: none; }
+  .diy3d-step-pill { flex-shrink: 0; min-height: 36px; }
+  .diy3d-focus-card { padding: 14px; }
+}
+@media (max-width: 420px) {
+  .diy3d-stage { height: 290px; }
+  .diy3d-scale-wrap { transform: scale(0.9); }
 }

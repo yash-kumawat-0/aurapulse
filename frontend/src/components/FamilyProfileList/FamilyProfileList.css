@@ -219,8 +219,26 @@
 }
 .family-form-submit:hover { background: var(--color-primary-dark); }
 
+@media (hover: none), (max-width: 768px) {
+  .family-member-remove {
+    opacity: 0.85;
+    width: 28px;
+    height: 28px;
+  }
+}
+
 @media (max-width: 640px) {
-  .family-members-grid { grid-template-columns: repeat(2, 1fr); }
+  .family-add-toggle { min-height: 40px; padding: 8px 14px; }
+  .family-members-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .family-member-card { padding: 14px 10px; }
+  .family-form { padding: 14px; }
   .family-form-row { flex-direction: column; }
   .family-form-field--small { max-width: unset; }
+  .family-form input { font-size: 1rem; min-height: 44px; padding: 10px 12px; }
+  .family-cond-btn { min-height: 38px; padding: 6px 12px; }
+  .family-form-submit { width: 100%; min-height: 44px; text-align: center; }
+}
+
+@media (max-width: 370px) {
+  .family-members-grid { grid-template-columns: 1fr; }
 }

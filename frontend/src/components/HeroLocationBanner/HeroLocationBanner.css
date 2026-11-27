@@ -397,15 +397,56 @@
 }
 
 @media (max-width: 640px) {
+  .hero {
+    padding: 14px 0;
+  }
+  .hero-inner {
+    padding: 0 12px;
+  }
   .hero-title {
-    font-size: 1.3rem;
+    font-size: 1.28rem;
+    line-height: 1.28;
+    margin-bottom: 10px;
+  }
+  .hero-search {
+    padding: 6px 8px 6px 14px;
+  }
+  .hero-search-input {
+    font-size: 1rem;
+  }
+  .hero-gps-btn {
+    width: 42px;
+    height: 42px;
+  }
+  .hero-suggestion-item {
+    min-height: 44px;
+    padding: 10px 14px;
+  }
+  .hero-graph-card {
+    padding: 14px;
+    gap: 10px;
+    border-radius: 14px;
   }
   .hero-graph-gauges {
-    flex-direction: column;
-    gap: 10px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 6px;
   }
   .hero-gauge {
-    width: 100%;
+    flex-direction: column;
     justify-content: center;
+    text-align: center;
+    gap: 6px;
+  }
+  .hero-gauge-meta {
+    align-items: center;
+  }
+  .hero-gauge-title {
+    font-size: 0.8rem;
+  }
+  .hero-delta-pill {
+    padding: 4px 8px;
+    font-size: 0.78rem;
   }
 }

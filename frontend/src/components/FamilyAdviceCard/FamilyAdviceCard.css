@@ -284,6 +284,21 @@
 }
 
 @media (max-width: 640px) {
-  .advice-single-card { padding: 16px; }
-  .advice-header { flex-direction: column; align-items: flex-start; }
+  .advice-header { flex-direction: column; align-items: stretch; gap: 10px; }
+  .advice-gen-btn { width: 100%; justify-content: center; min-height: 46px; }
+  .advice-person-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .advice-person-tabs::-webkit-scrollbar { display: none; }
+  .advice-person-tab { flex-shrink: 0; min-height: 42px; padding: 8px 14px; }
+  .advice-single-card { padding: 14px; gap: 12px; border-radius: 14px; }
+  .advice-single-avatar { width: 42px; height: 42px; font-size: 1.3rem; }
+  .advice-single-name { font-size: 1.08rem; }
+  .advice-single-main { padding: 12px 14px; }
+  .advice-single-main p { font-size: 0.98rem; }
+  .advice-single-list li { padding: 10px; font-size: 0.9rem; }
 }

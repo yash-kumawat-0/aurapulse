@@ -26,9 +26,11 @@ function App() {
     { id: 'indoor', label: 'Indoor Air', icon: '🏠' },
   ];
 
-  const handleFooterTabSelect = (tabId) => {
+  const handleTabSelect = (tabId, forceTop = false) => {
     setActiveTab(tabId);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (forceTop || window.scrollY > 120) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   return (
@@ -46,7 +48,7 @@ function App() {
                   <button
                     key={tab.id}
                     className={`tab-btn ${activeTab === tab.id ? 'tab-btn--active' : ''}`}
-                    onClick={() => setActiveTab(tab.id)}
+                    onClick={() => handleTabSelect(tab.id)}
                   >
                     <span className="tab-icon">{tab.icon}</span>
                     {tab.label}
@@ -99,7 +101,7 @@ function App() {
               <WhatsAppShareModal onClose={() => setShowWhatsAppModal(false)} />
             )}
           </main>
-          <Footer onSelectTab={handleFooterTabSelect} />
+          <Footer onSelectTab={(tabId) => handleTabSelect(tabId, true)} />
         </div>
       </AqiProvider>
     </UserProvider>
