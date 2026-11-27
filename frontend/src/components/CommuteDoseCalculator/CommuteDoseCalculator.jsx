@@ -24,6 +24,7 @@ import {
   generateViewportAqiGrid,
 } from '../../utils/aqiRouteColorizer.js';
 import { fetchMultiCommuteComparison } from '../../services/api.js';
+import AiAuditBadge from '../AiAuditBadge/AiAuditBadge.jsx';
 import './CommuteDoseCalculator.css';
 
 // Leaflet icon fix
@@ -92,6 +93,7 @@ function PlaceInput({ label, value, onChange, placeholder }) {
   const [query, setQuery] = useState(value || '');
   const [suggestions, setSuggestions] = useState([]);
   const [open, setOpen] = useState(false);
+  const [noMatch, setNoMatch] = useState(false);
   const timer = useRef(null);
   const wrap = useRef(null);
 
@@ -109,22 +111,30 @@ function PlaceInput({ label, value, onChange, placeholder }) {
     if (v.length >= 3) {
       timer.current = setTimeout(async () => {
         const r = await searchPlace(v);
-        setSuggestions(r); setOpen(r.length > 0);
+        setSuggestions(r);
+        setNoMatch(r.length === 0);
+        setOpen(true);
       }, 350);
-    } else { setSuggestions([]); setOpen(false); }
+    } else {
+      setSuggestions([]);
+      setNoMatch(false);
+      setOpen(false);
+    }
   };
-  const pick = (p) => { setQuery(p.label); setOpen(false); onChange({ lat: p.lat, lng: p.lng, label: p.label }); };
+  const pick = (p) => { setQuery(p.label); setNoMatch(false); setOpen(false); onChange({ lat: p.lat, lng: p.lng, label: p.label }); };
 
   return (
     <div className="cdc-place" ref={wrap}>
       <label className="cdc-place-label">{label}</label>
       <input className="cdc-place-input" placeholder={placeholder} value={query}
-        onChange={onType} onFocus={() => suggestions.length > 0 && setOpen(true)} />
+        onChange={onType} onFocus={() => (suggestions.length > 0 || noMatch) && setOpen(true)} />
       {open && (
         <ul className="cdc-place-list">
-          {suggestions.map((p, i) => (
+          {suggestions.length > 0 ? suggestions.map((p, i) => (
             <li key={i}><button className="cdc-place-opt" onClick={() => pick(p)}>📍 {p.label}</button></li>
-          ))}
+          )) : noMatch && (
+            <li className="cdc-place-empty">No matching location found — try another landmark or city</li>
+          )}
         </ul>
       )}
     </div>
@@ -145,8 +155,8 @@ function ColoredRoute({ segments, weight, opacity, onClick, tooltip }) {
 }
 
 // Deterministic client leg dose estimator matching backend inhaledDoseModel.js
-const LEG_PM_MULT = { DRIVE: 1.2, TWO_WHEELER: 1.4, METRO: 0.3, BUS: 0.6, WALK: 1.0, BICYCLE: 1.3 };
-const LEG_VE_LPM = { resting_in_vehicle: 9, two_wheeler: 14, walking_brisk: 25, cycling: 35 };
+const LEG_PM_MULT = { DRIVE: 1.2, TWO_WHEELER: 1.4, METRO: 0.3, TRANSFER: 0.35, BUS: 0.6, WALK: 1.0, BICYCLE: 1.3 };
+const LEG_VE_LPM = { resting_in_vehicle: 9, walking_slow: 18, two_wheeler: 14, walking_brisk: 25, cycling: 35 };
 
 function estimateLegDoseUg(leg, basePm25 = 100) {
   if (leg?.dose_ug != null) return leg.dose_ug;
@@ -371,7 +381,7 @@ function TransitNetworkLayers({
 
 // ========== MAIN COMPONENT ==========
 function CommuteDoseCalculator() {
-  const { location } = useUser();
+  const { location, language } = useUser();
   const { currentAqi } = useAqi();
 
   const [origin, setOrigin] = useState(null);
@@ -384,6 +394,7 @@ function CommuteDoseCalculator() {
   const [showAqiZones, setShowAqiZones] = useState(true);
   const [doseByMode, setDoseByMode] = useState({});
   const [safestMode, setSafestMode] = useState(null);
+  const [aiAnalysis, setAiAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [detectingGPS, setDetectingGPS] = useState(false);
@@ -438,7 +449,7 @@ function CommuteDoseCalculator() {
   const fetchRoutes = useCallback(async () => {
     if (!origin || !destination) return;
     setLoading(true); setError(null);
-    setAllModes([]); setDoseByMode({}); setSafestMode(null); setSelectedAlt(0);
+    setAllModes([]); setDoseByMode({}); setSafestMode(null); setAiAnalysis(null); setSelectedAlt(0);
     setSelectedMetroLineIdx(null);
 
     try {
@@ -466,11 +477,15 @@ function CommuteDoseCalculator() {
         }));
         const result = await fetchMultiCommuteComparison({
           origin: { latitude: origin.lat, longitude: origin.lng },
+          origin_label: origin.label,
+          destination_label: destination.label,
+          language,
           routes: routeParams,
         });
         const dmap = {};
         (result.data.routes || []).forEach((d) => { dmap[d.mode] = d; });
         setDoseByMode(dmap);
+        setAiAnalysis(result.data.ai_commute_analysis || null);
         if (result.data.safest_mode) { setSafestMode(result.data.safest_mode); setSelectedMode(result.data.safest_mode); }
       } catch {
         const dmap = {};
@@ -569,14 +584,48 @@ function CommuteDoseCalculator() {
         {error && <div className="cdc-status cdc-status--err">⚠️ {error}</div>}
       </div>
 
-      {/* ── Safest Recommendation ── */}
+      {/* ── AI Safest Recommendation & Exposure Verdict ── */}
       {safestMode && allModes.length > 1 && (
-        <div className="cdc-recommend">
-          <span className="cdc-recommend-shield">🛡️</span>
-          <div>
-            <strong>Safest Choice: {MODE_CONFIG[safestMode]?.icon} {MODE_CONFIG[safestMode]?.label}</strong>
-            {doseByMode[safestMode] && <span className="cdc-recommend-dose"> — {doseByMode[safestMode].dose_ug} µg inhaled</span>}
+        <div className="cdc-recommend-wrap">
+          <div className="cdc-recommend">
+            <span className="cdc-recommend-shield">🛡️</span>
+            <div className="cdc-recommend-main">
+              <div>
+                <strong>Safest Choice: {MODE_CONFIG[safestMode]?.icon} {MODE_CONFIG[safestMode]?.label}</strong>
+                {doseByMode[safestMode] && <span className="cdc-recommend-dose"> — {doseByMode[safestMode].dose_ug} µg inhaled</span>}
+              </div>
+              {aiAnalysis?.headline_verdict && (
+                <p className="cdc-ai-verdict">{aiAnalysis.headline_verdict}</p>
+              )}
+              {aiAnalysis?.total_pollution_summary && (
+                <p className="cdc-ai-summary">{aiAnalysis.total_pollution_summary}</p>
+              )}
+              {Array.isArray(aiAnalysis?.safer_route_tips) && aiAnalysis.safer_route_tips.length > 0 && (
+                <div className="cdc-ai-tips">
+                  {aiAnalysis.safer_route_tips.map((tip, idx) => (
+                    <span key={idx} className="cdc-ai-tip-chip">💡 {tip}</span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
+
+          {aiAnalysis && (
+            <AiAuditBadge
+              aiPowered={aiAnalysis.ai_powered}
+              model={aiAnalysis.model}
+              keySlot={aiAnalysis.key_slot}
+              promptPreview={aiAnalysis.prompt_preview}
+              inputContext={aiAnalysis.input_context}
+              outputData={{
+                recommended_mode: aiAnalysis.recommended_mode,
+                ai_estimated_dose_ug: aiAnalysis.ai_estimated_dose_ug,
+                headline_verdict: aiAnalysis.headline_verdict,
+                safer_route_tips: aiAnalysis.safer_route_tips,
+              }}
+              fallbackReason={aiAnalysis.fallback_reason}
+            />
+          )}
         </div>
       )}
 

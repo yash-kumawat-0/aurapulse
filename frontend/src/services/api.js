@@ -1,17 +1,42 @@
 // ============================================
 // API Service — Backend Communication Layer
+// Supports optional backup Gemini key header & safe JSON parsing
 // ============================================
 const RAW_API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
 const API_BASE = `${RAW_API_URL}/api/v1`;
+const BACKUP_KEY_STORAGE = 'aurapulse_backup_gemini_key';
 
-async function request(endpoint, options = {}) {
-  const url = `${API_BASE}${endpoint}`;
-  const config = {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
+export function getBackupGeminiKey() {
+  try {
+    return sessionStorage.getItem(BACKUP_KEY_STORAGE) || '';
+  } catch {
+    return '';
+  }
+}
+
+export function setBackupGeminiKey(key) {
+  try {
+    const clean = (key || '').trim();
+    if (clean) sessionStorage.setItem(BACKUP_KEY_STORAGE, clean);
+    else sessionStorage.removeItem(BACKUP_KEY_STORAGE);
+  } catch {
+    /* ignore storage limits */
+  }
+}
+
+async function requestUrl(fullUrl, options = {}) {
+  const backupKey = getBackupGeminiKey();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(backupKey ? { 'X-Gemini-Api-Key': backupKey } : {}),
+    ...(options.headers || {}),
   };
 
-  const response = await fetch(url, config);
+  const response = await fetch(fullUrl, {
+    ...options,
+    headers,
+  });
+
   const rawBody = await response.text();
   let data = {};
 
@@ -23,11 +48,20 @@ async function request(endpoint, options = {}) {
     }
   }
 
-  if (!response.ok || !data.success) {
+  if (!response.ok || (data.success === false)) {
     throw new Error(data.error?.message || `API request failed: ${response.status}`);
   }
 
   return data;
+}
+
+function request(endpoint, options = {}) {
+  return requestUrl(`${API_BASE}${endpoint}`, options);
+}
+
+// --- Health & AI Runtime Status ---
+export function fetchHealthStatus() {
+  return requestUrl(`${RAW_API_URL}/api/health`);
 }
 
 // --- AQI Endpoints ---

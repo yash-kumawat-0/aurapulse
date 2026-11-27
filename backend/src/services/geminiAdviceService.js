@@ -1,58 +1,34 @@
 // ============================================
-// Gemini Advice Service
+// Gemini Advice Service (Multi-Key Failover + Context Rich)
+// Translates telemetry + commute + indoor state into
+// personalized, dynamic family plans via Gemini.
 // ============================================
-// Orchestrates the Gemini AI to generate personalized, structured
-// air quality advice for families.
-//
-// CRITICAL RULE: Gemini NEVER generates or calculates numbers.
-// All numerical values are computed deterministically by the
-// physics engine and passed to Gemini as read-only context.
-// Gemini only writes textual explanations and behavioral advice.
-// ============================================
-import { genAI, GEMINI_MODEL, ADVICE_RESPONSE_SCHEMA } from '../config/gemini.js';
+import { ADVICE_RESPONSE_SCHEMA, generateWithFailover } from '../config/gemini.js';
 
-/**
- * System prompt that strictly governs Gemini's behavior.
- */
-const SYSTEM_PROMPT = `You are AuraPulse, a compassionate and practical air quality advisor for Indian families.
+const SYSTEM_PROMPT = `You are AuraPulse, a compassionate and practical air quality advisor for families.
 
 ABSOLUTE RULES:
 1. NEVER invent, calculate, or guess any number. All numbers are provided to you in the DATA CONTEXT below — use them exactly as given.
 2. NEVER mention specific medical dosages, drug names, or treatment plans. You are NOT a doctor.
-3. Always speak in simple, warm, everyday language. Avoid jargon.
-4. When mentioning times, use the 12-hour format (e.g., "2:30 PM", not "14:30").
-5. Prioritize ACTIONABLE advice over fear. Don't just say "air is bad" — say what to DO.
-6. For children and elderly, be extra gentle and specific.
-7. Keep each tip to 1-2 sentences maximum.
-
-Your job is to take the calculated environmental data and translate it into a family's daily game plan — like a caring neighbor who happens to know the science.`;
+3. Speak in simple, warm, practical language tailored strictly to each member's age and health condition.
+4. Use 12-hour time format (e.g., "2:00 PM") when citing outdoor windows.
+5. Keep each tip to 1-2 sentences maximum and make recommendations noticeably responsive to the location AQI, family profile, and target language.`;
 
 /**
- * Generates a structured family action plan using Gemini.
- *
- * @param {object} params
- * @param {object} params.currentAqi - Current AQI data from the Air Quality API.
- * @param {object} params.diurnalAnalysis - Output from diurnalOptimizer.
- * @param {object} params.indoorSimulation - Output from massBalanceModel.
- * @param {object} params.commuteComparison - Output from inhaledDoseModel (optional).
- * @param {Array} params.familyMembers - Array of { name, age, health_condition }.
- * @param {string} params.language - Preferred language (default: 'English').
- * @returns {Promise<object>} Structured JSON advice response.
+ * Generates a structured family action plan using Gemini with automatic failover.
  */
 export async function generateFamilyAdvice({
+  locationLabel,
   currentAqi,
   diurnalAnalysis,
   indoorSimulation,
   commuteComparison,
   familyMembers = [],
   language = 'English',
+  overrideKey,
 }) {
-  if (!genAI) {
-    return generateFallbackAdvice({ currentAqi, diurnalAnalysis, indoorSimulation, commuteComparison, familyMembers, language });
-  }
-
-  // Build the data context — these are the ONLY numbers Gemini can reference
   const dataContext = buildDataContext({
+    locationLabel,
     currentAqi,
     diurnalAnalysis,
     indoorSimulation,
@@ -60,77 +36,119 @@ export async function generateFamilyAdvice({
     familyMembers,
   });
 
-  const userPrompt = `Generate today's air quality action plan for this family.
+  const userPrompt = `Generate today's personalized air quality action plan for this household.
 
-Respond in: ${language}
+Respond strictly in language: ${language}
 
-DATA CONTEXT (use these numbers exactly, do not modify or recalculate):
+DATA CONTEXT (use these numbers exactly; do not modify or recalculate):
 ${JSON.stringify(dataContext, null, 2)}
 
 FAMILY MEMBERS:
-${familyMembers.map((m) => `- ${m.name} (Age: ${m.age}, Condition: ${m.health_condition || 'None'})`).join('\n')}
+${familyMembers.map((m) => `- ${m.name} (Age: ${m.age}, Condition: ${m.health_condition || 'NONE'})`).join('\n')}
 
-Create the action plan following the response schema strictly.`;
+Return JSON strictly adhering to the schema.`;
 
-  try {
-    const result = await genAI.models.generateContent({
-      model: GEMINI_MODEL,
-      contents: userPrompt,
-      config: {
-        systemInstruction: SYSTEM_PROMPT,
-        responseMimeType: 'application/json',
-        responseSchema: ADVICE_RESPONSE_SCHEMA,
-        temperature: 0.3,
-      },
-    });
+  const aiRes = await generateWithFailover({
+    contents: userPrompt,
+    systemInstruction: SYSTEM_PROMPT,
+    responseSchema: ADVICE_RESPONSE_SCHEMA,
+    overrideKey,
+    temperature: 0.3,
+  });
 
-    const responseText = result.text || '';
-    const parsed = JSON.parse(responseText);
-    return { success: true, advice: parsed, model: GEMINI_MODEL };
-  } catch (err) {
-    console.warn('Gemini API call failed, using rule-based advice fallback:', err.message);
-    return generateFallbackAdvice({ currentAqi, diurnalAnalysis, indoorSimulation, commuteComparison, familyMembers, language });
+  if (aiRes.ok && aiRes.data) {
+    return {
+      success: true,
+      advice: aiRes.data,
+      model: aiRes.model,
+      ai_powered: true,
+      key_slot: aiRes.key_slot,
+      key_source: aiRes.key_source,
+      prompt_preview: `Location: ${locationLabel || 'Current'} · AQI ${currentAqi?.aqi} · ${familyMembers.length} member(s) · Language: ${language}`,
+      input_context: dataContext,
+    };
   }
+
+  return generateFallbackAdvice({
+    locationLabel,
+    currentAqi,
+    diurnalAnalysis,
+    indoorSimulation,
+    commuteComparison,
+    familyMembers,
+    language,
+    fallbackReason: aiRes.reason,
+    inputContext: dataContext,
+  });
 }
 
-function generateFallbackAdvice({ currentAqi, diurnalAnalysis, indoorSimulation, familyMembers }) {
+function generateFallbackAdvice({
+  locationLabel,
+  currentAqi,
+  diurnalAnalysis,
+  familyMembers,
+  language = 'English',
+  fallbackReason,
+  inputContext,
+}) {
   const aqiVal = currentAqi?.aqi || 180;
   const cleanestWindow = diurnalAnalysis?.cleanest_window?.start_label
     ? `${diurnalAnalysis.cleanest_window.start_label} – ${diurnalAnalysis.cleanest_window.end_label}`
     : '2:00 PM – 4:30 PM';
 
+  const isHi = language === 'Hindi';
+  const isTe = language === 'Telugu';
+
   const familyAdvice = familyMembers.map((m) => {
     const cond = m.health_condition?.toUpperCase() || 'NONE';
     let risk_level = 'MODERATE';
-    let primary_action = `Reschedule any outdoor physical exertion strictly to the ${cleanestWindow} clean air window.`;
-    let detailed_tips = [
-      'Keep car cabin air recirculation switched on during travel.',
-      'Rinse face and eyes with fresh water after arriving home.',
-    ];
+    let primary_action = isHi
+      ? `बाहरी गतिविधियों को केवल ${cleanestWindow} की सबसे साफ हवा वाली विंडो में रखें।`
+      : isTe
+        ? `బయటి కార్యకలాపాలను ${cleanestWindow} స్వచ్ఛమైన గాలి సమయంలో మాత్రమే పెట్టుకోండి.`
+        : `Reschedule outdoor exertion strictly to the ${cleanestWindow} clean-air window.`;
+    let detailed_tips = isHi
+      ? ['यात्रा के दौरान कार/कैब में एयर रीसर्क्युलेशन ऑन रखें।', 'घर लौटने के बाद साफ पानी से चेहरा और आंखें धोएं।']
+      : isTe
+        ? ['ప్రయాణంలో వాహనం ఏసీ రీసర్క్యులేషన్ మోడ్‌లో ఉంచండి.', 'ఇంటికి వచ్చాక శుభ్రమైన నీటితో ముఖం కడుక్కోండి.']
+        : ['Keep vehicle cabin AC on recirculation during traffic.', 'Wash face and rinse eyes after returning indoors.'];
 
     if (cond === 'ASTHMA' || cond === 'COPD') {
       risk_level = aqiVal > 150 ? 'SEVERE' : 'HIGH';
-      primary_action = 'Keep preventative inhaler within reach and stay in a room with air filtration.';
-      detailed_tips = [
-        'Avoid stepping outside during the morning inversion (before 9:30 AM).',
-        'Wear a tightly sealed N95/FFP2 respirator if transit is necessary.',
-        'Avoid exposure to indoor agarbatti or frying fumes.',
-      ];
+      primary_action = isHi
+        ? 'इनहेलर पास रखें और फिल्टर की हुई हवा वाले कमरे में ही रहें।'
+        : isTe
+          ? 'ఇన్హేలర్ అందుబాటులో ఉంచి శుభ్రమైన గాలి గదిలోనే ఉండండి.'
+          : 'Keep rescue inhaler handy and stay inside a filtered room.';
+      detailed_tips = isHi
+        ? ['सुबह 9:30 बजे से पहले बाहर न निकलें।', 'बाहर जाना जरूरी हो तो फिट किया हुआ N95 मास्क पहनें।', 'अगरबत्ती या तेज धुएं से बचें।']
+        : isTe
+          ? ['ఉదయం 9:30 ముందు బయటకు వెళ్ళకండి.', 'బయటకు వెళ్ళాల్సి వస్తే N95 మాస్క్ తప్పనిసరిగా ధరించండి.', 'ఇంట్లో ధూపం లేదా పొగ రాకుండా చూసుకోండి.']
+          : ['Avoid stepping outside before 9:30 AM morning inversion clears.', 'Wear a tight N95/FFP2 respirator outdoors.', 'Avoid indoor incense or frying smoke.'];
     } else if (cond === 'HEART_CONDITION') {
       risk_level = 'HIGH';
-      primary_action = 'Cancel early morning verandah or garden walks; cold winter smog constricts arteries.';
-      detailed_tips = [
-        `Take mild walks only between ${cleanestWindow} when particulate concentration is lowest.`,
-        'Keep blood pressure and prescribed cardiovascular medication on strict schedule.',
-        'Ensure the bedroom air is filtered before sleeping.',
-      ];
-    } else if (cond === 'INFANT' || cond === 'PREGNANT') {
+      primary_action = isHi
+        ? 'सुबह की तेज सैर रद्द करें और साफ कमरे में आराम करें।'
+        : isTe
+          ? 'ఉదయం నడక మానేసి ఇంటి లోపలే విశ్రాంతి తీసుకోండి.'
+          : 'Skip early morning walks and rest in cleaner indoor air.';
+      detailed_tips = isHi
+        ? [`हल्की वॉक केवल ${cleanestWindow} के बीच करें।`, 'दवाइयां नियमित समय पर लें।']
+        : isTe
+          ? [`తేలికపాటి నడక ${cleanestWindow} మధ్యలో మాత్రమే చేయండి.`, 'మందులు సమయానికి తీసుకోండి.']
+          : [`Schedule light movement only between ${cleanestWindow}.`, 'Keep prescribed blood-pressure/cardiac routine steady.'];
+    } else if (cond === 'INFANT' || cond === 'PREGNANT' || m.age < 6) {
       risk_level = 'HIGH';
-      primary_action = 'Keep indoor nursery air clean and limit exposure to street traffic fumes.';
-      detailed_tips = [
-        'Ensure windows remain closed during morning peak traffic hours.',
-        'Use wet mopping instead of dry broom sweeping to avoid kicking up settled dust.',
-      ];
+      primary_action = isHi
+        ? 'कमरे की खिड़कियां बंद रखें और धुएं से दूर रहें।'
+        : isTe
+          ? 'గది కిటికీలు మూసివేసి ట్రాఫిక్ పొగకు దూరంగా ఉండండి.'
+          : 'Keep nursery air clean and minimize roadside traffic exposure.';
+      detailed_tips = isHi
+        ? ['पीक ट्रैफिक के दौरान खिड़कियां बंद रखें।', 'झाड़ू की जगह गीले पोंछे का उपयोग करें।']
+        : isTe
+          ? ['ట్రాఫిక్ సమయంలో కిటికీలు మూసి ఉంచండి.', 'చీపురుకు బదులు తడి గుడ్డతో తుడవండి.']
+          : ['Close windows during peak morning rush.', 'Wet-mop floors instead of dry sweeping.'];
     }
 
     return {
@@ -141,24 +159,46 @@ function generateFallbackAdvice({ currentAqi, diurnalAnalysis, indoorSimulation,
     };
   });
 
+  const overall_summary = isHi
+    ? `${locationLabel || 'आपके क्षेत्र'} में वर्तमान AQI ${aqiVal} है। सुबह हवा में प्रदूषक फंसे रहते हैं, इसलिए बाहरी काम ${cleanestWindow} में करें।`
+    : isTe
+      ? `${locationLabel || 'మీ ప్రాంతం'} ప్రస్తుత AQI ${aqiVal}. ఉదయం పొగమంచు ఎక్కువగా ఉంటుంది, కాబట్టి బయటి పనులు ${cleanestWindow}లో చేయండి.`
+      : `Current AQI in ${locationLabel || 'your area'} is ${aqiVal} (${currentAqi?.aqi_category || 'Unhealthy'}). Morning atmospheric trapping keeps PM2.5 elevated — plan outdoor steps during ${cleanestWindow}.`;
+
+  const ventilation_advice = isHi
+    ? `ताजी हवा के लिए खिड़कियां केवल 20–30 मिनट (${cleanestWindow}) में खोलें।`
+    : isTe
+      ? `గాలి కోసం కిటికీలను ${cleanestWindow} మధ్యలో కేవలం 20–30 నిమిషాలు తెరవండి.`
+      : `Open windows for 20–30 minutes only during ${cleanestWindow} to air out indoor air safely.`;
+
+  const commute_advice = isHi
+    ? 'खुले दोपहिया के बजाय मेट्रो या एसी वाहन चुनें ताकि फेफड़ों में धुआं कम जाए।'
+    : isTe
+      ? 'బైక్ కంటే మెట్రో లేదా ఏసీ వాహనంలో ప్రయాణించి కాలుష్య ప్రభావాన్ని తగ్గించండి.'
+      : 'Choose enclosed Metro or AC cabin travel over open two-wheelers to cut particulate inhalation.';
+
   return {
     success: true,
     advice: {
-      overall_summary: `Current AQI is ${aqiVal} (${currentAqi?.aqi_category || 'Unhealthy'}). Winter atmospheric dynamics create severe particulate trapping in the early morning. Shift all outdoor routines to the afternoon clean window.`,
+      overall_summary,
       family_advice: familyAdvice,
-      ventilation_advice: `Open windows for 20-30 minutes only during the cleanest window (${cleanestWindow}) to air out stale indoor air without letting in peak smog.`,
-      commute_advice: 'Choose enclosed public transit (Metro) or vehicle with AC recirculation over open two-wheelers to cut particulate lung deposition by more than half.',
+      ventilation_advice,
+      commute_advice,
     },
     model: 'aurapulse-expert-rule-engine',
+    ai_powered: false,
+    fallback_reason: fallbackReason || null,
+    key_slot: null,
+    prompt_preview: `Fallback used (${fallbackReason || 'no API key'}) · Language: ${language}`,
+    input_context: inputContext,
   };
 }
 
-/**
- * Builds the read-only data context passed to Gemini.
- * This is the ONLY source of truth for all numbers.
- */
-function buildDataContext({ currentAqi, diurnalAnalysis, indoorSimulation, commuteComparison }) {
-  const context = {};
+function buildDataContext({ locationLabel, currentAqi, diurnalAnalysis, indoorSimulation, commuteComparison, familyMembers }) {
+  const context = {
+    location: locationLabel || 'Current Location',
+    member_count: familyMembers.length,
+  };
 
   if (currentAqi) {
     context.current_air_quality = {
@@ -176,7 +216,6 @@ function buildDataContext({ currentAqi, diurnalAnalysis, indoorSimulation, commu
       dirtiest_window: diurnalAnalysis.dirtiest_window,
       ventilation_advice: diurnalAnalysis.ventilation_recommendation,
       morning_trap_active: diurnalAnalysis.morning_trap_warning,
-      daily_avg_pm25: diurnalAnalysis.daily_average_pm25,
     };
   }
 
@@ -186,27 +225,13 @@ function buildDataContext({ currentAqi, diurnalAnalysis, indoorSimulation, commu
       io_ratio_percent: indoorSimulation.io_ratio_percent,
       is_safe: indoorSimulation.is_safe,
       purifier_cadr_needed: indoorSimulation.cadr_needed_for_safe,
-      recommendation: indoorSimulation.recommendation,
     };
   }
 
   if (commuteComparison) {
-    context.commute = {
-      route_a: {
-        label: commuteComparison.route_a.label,
-        dose_ug: commuteComparison.route_a.dose_ug,
-        duration_min: commuteComparison.route_a.duration_min,
-        co2_kg: commuteComparison.route_a.co2_kg,
-      },
-      route_b: {
-        label: commuteComparison.route_b.label,
-        dose_ug: commuteComparison.route_b.dose_ug,
-        duration_min: commuteComparison.route_b.duration_min,
-        co2_kg: commuteComparison.route_b.co2_kg,
-      },
-      safer_route: commuteComparison.comparison.safer_route,
-      dose_reduction_percent: commuteComparison.comparison.dose_reduction_percent,
-      co2_saved_kg: commuteComparison.comparison.co2_saved_kg,
+    context.commute_safest = {
+      mode: commuteComparison.safest_mode || commuteComparison.comparison?.safer_route,
+      dose_ug: commuteComparison.safest_route_summary?.dose_ug,
     };
   }
 

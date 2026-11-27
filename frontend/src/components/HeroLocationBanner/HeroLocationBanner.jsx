@@ -75,6 +75,7 @@ function HeroLocationBanner({ activeTab = 'dashboard' }) {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [noMatch, setNoMatch] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const debounceRef = useRef(null);
   const wrapperRef = useRef(null);
@@ -120,6 +121,7 @@ function HeroLocationBanner({ activeTab = 'dashboard' }) {
         window_seal_type: homeProfile.window_seal_type || 'standard_aluminum',
         purifier_cadr: homeProfile.purifier_cadr || 0,
         indoor_source: homeProfile.indoor_source || 'none',
+        skip_ai: true,
       });
     }
   }, [currentAqi, homeProfile, loadIndoorSimulation]);
@@ -134,10 +136,12 @@ function HeroLocationBanner({ activeTab = 'dashboard' }) {
       debounceRef.current = setTimeout(async () => {
         const results = await searchPlace(value);
         setSuggestions(results);
-        setShowSuggestions(results.length > 0);
+        setNoMatch(results.length === 0);
+        setShowSuggestions(true);
       }, 350);
     } else {
       setSuggestions([]);
+      setNoMatch(false);
       setShowSuggestions(false);
     }
   };
@@ -209,7 +213,7 @@ function HeroLocationBanner({ activeTab = 'dashboard' }) {
 
             {showSuggestions && (
               <ul className="hero-suggestions">
-                {suggestions.map((place, i) => (
+                {suggestions.length > 0 ? suggestions.map((place, i) => (
                   <li key={i}>
                     <button
                       className="hero-suggestion-item"
@@ -221,7 +225,11 @@ function HeroLocationBanner({ activeTab = 'dashboard' }) {
                       {place.label}
                     </button>
                   </li>
-                ))}
+                )) : noMatch && (
+                  <li className="hero-suggestion-empty">
+                    No matching location found — try another city or tap GPS
+                  </li>
+                )}
               </ul>
             )}
           </div>

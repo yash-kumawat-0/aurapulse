@@ -9,6 +9,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useUser } from '../../context/UserContext.jsx';
 import { useAqi } from '../../context/AqiContext.jsx';
 import DiyPurifierGuide from '../DiyPurifierGuide/DiyPurifierGuide.jsx';
+import AiAuditBadge from '../AiAuditBadge/AiAuditBadge.jsx';
 import './IndoorAirSimulator.css';
 
 // ── 1. Room Type & Volume Presets ──
@@ -85,7 +86,7 @@ function PmRangeRow({ label, value, maxRange }) {
 }
 
 function IndoorAirSimulator() {
-  const { homeProfile, setHomeProfile, location } = useUser();
+  const { homeProfile, setHomeProfile, location, language } = useUser();
   const { currentAqi, diurnalData, indoorData, loadIndoorSimulation, loadAqiData, loading } = useAqi();
 
   const [roomKey, setRoomKey] = useState('bedroom');
@@ -124,6 +125,11 @@ function IndoorAirSimulator() {
       window_seal_type: sealType,
       purifier_cadr: 0,
       indoor_source: source,
+      location_label: location?.label || 'Local City',
+      lat: location?.lat,
+      lng: location?.lng,
+      language,
+      skip_ai: false,
     };
     setHomeProfile({ ...homeProfile, ...params });
     await loadIndoorSimulation(params);
@@ -144,6 +150,7 @@ function IndoorAirSimulator() {
   const diySimulation = indoorData?.diy_simulation;
   const purifierRec = indoorData?.purifier_recommendation;
   const diyRec = indoorData?.diy_purifier;
+  const aiGuidance = indoorData?.ai_indoor_guidance;
 
   const outdoorPM = sim?.outdoor_pm25 ?? currentAqi?.pm25 ?? 150;
   const excessAboveSafe = sim ? Math.max(0, Math.round((sim.indoor_pm25 - 35) * 10) / 10) : 0;
@@ -345,10 +352,12 @@ function IndoorAirSimulator() {
           ══════════════════════════════════════════ */}
       {hasSimulated && sim && (
         <div ref={resultsRef} id="ia-results" className="ia-results-container">
-          {/* ONE BIG LINE Summary */}
+          {/* ONE BIG LINE Summary (uses Gemini localized verdict when live) */}
           <div className={`ia-one-line ${isUrgent ? 'ia-one-line--warn' : 'ia-one-line--safe'}`}>
             <span className="ia-one-line-icon">{isUrgent ? '⚠️' : '✅'}</span>
-            <span className="ia-one-line-text">{oneBigLine}</span>
+            <span className="ia-one-line-text">
+              {(aiGuidance?.ai_powered && aiGuidance?.one_line_verdict) ? aiGuidance.one_line_verdict : oneBigLine}
+            </span>
           </div>
 
           {/* Key Numbers Container — Clean Cards + Bottom Scale Labels */}
@@ -394,6 +403,67 @@ function IndoorAirSimulator() {
               </div>
             </div>
           </div>
+
+          {/* Location-Aware DIY Filter/Fan Prices & Verified Online Buy Links */}
+          {aiGuidance && Array.isArray(aiGuidance.diy_parts) && aiGuidance.diy_parts.length > 0 && (
+            <section className="ia-shop-card" aria-label="Local DIY Purifier Prices and Online Store Links">
+              <div className="ia-shop-head">
+                <div>
+                  <h4 className="ia-shop-title">
+                    🛒 Local DIY Filter &amp; Fan Prices ({aiGuidance.location_detected || location?.label || 'Local'})
+                  </h4>
+                  <p className="ia-shop-sub">
+                    Estimated build cost for your {volumeM3} m³ room: <strong>{aiGuidance.total_diy_estimate}</strong>
+                  </p>
+                </div>
+              </div>
+
+              <div className="ia-shop-grid">
+                {aiGuidance.diy_parts.map((part, idx) => {
+                  const partIcon = part.part_type === 'fan' ? '💨' : part.part_type === 'filter' ? '🧹' : '🧻';
+                  return (
+                    <div key={idx} className="ia-part-card">
+                      <div className="ia-part-top">
+                        <span className="ia-part-title">{partIcon} {part.title}</span>
+                        <span className="ia-part-price">{part.estimated_price}</span>
+                      </div>
+                      <span className="ia-part-spec">{part.spec_detail}</span>
+                      <div className="ia-part-links">
+                        {(part.platform_links || []).map((link, lIdx) => (
+                          <a
+                            key={lIdx}
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ia-buy-btn"
+                            title={`Search "${link.search_query}" on ${link.platform_name}`}
+                          >
+                            <span>{link.platform_name}</span>
+                            {link.estimated_price && <small>· {link.estimated_price}</small>}
+                            <span>↗</span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <AiAuditBadge
+                aiPowered={aiGuidance.ai_powered}
+                model={aiGuidance.model}
+                keySlot={aiGuidance.key_slot}
+                promptPreview={aiGuidance.prompt_preview}
+                inputContext={aiGuidance.input_context}
+                outputData={{
+                  location_detected: aiGuidance.location_detected,
+                  total_diy_estimate: aiGuidance.total_diy_estimate,
+                  diy_parts: aiGuidance.diy_parts,
+                }}
+                fallbackReason={aiGuidance.fallback_reason}
+              />
+            </section>
+          )}
 
           {/* Simple Interactive 3D DIY Purifier Builder */}
           <DiyPurifierGuide

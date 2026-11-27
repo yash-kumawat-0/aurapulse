@@ -1,8 +1,5 @@
 // ============================================
-// Advice Controller
-// ============================================
-// Orchestrates ALL engines and services to generate
-// the final family action plan via Gemini.
+// Advice Controller — Full Telemetry + Dynamic Gemini AI
 // ============================================
 import { getCurrentConditions, getForecast } from '../services/googleAirQualityService.js';
 import { analyzeDiurnalPattern } from '../engine/diurnalOptimizer.js';
@@ -12,19 +9,19 @@ import { createApiError } from '../middleware/errorHandler.js';
 
 /**
  * POST /api/v1/advice/generate
- * Generates a comprehensive family action plan.
- *
- * Body: {
- *   lat: number,
- *   lng: number,
- *   family_members: [{ name, age, health_condition }],
- *   home_profile: { room_area_sqft, ceiling_height_ft, window_seal_type, indoor_source },
- *   language: "English" | "Hindi" | "Telugu"
- * }
+ * Generates a comprehensive personalized family action plan.
  */
 export async function generateAdvice(req, res, next) {
   try {
-    const { lat, lng, family_members, home_profile, language } = req.body;
+    const {
+      lat,
+      lng,
+      location_label,
+      family_members,
+      home_profile,
+      commute_comparison,
+      language,
+    } = req.body;
 
     if (!lat || !lng) throw createApiError('lat and lng are required.', 400);
     if (!family_members || family_members.length === 0) {
@@ -34,13 +31,11 @@ export async function generateAdvice(req, res, next) {
     const latitude = parseFloat(lat);
     const longitude = parseFloat(lng);
 
-    // Step 1: Gather all external data in parallel
     const [currentAqi, forecastData] = await Promise.all([
       getCurrentConditions(latitude, longitude),
       getForecast(latitude, longitude, 48),
     ]);
 
-    // Step 2: Run deterministic physics calculations
     const diurnalAnalysis = analyzeDiurnalPattern(forecastData.hourly);
 
     const homeParams = home_profile || {};
@@ -53,13 +48,15 @@ export async function generateAdvice(req, res, next) {
       indoorSource: homeParams.indoor_source || 'none',
     });
 
-    // Step 3: Send all calculated data to Gemini for natural language advice
     const adviceResult = await generateFamilyAdvice({
+      locationLabel: location_label,
       currentAqi,
       diurnalAnalysis,
       indoorSimulation,
+      commuteComparison: commute_comparison,
       familyMembers: family_members,
       language: language || 'English',
+      overrideKey: req.get('X-Gemini-Api-Key'),
     });
 
     res.json({
@@ -80,6 +77,14 @@ export async function generateAdvice(req, res, next) {
           morning_trap_warning: diurnalAnalysis.morning_trap_warning,
         },
         model: adviceResult.model,
+        ai_audit: {
+          ai_powered: adviceResult.ai_powered,
+          model: adviceResult.model,
+          key_slot: adviceResult.key_slot,
+          fallback_reason: adviceResult.fallback_reason || null,
+          prompt_preview: adviceResult.prompt_preview,
+          input_context: adviceResult.input_context,
+        },
       },
     });
   } catch (err) {

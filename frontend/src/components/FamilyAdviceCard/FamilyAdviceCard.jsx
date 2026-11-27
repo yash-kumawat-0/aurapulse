@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { useUser } from '../../context/UserContext.jsx';
 import { useAqi } from '../../context/AqiContext.jsx';
 import { getRiskColor } from '../../utils/aqiColorMapper.js';
+import AiAuditBadge from '../AiAuditBadge/AiAuditBadge.jsx';
 import './FamilyAdviceCard.css';
 
 const RISK_INFO = {
@@ -46,6 +47,7 @@ function FamilyAdviceCard() {
     loadAdvice({
       lat: location.lat,
       lng: location.lng,
+      location_label: location.label,
       family_members: familyMembers,
       home_profile: homeProfile,
       language,
@@ -120,6 +122,18 @@ function FamilyAdviceCard() {
               <span className="advice-summary-icon">📋</span>
               <p>{hasAdvice.overall_summary}</p>
             </div>
+          )}
+
+          {adviceData?.ai_audit && (
+            <AiAuditBadge
+              aiPowered={adviceData.ai_audit.ai_powered}
+              model={adviceData.ai_audit.model}
+              keySlot={adviceData.ai_audit.key_slot}
+              promptPreview={adviceData.ai_audit.prompt_preview}
+              inputContext={adviceData.ai_audit.input_context}
+              outputData={hasAdvice}
+              fallbackReason={adviceData.ai_audit.fallback_reason}
+            />
           )}
 
           {/* Clickable Person Selector Pills */}

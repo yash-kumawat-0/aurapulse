@@ -1,0 +1,128 @@
+/* ============================================
+   AiAuditBadge — Clean Runtime AI Transparency
+   ============================================ */
+.aia-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.aia-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.aia-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.aia-pill--live {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+}
+
+.aia-pill--fallback {
+  background: #F1F5F9;
+  color: #475569;
+  border: 1px solid #CBD5E1;
+}
+
+.aia-key-tag {
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.aia-toggle-btn {
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-accent-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-secondary);
+  transition: background 0.15s;
+}
+
+.aia-toggle-btn:hover {
+  background: var(--bg-accent-soft);
+}
+
+.aia-drawer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: #F8FAFC;
+  border: 1px solid #CBD5E1;
+  border-radius: 12px;
+}
+
+.aia-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.aia-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.aia-block-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+.aia-summary-text {
+  font-size: 0.84rem;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.aia-warn-note {
+  padding: 7px 10px;
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: #92400E;
+}
+
+.aia-code {
+  margin: 0;
+  padding: 8px 10px;
+  background: #0F172A;
+  color: #E2E8F0;
+  border-radius: 8px;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  max-height: 190px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+@media (max-width: 720px) {
+  .aia-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .aia-toggle-btn {
+    min-height: 36px;
+  }
+}

@@ -54,16 +54,42 @@
   text-align: left; transition: background 0.15s;
 }
 .cdc-place-opt:hover { background: var(--bg-secondary); }
-
-/* ── Recommendation Banner ── */
-.cdc-recommend {
-  display: flex; align-items: center; gap: var(--space-sm);
-  padding: 12px 16px;
-  background: #ECFDF5; border: 1.5px solid #86EFAC;
-  border-radius: var(--radius-md); font-size: 0.95rem; color: #065F46;
+.cdc-place-empty {
+  padding: 12px 14px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-align: center;
 }
-.cdc-recommend-shield { font-size: 1.25rem; }
+
+/* ── AI Recommendation Banner ── */
+.cdc-recommend-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #ECFDF5;
+  border: 1.5px solid #86EFAC;
+  border-radius: var(--radius-md);
+}
+.cdc-recommend {
+  display: flex; align-items: flex-start; gap: var(--space-sm);
+  font-size: 0.95rem; color: #065F46;
+}
+.cdc-recommend-main { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.cdc-recommend-shield { font-size: 1.25rem; flex-shrink: 0; }
 .cdc-recommend-dose { font-weight: 600; color: #047857; }
+.cdc-ai-verdict { margin: 2px 0 0 0; font-size: 0.9rem; font-weight: 600; color: #064E3B; line-height: 1.45; }
+.cdc-ai-summary { margin: 0; font-size: 0.85rem; color: #047857; line-height: 1.45; }
+.cdc-ai-tips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.cdc-ai-tip-chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  border: 1px solid #A7F3D0;
+  color: #065F46;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
 
 /* ════════════════════════════════════════════
    BOLD COLOR-CODED TRANSPORT CARDS

@@ -158,6 +158,13 @@
   flex-shrink: 0;
 }
 
+.hero-suggestion-empty {
+  padding: 12px 14px;
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
 /* --- Current Location Label --- */
 .hero-current-loc {
   margin-top: var(--space-sm);

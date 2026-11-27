@@ -3,6 +3,7 @@
 // ============================================
 import { computeRoutes } from '../services/googleRoutesService.js';
 import { getCurrentConditions } from '../services/googleAirQualityService.js';
+import { generateCommuteAiAnalysis } from '../services/geminiCommuteService.js';
 import { compareCommuteDoses, calculateSegmentDose } from '../engine/inhaledDoseModel.js';
 import { createApiError } from '../middleware/errorHandler.js';
 
@@ -161,7 +162,15 @@ export async function compareCommutes(req, res, next) {
  */
 export async function multiCompare(req, res, next) {
   try {
-    const { origin, routes, mask_type } = req.body;
+    const {
+      origin,
+      routes,
+      mask_type,
+      origin_label,
+      destination_label,
+      language,
+      skip_ai,
+    } = req.body;
 
     if (!origin?.latitude || !origin?.longitude) {
       throw createApiError('origin with latitude and longitude is required.', 400);
@@ -297,16 +306,28 @@ export async function multiCompare(req, res, next) {
       results[0].is_safest = true;
     }
 
-    // Attach crisp automated safe path suggestion across all evaluated modes
+    // Attach crisp automated safe path suggestion + Gemini AI route analysis
     const safestRoute = results[0] || null;
+    const aiCommuteAnalysis = !skip_ai
+      ? await generateCommuteAiAnalysis({
+          originLabel: origin_label || origin?.label,
+          destinationLabel: destination_label,
+          originAqi,
+          routes: results,
+          language: language || 'English',
+          overrideKey: req.get('X-Gemini-Api-Key'),
+        })
+      : null;
+
     res.json({
       success: true,
       data: {
         routes: results,
         base_pm25: basePM25,
         origin_aqi: originAqi.aqi,
-        safest_mode: safestRoute?.mode || null,
+        safest_mode: aiCommuteAnalysis?.recommended_mode || safestRoute?.mode || null,
         safest_route_summary: safestRoute,
+        ai_commute_analysis: aiCommuteAnalysis,
       },
     });
   } catch (err) {

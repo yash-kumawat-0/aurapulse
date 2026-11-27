@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cors from 'cors';
 import { errorHandler } from './src/middleware/errorHandler.js';
+import { getAiStatus } from './src/config/gemini.js';
 import apiRoutes from './src/routes/apiRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -35,15 +36,20 @@ app.use(
   cors((req, callback) => {
     const origin = req.header('Origin');
 
+    const commonOptions = {
+      credentials: true,
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Gemini-Api-Key'],
+    };
+
     // Allow curl, healthchecks, and same-navigation requests with no Origin header
     if (!origin) {
-      return callback(null, { origin: true, credentials: true });
+      return callback(null, { origin: true, ...commonOptions });
     }
 
     // Automatically allow same-origin browser requests (e.g. unified full-stack deploy)
     try {
       if (new URL(origin).host === req.get('host')) {
-        return callback(null, { origin: true, credentials: true });
+        return callback(null, { origin: true, ...commonOptions });
       }
     } catch {
       return callback(new Error('Invalid Origin header'));
@@ -56,17 +62,18 @@ app.use(
 
     return callback(allowed ? null : new Error('Origin not allowed by CORS'), {
       origin: allowed,
-      credentials: true,
+      ...commonOptions,
     });
   }),
 );
 app.use(express.json());
 
 // --- Health Check ---
-app.get('/api/health', (_req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     service: 'aurapulse-api',
+    ai: getAiStatus(req.get('X-Gemini-Api-Key')),
     timestamp: new Date().toISOString(),
   });
 });
