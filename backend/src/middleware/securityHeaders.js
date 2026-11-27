@@ -10,6 +10,7 @@ const CSP_DIRECTIVES = [
   "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://cdnjs.cloudflare.com https://raw.githubusercontent.com",
   "connect-src 'self' https://nominatim.openstreetmap.org https://router.project-osrm.org https://overpass-api.de https://overpass.kumi.systems https://api.open-meteo.com https://airquality.googleapis.com https://routes.googleapis.com https://generativelanguage.googleapis.com",
   "frame-ancestors 'none'",
+  "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
 ].join('; ');

@@ -39,7 +39,11 @@ describe('HTTP API Security, Validation & End-to-End Route Handlers', () => {
     assert.equal(res.headers.get('x-powered-by'), null);
     assert.equal(res.headers.get('x-content-type-options'), 'nosniff');
     assert.equal(res.headers.get('x-frame-options'), 'DENY');
-    assert.ok(res.headers.get('content-security-policy')?.includes("frame-ancestors 'none'"));
+    const csp = res.headers.get('content-security-policy') || '';
+    assert.ok(csp.includes("frame-ancestors 'none'"));
+    assert.ok(csp.includes("object-src 'none'"));
+    assert.ok(csp.includes("script-src 'self'"));
+    assert.ok(!csp.includes("script-src 'self' 'unsafe-inline'"));
     assert.ok(res.headers.get('referrer-policy'));
   });
 
