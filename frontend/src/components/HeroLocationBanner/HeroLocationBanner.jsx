@@ -183,12 +183,13 @@ function HeroLocationBanner({ activeTab = 'dashboard' }) {
           <h1 className="hero-title">Check your air quality</h1>
           <div className="hero-search-wrapper" ref={wrapperRef}>
             <div className="hero-search">
-              <svg className="hero-search-icon" viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+              <svg className="hero-search-icon" viewBox="0 0 20 20" fill="currentColor" width="18" height="18" aria-hidden="true">
                 <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
               </svg>
               <input
                 type="text"
                 className="hero-search-input"
+                aria-label="Search any city or place"
                 placeholder="Search any place..."
                 value={query}
                 onChange={handleInputChange}
@@ -199,12 +200,13 @@ function HeroLocationBanner({ activeTab = 'dashboard' }) {
                 className="hero-gps-btn"
                 onClick={handleDetect}
                 disabled={loading}
+                aria-label="Use my current location"
                 title="Use my location"
               >
                 {loading ? (
-                  <span className="hero-spinner" />
+                  <span className="hero-spinner" aria-hidden="true" />
                 ) : (
-                  <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" aria-hidden="true">
                     <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
                   </svg>
                 )}

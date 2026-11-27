@@ -364,6 +364,7 @@ function FamilyAdviceCard() {
                     <input
                       type="text"
                       className="advice-sym-input"
+                      aria-label="Describe custom symptom"
                       placeholder="Other symptom..."
                       value={customSymptom}
                       onChange={(e) => setCustomSymptom(e.target.value)}
@@ -386,7 +387,7 @@ function FamilyAdviceCard() {
                 )}
 
                 {symptomResult && !symLoading && (
-                  <div className="advice-sym-result">
+                  <div className="advice-sym-result" aria-live="polite">
                     <div className="advice-sym-res-top">
                       <span className="advice-sym-trigger-icon">{symptomResult.trigger_emoji}</span>
                       <div>

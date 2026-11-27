@@ -1,7 +1,7 @@
 // ============================================
 // API Service — Backend Communication Layer
 // ============================================
-const RAW_API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+const RAW_API_URL = (import.meta.env?.VITE_API_URL || '').replace(/\/+$/, '');
 const API_BASE = `${RAW_API_URL}/api/v1`;
 
 async function request(endpoint, options = {}) {

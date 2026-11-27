@@ -1,6 +1,7 @@
 // ============================================
-// WhatsAppShareModal Component
+// WhatsAppShareModal Component — Accessible Dialog & Safe Links
 // ============================================
+import { useEffect, useState } from 'react';
 import { useUser } from '../../context/UserContext.jsx';
 import { useAqi } from '../../context/AqiContext.jsx';
 import './WhatsAppShareModal.css';
@@ -8,10 +9,17 @@ import './WhatsAppShareModal.css';
 function WhatsAppShareModal({ onClose }) {
   const { location } = useUser();
   const { currentAqi, diurnalData } = useAqi();
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   const diurnal = diurnalData?.diurnal;
-
-  // Build the bulletin message
   const locationLabel = location?.label || 'Your Area';
   const aqi = currentAqi?.aqi || '—';
   const pm25 = currentAqi?.pm25 ? Math.round(currentAqi.pm25) : '—';
@@ -50,29 +58,44 @@ _Powered by AuraPulse • Google Maps Air Quality API • Gemini AI_`;
 
   const handleShare = () => {
     const encoded = encodeURIComponent(bulletin);
-    window.open(`https://wa.me/?text=${encoded}`, '_blank');
+    window.open(`https://wa.me/?text=${encoded}`, '_blank', 'noopener,noreferrer');
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(bulletin);
+    navigator.clipboard?.writeText(bulletin);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div className="whatsapp-overlay" onClick={onClose}>
-      <div className="whatsapp-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="whatsapp-overlay" onClick={onClose} role="presentation">
+      <div
+        className="whatsapp-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="whatsapp-modal-title"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="whatsapp-header">
-          <h3>📱 Clean Air Bulletin</h3>
-          <button className="whatsapp-close-btn" onClick={onClose}>✕</button>
+          <h3 id="whatsapp-modal-title">📱 Clean Air Bulletin</h3>
+          <button
+            type="button"
+            className="whatsapp-close-btn"
+            onClick={onClose}
+            aria-label="Close clean air bulletin"
+          >
+            ✕
+          </button>
         </div>
         <div className="whatsapp-body">
           <div className="whatsapp-preview">{bulletin}</div>
         </div>
         <div className="whatsapp-actions">
-          <button className="whatsapp-share-btn" onClick={handleShare}>
+          <button type="button" className="whatsapp-share-btn" onClick={handleShare}>
             📤 Share on WhatsApp
           </button>
-          <button className="whatsapp-copy-btn" onClick={handleCopy}>
-            📋 Copy
+          <button type="button" className="whatsapp-copy-btn" onClick={handleCopy}>
+            {copied ? '✓ Copied!' : '📋 Copy'}
           </button>
         </div>
       </div>

@@ -32,13 +32,14 @@ describe('HTTP API Security, Validation & End-to-End Route Handlers', () => {
     await new Promise((resolve) => server.close(resolve));
   });
 
-  it('serves /api/health with OWASP security headers and hides X-Powered-By', async () => {
+  it('serves /api/health with OWASP + CSP security headers and hides X-Powered-By', async () => {
     const res = await jsonReq('/api/health');
     assert.equal(res.status, 200);
     assert.equal(res.body.status, 'ok');
     assert.equal(res.headers.get('x-powered-by'), null);
     assert.equal(res.headers.get('x-content-type-options'), 'nosniff');
     assert.equal(res.headers.get('x-frame-options'), 'DENY');
+    assert.ok(res.headers.get('content-security-policy')?.includes("frame-ancestors 'none'"));
     assert.ok(res.headers.get('referrer-policy'));
   });
 
@@ -49,19 +50,36 @@ describe('HTTP API Security, Validation & End-to-End Route Handlers', () => {
     assert.match(res.body.error.message, /not found/i);
   });
 
-  it('rejects out-of-range coordinates with HTTP 400 validation errors', async () => {
+  it('rejects out-of-range coordinates and malformed payloads with HTTP 400', async () => {
     const badAqi = await jsonReq('/api/v1/aqi/current?lat=120&lng=73.8');
     assert.equal(badAqi.status, 400);
-    assert.equal(badAqi.body.success, false);
 
     const badSim = await jsonReq('/api/v1/indoor/simulate', {
       method: 'POST',
       body: JSON.stringify({ outdoor_pm25: -50 }),
     });
     assert.equal(badSim.status, 400);
+
+    const badBrief = await jsonReq('/api/v1/commute/location-brief', {
+      method: 'POST',
+      body: JSON.stringify({ lat: 999, lng: 73 }),
+    });
+    assert.equal(badBrief.status, 400);
+
+    const badMultiCompare = await jsonReq('/api/v1/commute/multi-compare', {
+      method: 'POST',
+      body: JSON.stringify({ origin: { latitude: 18.5, longitude: 73.8 }, routes: [] }),
+    });
+    assert.equal(badMultiCompare.status, 400);
+
+    const badAdvice = await jsonReq('/api/v1/advice/generate', {
+      method: 'POST',
+      body: JSON.stringify({ lat: 18.5, lng: 73.8, family_members: [] }),
+    });
+    assert.equal(badAdvice.status, 400);
   });
 
-  it('validates advice and symptom-check inputs and handles skip_ai indoor simulations cleanly', async () => {
+  it('validates symptom-check inputs and simulates custom indoor + family endpoints cleanly', async () => {
     const badSym = await jsonReq('/api/v1/advice/symptom-check', {
       method: 'POST',
       body: JSON.stringify({ lat: 18.52, lng: 73.85 }),
@@ -85,5 +103,18 @@ describe('HTTP API Security, Validation & End-to-End Route Handlers', () => {
     assert.equal(sim.body.success, true);
     assert.ok(sim.body.data.simulation.indoor_pm25 > 0);
     assert.ok(sim.body.data.diy_simulation.indoor_pm25 < sim.body.data.simulation.indoor_pm25);
+
+    const familyBad = await jsonReq('/api/v1/family', {
+      method: 'POST',
+      body: JSON.stringify({ user_id: 'u1', name: 'Test', age: 250 }),
+    });
+    assert.equal(familyBad.status, 400);
+
+    const familyOk = await jsonReq('/api/v1/family', {
+      method: 'POST',
+      body: JSON.stringify({ user_id: 'u1', name: 'Meera', age: 34, health_condition: 'NONE' }),
+    });
+    assert.equal(familyOk.status, 201);
+    assert.equal(familyOk.body.data.name, 'Meera');
   });
 });

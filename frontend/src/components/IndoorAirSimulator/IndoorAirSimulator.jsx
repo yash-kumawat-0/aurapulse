@@ -271,6 +271,7 @@ function IndoorAirSimulator() {
               <input
                 type="text"
                 className="ia-other-input"
+                aria-label="Describe custom window setup"
                 placeholder="Describe window setup (e.g. Balcony gap, Exhaust open, Cracked frame)..."
                 value={customWindowDesc}
                 onChange={(e) => { setCustomWindowDesc(e.target.value); if (hasSimulated) setNeedsRefresh(true); }}
@@ -306,6 +307,7 @@ function IndoorAirSimulator() {
               <input
                 type="text"
                 className="ia-other-input"
+                aria-label="Describe custom indoor smoke or dust source"
                 placeholder="Describe indoor source (e.g. Candles, Paint fumes, Renovation dust, Heater)..."
                 value={customSourceDesc}
                 onChange={(e) => { setCustomSourceDesc(e.target.value); if (hasSimulated) setNeedsRefresh(true); }}
@@ -339,7 +341,7 @@ function IndoorAirSimulator() {
           PART 2: INTERACTIVE 3D ROOM + FILTER ECONOMICS
           ══════════════════════════════════════════ */}
       {hasSimulated && sim && (
-        <div ref={resultsRef} id="ia-results" className="ia-results-container">
+        <div ref={resultsRef} id="ia-results" className="ia-results-container" aria-live="polite">
           {/* Animated Before -> DIY Transformation Strip + Gemini Stickers */}
           <div className={`ia-visual-hero ${isUrgent ? 'ia-visual-hero--warn' : 'ia-visual-hero--safe'}`}>
             <div className="ia-flow-strip">

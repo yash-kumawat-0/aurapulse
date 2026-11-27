@@ -1,8 +1,9 @@
 // ============================================
-// Family Controller
+// Family Controller (Validated & Sanitized)
 // ============================================
 import supabase from '../config/db.js';
 import { createApiError } from '../middleware/errorHandler.js';
+import { sanitizeTextInput } from '../middleware/validateRequest.js';
 
 /**
  * GET /api/v1/family?user_id=xxx
@@ -10,11 +11,10 @@ import { createApiError } from '../middleware/errorHandler.js';
  */
 export async function getFamilyMembers(req, res, next) {
   try {
-    const { user_id } = req.query;
-    if (!user_id) throw createApiError('user_id query parameter is required.', 400);
+    const userId = sanitizeTextInput(req.query?.user_id, 64);
+    if (!userId) throw createApiError('user_id query parameter is required.', 400);
 
     if (!supabase) {
-      // Return mock data if no database configured
       return res.json({
         success: true,
         data: getMockFamilyMembers(),
@@ -24,10 +24,10 @@ export async function getFamilyMembers(req, res, next) {
     const { data, error } = await supabase
       .from('family_members')
       .select('*')
-      .eq('user_id', user_id)
+      .eq('user_id', userId)
       .order('age', { ascending: true });
 
-    if (error) throw createApiError(error.message, 500);
+    if (error) throw createApiError('Unable to load family members.', 500);
     res.json({ success: true, data });
   } catch (err) {
     next(err);
@@ -36,29 +36,33 @@ export async function getFamilyMembers(req, res, next) {
 
 /**
  * POST /api/v1/family
- * Adds a new family member.
+ * Adds a validated new family member.
  */
 export async function addFamilyMember(req, res, next) {
   try {
-    const { user_id, name, age, health_condition } = req.body;
-    if (!user_id || !name || !age) {
-      throw createApiError('user_id, name, and age are required.', 400);
+    const userId = sanitizeTextInput(req.body?.user_id, 64);
+    const cleanName = sanitizeTextInput(req.body?.name, 60);
+    const parsedAge = parseInt(req.body?.age, 10);
+    const cleanCond = sanitizeTextInput(req.body?.health_condition || 'NONE', 40).toUpperCase();
+
+    if (!userId || !cleanName || !Number.isFinite(parsedAge) || parsedAge < 0 || parsedAge > 120) {
+      throw createApiError('Valid user_id, name, and age (0-120) are required.', 400);
     }
 
     if (!supabase) {
-      return res.json({
+      return res.status(201).json({
         success: true,
-        data: { id: `mock-${Date.now()}`, user_id, name, age, health_condition: health_condition || 'NONE' },
+        data: { id: `mock-${Date.now()}`, user_id: userId, name: cleanName, age: parsedAge, health_condition: cleanCond },
       });
     }
 
     const { data, error } = await supabase
       .from('family_members')
-      .insert([{ user_id, name, age, health_condition: health_condition || 'NONE' }])
+      .insert([{ user_id: userId, name: cleanName, age: parsedAge, health_condition: cleanCond }])
       .select()
       .single();
 
-    if (error) throw createApiError(error.message, 500);
+    if (error) throw createApiError('Unable to save family member.', 500);
     res.status(201).json({ success: true, data });
   } catch (err) {
     next(err);
@@ -71,14 +75,15 @@ export async function addFamilyMember(req, res, next) {
  */
 export async function deleteFamilyMember(req, res, next) {
   try {
-    const { id } = req.params;
+    const cleanId = sanitizeTextInput(req.params?.id, 64);
+    if (!cleanId) throw createApiError('Member id is required.', 400);
 
     if (!supabase) {
       return res.json({ success: true, message: 'Deleted (mock mode).' });
     }
 
-    const { error } = await supabase.from('family_members').delete().eq('id', id);
-    if (error) throw createApiError(error.message, 500);
+    const { error } = await supabase.from('family_members').delete().eq('id', cleanId);
+    if (error) throw createApiError('Unable to delete family member.', 500);
 
     res.json({ success: true, message: 'Family member deleted.' });
   } catch (err) {
@@ -86,9 +91,6 @@ export async function deleteFamilyMember(req, res, next) {
   }
 }
 
-/**
- * Returns mock family members for development without a database.
- */
 function getMockFamilyMembers() {
   return [
     { id: 'mock-1', name: 'Rohan', age: 32, health_condition: 'NONE' },

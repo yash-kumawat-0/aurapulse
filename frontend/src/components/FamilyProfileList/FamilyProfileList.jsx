@@ -1,5 +1,5 @@
 // ============================================
-// FamilyProfileList — Clickable Member Cards
+// FamilyProfileList — Accessible Clickable Member Cards
 // Includes custom "Other" health issue field
 // ============================================
 import { useState } from 'react';
@@ -62,20 +62,27 @@ function FamilyProfileList() {
       <div className="family-header">
         <div className="family-header-left">
           <h3 className="family-title">👨‍👩‍👧 Family Members</h3>
-          <span className="family-count">{familyMembers.length} member{familyMembers.length !== 1 ? 's' : ''} · tap for plan</span>
+          <span className="family-count">
+            {familyMembers.length} member{familyMembers.length !== 1 ? 's' : ''} · tap for plan
+          </span>
         </div>
-        <button className="family-add-toggle" onClick={() => setAdding(!adding)}>
+        <button
+          type="button"
+          className="family-add-toggle"
+          aria-expanded={adding}
+          onClick={() => setAdding(!adding)}
+        >
           {adding ? '✕ Cancel' : '+ Add Member'}
         </button>
       </div>
 
-      {/* ── Add Member Form ── */}
       {adding && (
         <form className="family-form" onSubmit={handleAdd}>
           <div className="family-form-row">
             <div className="family-form-field">
-              <label className="family-form-label">Name</label>
+              <label className="family-form-label" htmlFor="member-name-input">Name</label>
               <input
+                id="member-name-input"
                 type="text"
                 placeholder="e.g. Priya"
                 value={name}
@@ -84,8 +91,9 @@ function FamilyProfileList() {
               />
             </div>
             <div className="family-form-field family-form-field--small">
-              <label className="family-form-label">Age</label>
+              <label className="family-form-label" htmlFor="member-age-input">Age</label>
               <input
+                id="member-age-input"
                 type="number"
                 placeholder="25"
                 min="0"
@@ -98,17 +106,18 @@ function FamilyProfileList() {
           </div>
 
           <div className="family-form-field">
-            <label className="family-form-label">Health Condition</label>
-            <div className="family-cond-grid">
+            <span className="family-form-label">Health Condition</span>
+            <div className="family-cond-grid" role="group" aria-label="Health Condition">
               {CONDITIONS.map((c) => (
                 <button
                   key={c.value}
                   type="button"
+                  aria-pressed={condition === c.value}
                   className={`family-cond-btn ${condition === c.value ? 'family-cond-btn--on' : ''}`}
                   style={condition === c.value ? { borderColor: c.color, background: c.bg } : {}}
                   onClick={() => setCondition(c.value)}
                 >
-                  <span>{c.emoji}</span>
+                  <span aria-hidden="true">{c.emoji}</span>
                   <span className="family-cond-name">{c.label}</span>
                 </button>
               ))}
@@ -117,8 +126,11 @@ function FamilyProfileList() {
 
           {condition === 'OTHER' && (
             <div className="family-form-field">
-              <label className="family-form-label">Specify Other Health Issue</label>
+              <label className="family-form-label" htmlFor="member-custom-issue-input">
+                Specify Other Health Issue
+              </label>
               <input
+                id="member-custom-issue-input"
                 type="text"
                 placeholder="e.g. Dust allergy, Sinusitis, Bronchitis, Migraine..."
                 value={customIssue}
@@ -133,7 +145,6 @@ function FamilyProfileList() {
         </form>
       )}
 
-      {/* ── Clickable Member Cards Grid ── */}
       <div className="family-members-grid">
         {familyMembers.map((m) => {
           const cond = getCondInfo(m.health_condition);
@@ -145,46 +156,50 @@ function FamilyProfileList() {
             : cond.label;
 
           return (
-            <div
+            <article
               key={m.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => setSelectedMemberId(m.id)}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedMemberId(m.id); }}
               className={`family-member-card ${isVulnerable ? 'family-member-card--vulnerable' : ''} ${isSelected ? 'family-member-card--selected' : ''}`}
               style={{ borderLeftColor: cond.color }}
             >
               <button
                 type="button"
+                className="family-member-select-btn"
+                aria-pressed={isSelected}
+                onClick={() => setSelectedMemberId(m.id)}
+              >
+                <div className="family-member-avatar" style={{ background: cond.bg }}>
+                  <span aria-hidden="true">{ageGroup.icon}</span>
+                </div>
+                <div className="family-member-info">
+                  <span className="family-member-name">{m.name}</span>
+                  <span className="family-member-age">{m.age} yrs · {ageGroup.label}</span>
+                </div>
+                <div className="family-member-cond" style={{ background: cond.bg, color: cond.color }}>
+                  <span aria-hidden="true">{cond.emoji}</span> {badgeLabel}
+                </div>
+                {isSelected ? (
+                  <span className="family-member-selected">✓ Viewing Plan</span>
+                ) : isVulnerable ? (
+                  <span className="family-member-vuln">⚠️ Sensitive</span>
+                ) : null}
+              </button>
+              <button
+                type="button"
                 className="family-member-remove"
-                onClick={(e) => { e.stopPropagation(); removeFamilyMember(m.id); }}
-                title="Remove member"
+                onClick={() => removeFamilyMember(m.id)}
+                aria-label={`Remove ${m.name}`}
+                title={`Remove ${m.name}`}
               >
                 ✕
               </button>
-              <div className="family-member-avatar" style={{ background: cond.bg }}>
-                <span>{ageGroup.icon}</span>
-              </div>
-              <div className="family-member-info">
-                <span className="family-member-name">{m.name}</span>
-                <span className="family-member-age">{m.age} yrs · {ageGroup.label}</span>
-              </div>
-              <div className="family-member-cond" style={{ background: cond.bg, color: cond.color }}>
-                {cond.emoji} {badgeLabel}
-              </div>
-              {isSelected ? (
-                <span className="family-member-selected">✓ Viewing Plan</span>
-              ) : isVulnerable ? (
-                <span className="family-member-vuln">⚠️ Sensitive</span>
-              ) : null}
-            </div>
+            </article>
           );
         })}
       </div>
 
       {familyMembers.length === 0 && (
         <div className="family-empty">
-          <span className="family-empty-icon">👨‍👩‍👧‍👦</span>
+          <span className="family-empty-icon" aria-hidden="true">👨‍👩‍👧‍👦</span>
           <p>Add family members for personalized plans</p>
         </div>
       )}

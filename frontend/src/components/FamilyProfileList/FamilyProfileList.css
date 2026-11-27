@@ -54,17 +54,22 @@
 
 .family-member-card {
   position: relative;
+  background: var(--bg-primary);
+  border: 2px solid var(--border-light);
+  border-left: 5px solid var(--border-light);
+  border-radius: var(--radius-md);
+  transition: all 0.16s ease;
+}
+.family-member-select-btn {
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
   padding: var(--space-md) var(--space-sm);
-  background: var(--bg-primary);
-  border: 2px solid var(--border-light);
-  border-left: 5px solid var(--border-light);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all 0.16s ease;
+  background: transparent;
+  border-radius: inherit;
+  text-align: center;
 }
 .family-member-card:hover {
   box-shadow: var(--shadow-md);

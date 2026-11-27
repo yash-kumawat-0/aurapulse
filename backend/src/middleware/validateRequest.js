@@ -124,3 +124,38 @@ export function validateLocationBriefBody(req, _res, next) {
     next(err);
   }
 }
+
+/**
+ * Validates /compare, /multi-compare, and /multi-leg commute payloads cleanly.
+ */
+export function validateCommutePayload(req, _res, next) {
+  try {
+    const body = req.body || {};
+    if (req.path.endsWith('/multi-leg')) {
+      if (!Array.isArray(body.legs) || body.legs.length === 0 || body.legs.length > 20) {
+        throw createApiError('legs must contain between 1 and 20 commute segments.', 400);
+      }
+      if (body.origin?.latitude !== undefined && body.origin?.longitude !== undefined) {
+        parseValidCoordinates(body.origin.latitude, body.origin.longitude);
+      }
+      return next();
+    }
+
+    if (!body.origin) {
+      throw createApiError('origin coordinates are required.', 400);
+    }
+    parseValidCoordinates(body.origin.latitude, body.origin.longitude);
+
+    if (req.path.endsWith('/compare')) {
+      if (!body.destination) {
+        throw createApiError('destination coordinates are required.', 400);
+      }
+      parseValidCoordinates(body.destination.latitude, body.destination.longitude);
+    } else if (!Array.isArray(body.routes) || body.routes.length === 0 || body.routes.length > 10) {
+      throw createApiError('routes must contain between 1 and 10 options.', 400);
+    }
+    return next();
+  } catch (err) {
+    return next(err);
+  }
+}
