@@ -1,33 +1,28 @@
 // ============================================
-// Gemini Indoor Air & Location DIY Shopping Service
-// Generates location-aware fan/filter/tape pricing,
-// platform recommendations, and verified live buy links.
+// Gemini Indoor Air & Regional DIY Shopping Service
+// Responds dynamically to fresh room, custom window/source
+// inputs, generating prices, verified store links & stickers.
 // ============================================
 import { generateWithFailover } from '../config/gemini.js';
 
 const INDOOR_AI_SCHEMA = {
   type: 'object',
   properties: {
-    location_detected: {
-      type: 'string',
-      description: 'City and country inferred from provided location context (e.g., Pune, India).',
+    location_detected: { type: 'string' },
+    currency_code: { type: 'string' },
+    currency_symbol: { type: 'string' },
+    visual_badges: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          icon: { type: 'string' },
+          label: { type: 'string', description: 'Short 2-5 word visual sticker (e.g., Seal Balcony Gap, 215 m³/h Needed).' },
+        },
+        required: ['icon', 'label'],
+      },
     },
-    currency_code: {
-      type: 'string',
-      description: '3-letter ISO currency code for user location (e.g., INR, USD, GBP, EUR).',
-    },
-    currency_symbol: {
-      type: 'string',
-      description: 'Currency symbol matching currency_code (e.g., ₹, $, £, €).',
-    },
-    one_line_verdict: {
-      type: 'string',
-      description: '1 concise actionable sentence combining room volume, PM2.5 drop, and purifier target.',
-    },
-    total_diy_estimate: {
-      type: 'string',
-      description: 'Total estimated cost range in local currency to build the DIY purifier (e.g., ₹1,500 – ₹2,100).',
-    },
+    total_diy_estimate: { type: 'string' },
     diy_parts: {
       type: 'array',
       items: {
@@ -45,10 +40,7 @@ const INDOOR_AI_SCHEMA = {
               properties: {
                 platform_name: { type: 'string' },
                 estimated_price: { type: 'string' },
-                search_query: {
-                  type: 'string',
-                  description: 'Specific shopping search query for this exact fan/filter size on this platform.',
-                },
+                search_query: { type: 'string' },
               },
               required: ['platform_name', 'estimated_price', 'search_query'],
             },
@@ -62,24 +54,19 @@ const INDOOR_AI_SCHEMA = {
     'location_detected',
     'currency_code',
     'currency_symbol',
-    'one_line_verdict',
+    'visual_badges',
     'total_diy_estimate',
     'diy_parts',
   ],
 };
 
 const SYSTEM_PROMPT = `You are AuraPulse's indoor clean-air hardware & local shopping advisor.
-Given the user's location (city/coordinates), room volume, indoor/outdoor PM2.5, required CADR (m³/h), and DIY purifier fan/filter quantities:
-1. Infer the user's country/city and local currency accurately.
-2. Estimate realistic current local prices for the exact Box Fan size, MERV-13 / True HEPA Filters, and Duct Tape/Cardboard needed.
-3. Recommend 2–3 popular online shopping platforms actively operating in that country/city (e.g., Amazon India, Flipkart, JioMart for India; Amazon, Home Depot, Walmart for USA; Amazon UK, Argos for UK; Amazon.de for Germany).
-4. Provide clean, specific search_query strings for each item on each platform so users immediately land on matching products.`;
+React dynamically to the user's EXACT location, room size, custom window setup (if any), and custom indoor pollution source (if any):
+1. Infer city/country & local currency accurately.
+2. Output 2–4 punchy visual action stickers (short 2–5 word tags with emoji icons) tailored directly to their custom window/source setup.
+3. Estimate current local prices and 2–3 real online store platforms operating in that city/country (e.g. Amazon India, Flipkart, JioMart in India; Amazon, Home Depot, Walmart in USA) for the exact Box Fan, MERV-13/HEPA Filter count, and Duct Tape/Cardboard with specific search_query strings.`;
 
-/**
- * Builds deterministic verified HTTPS platform search URLs from AI-chosen
- * platform names & search queries — prevents dead/hallucinated /dp/ 404 product links.
- */
-function buildVerifiedPlatformUrl(platformName, searchQuery) {
+export function buildVerifiedPlatformUrl(platformName, searchQuery) {
   const name = String(platformName || '').toLowerCase();
   const q = encodeURIComponent(String(searchQuery || 'HEPA air purifier filter').trim());
 
@@ -147,9 +134,6 @@ function isLikelyIndia(locationLabel, lat, lng) {
   return !Number.isNaN(la) && !Number.isNaN(lo) && la >= 6 && la <= 37 && lo >= 68 && lo <= 98;
 }
 
-/**
- * Generates AI-powered local DIY purifier parts pricing & online purchase links.
- */
 export async function generateIndoorAiShoppingAndPlan({
   locationLabel,
   lat,
@@ -161,52 +145,39 @@ export async function generateIndoorAiShoppingAndPlan({
   roomAreaSqft,
   ceilingHeightFt,
   windowSealType,
+  customWindowDesc,
   indoorSource,
+  customSourceDesc,
   language = 'English',
-  overrideKey,
 }) {
   const filterCount = (diyRec?.filters || 4) * (diyRec?.units_needed || 1);
   const fanCount = diyRec?.units_needed || 1;
   const fanSize = diyRec?.fan_size_inch || 20;
 
   const inputContext = {
-    location: {
-      label: locationLabel || 'Local City',
-      latitude: lat ?? null,
-      longitude: lng ?? null,
-    },
+    location: { label: locationLabel || 'Local City', latitude: lat ?? null, longitude: lng ?? null },
     room: {
       floor_area_sqft: roomAreaSqft,
       ceiling_height_ft: ceilingHeightFt,
       volume_m3: simulation?.room_volume_m3,
-      window_seal_type: windowSealType,
-      indoor_source: indoorSource,
+      window_seal: windowSealType === 'other' && customWindowDesc ? customWindowDesc : windowSealType,
+      indoor_source: indoorSource === 'other' && customSourceDesc ? customSourceDesc : indoorSource,
     },
     air_quality: {
       outdoor_pm25_ug_m3: outdoorPm25,
-      predicted_indoor_pm25_ug_m3: simulation?.indoor_pm25,
-      with_diy_purifier_pm25_ug_m3: diySimulation?.indoor_pm25,
+      current_indoor_pm25_ug_m3: simulation?.indoor_pm25,
+      with_diy_pm25_ug_m3: diySimulation?.indoor_pm25,
       cadr_needed_m3_h: simulation?.cadr_needed_for_safe,
     },
-    diy_hardware_needed: {
-      box_fan_count: fanCount,
-      fan_size_inch: fanSize,
-      filter_count: filterCount,
-      filter_grade: 'MERV-13 or True HEPA Panel Filter',
-    },
+    diy_hardware: { fan_count: fanCount, fan_size_inch: fanSize, filter_count: filterCount },
     language,
   };
 
-  const promptText = `Estimate current regional prices and online store links for the DIY purifier parts in ${inputContext.location.label}, and summarize the room plan in ${language}.
-DATA CONTEXT:
-${JSON.stringify(inputContext, null, 2)}`;
-
   const aiRes = await generateWithFailover({
-    contents: promptText,
+    contents: `Generate location pricing, live shopping links, and crisp visual action stickers in ${language}:\n${JSON.stringify(inputContext)}`,
     systemInstruction: SYSTEM_PROMPT,
     responseSchema: INDOOR_AI_SCHEMA,
-    overrideKey,
-    temperature: 0.25,
+    temperature: 0.35,
   });
 
   if (aiRes.ok && aiRes.data) {
@@ -215,17 +186,10 @@ ${JSON.stringify(inputContext, null, 2)}`;
       diy_parts: normalizePlatformLinks(aiRes.data.diy_parts),
       ai_powered: true,
       model: aiRes.model,
-      key_slot: aiRes.key_slot,
-      key_source: aiRes.key_source,
-      prompt_preview: `${inputContext.location.label} · ${simulation?.room_volume_m3} m³ room · Need ${simulation?.cadr_needed_for_safe} m³/h (${fanCount}× ${fanSize}" fan, ${filterCount}× filters)`,
-      input_context: inputContext,
     };
   }
 
-  // Regional deterministic fallback if all keys exhaust
   const india = isLikelyIndia(locationLabel, lat, lng);
-  const currencyCode = india ? 'INR' : 'USD';
-  const currencySymbol = india ? '₹' : '$';
   const fanEst = india ? `₹${850 * fanCount} – ₹${1450 * fanCount}` : `$${18 * fanCount} – $${28 * fanCount}`;
   const filterEst = india ? `₹${280 * filterCount} – ₹${520 * filterCount}` : `$${12 * filterCount} – $${18 * filterCount}`;
   const tapeEst = india ? '₹120 – ₹220' : '$5 – $9';
@@ -233,17 +197,27 @@ ${JSON.stringify(inputContext, null, 2)}`;
     ? `~₹${(850 * fanCount) + (280 * filterCount) + 120} – ₹${(1450 * fanCount) + (520 * filterCount) + 220}`
     : `~$${(18 * fanCount) + (12 * filterCount) + 5} – $${(28 * fanCount) + (18 * filterCount) + 9}`;
 
+  const badges = [
+    { icon: '🌀', label: `Need ${simulation?.cadr_needed_for_safe || 200} m³/h` },
+    ...(windowSealType === 'leaky_wood' || windowSealType === 'other'
+      ? [{ icon: '🪟', label: customWindowDesc ? customWindowDesc.slice(0, 22) : 'Seal Window Gaps' }]
+      : []),
+    ...(indoorSource !== 'none'
+      ? [{ icon: '🚭', label: customSourceDesc ? `Stop ${customSourceDesc.slice(0, 18)}` : 'Stop Indoor Smoke' }]
+      : [{ icon: '✨', label: `Drops to ~${Math.round(diySimulation?.indoor_pm25 || 25)} µg/m³` }]),
+  ];
+
   const fallbackParts = normalizePlatformLinks([
     {
       part_type: 'fan',
-      title: `${fanSize}-inch Box / High-Velocity Square Fan`,
+      title: `${fanSize}" Box Fan`,
       quantity: fanCount,
-      spec_detail: `Qty ${fanCount} · Square housing fits filter cleanly`,
+      spec_detail: `Qty ${fanCount} · Square airflow`,
       estimated_price: fanEst,
       platform_links: india
         ? [
-            { platform_name: 'Amazon India', estimated_price: `₹${900 * fanCount}`, search_query: `${fanSize} inch box fan high airflow` },
-            { platform_name: 'Flipkart', estimated_price: `₹${850 * fanCount}`, search_query: `square box fan high speed` },
+            { platform_name: 'Amazon.in', estimated_price: `₹${900 * fanCount}`, search_query: `${fanSize} inch box fan high velocity` },
+            { platform_name: 'Flipkart', estimated_price: `₹${850 * fanCount}`, search_query: `square box fan high airflow` },
           ]
         : [
             { platform_name: 'Amazon', estimated_price: `$${22 * fanCount}`, search_query: `${fanSize} inch box fan` },
@@ -252,13 +226,13 @@ ${JSON.stringify(inputContext, null, 2)}`;
     },
     {
       part_type: 'filter',
-      title: 'MERV-13 / HEPA Air Filter Panels',
+      title: 'HEPA / MERV-13 Filters',
       quantity: filterCount,
-      spec_detail: `Qty ${filterCount} · ${fanSize}×${fanSize}×1 in MERV-13 / HEPA`,
+      spec_detail: `Qty ${filterCount} · ${fanSize}×${fanSize}" panels`,
       estimated_price: filterEst,
       platform_links: india
         ? [
-            { platform_name: 'Amazon India', estimated_price: `₹${350 * filterCount}`, search_query: `HEPA MERV 13 replacement air filter panel` },
+            { platform_name: 'Amazon.in', estimated_price: `₹${350 * filterCount}`, search_query: `HEPA MERV 13 replacement air filter panel` },
             { platform_name: 'Flipkart', estimated_price: `₹${320 * filterCount}`, search_query: `HEPA replacement air purifier filter` },
           ]
         : [
@@ -268,13 +242,13 @@ ${JSON.stringify(inputContext, null, 2)}`;
     },
     {
       part_type: 'supplies',
-      title: 'Heavy-Duty Duct Tape + Cardboard Base',
+      title: 'Duct Tape + Cardboard',
       quantity: 1,
-      spec_detail: '1 roll wide tape to seal all cube seams airtight',
+      spec_detail: 'Seals cube seams airtight',
       estimated_price: tapeEst,
       platform_links: india
         ? [
-            { platform_name: 'Amazon India', estimated_price: '₹150', search_query: 'heavy duty silver duct tape 48mm' },
+            { platform_name: 'Amazon.in', estimated_price: '₹150', search_query: 'heavy duty silver duct tape 48mm' },
             { platform_name: 'Flipkart', estimated_price: '₹135', search_query: 'heavy duty duct tape' },
           ]
         : [
@@ -286,16 +260,12 @@ ${JSON.stringify(inputContext, null, 2)}`;
 
   return {
     location_detected: locationLabel || (india ? 'India' : 'United States'),
-    currency_code: currencyCode,
-    currency_symbol: currencySymbol,
-    one_line_verdict: `${simulation?.room_volume_m3} m³ room drops from ${Math.round(simulation?.indoor_pm25 || 0)} to ~${Math.round(diySimulation?.indoor_pm25 || 0)} µg/m³ using ${diyRec?.estimated_cadr * fanCount} m³/h DIY filtration.`,
+    currency_code: india ? 'INR' : 'USD',
+    currency_symbol: india ? '₹' : '$',
+    visual_badges: badges,
     total_diy_estimate: totalEst,
     diy_parts: fallbackParts,
     ai_powered: false,
     model: 'aurapulse-pricing-fallback',
-    fallback_reason: aiRes.reason || null,
-    key_slot: null,
-    prompt_preview: `Fallback used (${aiRes.reason || 'no API key'})`,
-    input_context: inputContext,
   };
 }

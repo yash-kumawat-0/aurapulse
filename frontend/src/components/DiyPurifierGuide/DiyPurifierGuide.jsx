@@ -1,6 +1,6 @@
 // ============================================
-// DiyPurifierGuide — Clean Uncluttered 3D Purifier
-// Simple layout, crisp centered stage, unified controls
+// DiyPurifierGuide — 3D Animated Purifier +
+// Visual Step Stickers + Unified Needed Parts & Buy Links
 // ============================================
 import { useState, useEffect, useRef } from 'react';
 import './DiyPurifierGuide.css';
@@ -13,36 +13,36 @@ function getMinimalSteps(isSingleFilter, beforePm, afterPm) {
         num: 1,
         icon: '🛒',
         title: 'Gather Parts',
-        instruction: 'Keep 1 box fan, 1 same-size HEPA/MERV-13 filter, and duct tape ready on a flat table.',
-        tip: 'Simplest quick setup for smaller rooms.',
+        visualCue: '💨 Fan + 🧹 1 Filter + 🧻 Tape',
+        hint: 'Lay flat on table',
       },
       {
         num: 2,
         icon: '➡️',
-        title: 'Point Arrow In',
-        instruction: 'Check the printed airflow arrow on the filter frame so it points INTO the back of the fan.',
-        tip: 'Air must travel in the same direction as the arrow.',
+        title: 'Arrow Into Fan',
+        visualCue: 'FILTER [➔ IN] 💨 FAN',
+        hint: 'Match printed arrow toward fan back',
       },
       {
         num: 3,
         icon: '🔧',
-        title: 'Tape All 4 Sides',
-        instruction: 'Press the filter flat against the back grille and tape all 4 edges with zero air gaps.',
-        tip: 'Taping tightly forces all smog through the filter media.',
+        title: 'Tape 4 Edges',
+        visualCue: '🧻 Seal All 4 Sides Tight',
+        hint: 'Zero air gaps around grille',
       },
       {
         num: 4,
         icon: '📦',
-        title: 'Stand Upright',
-        instruction: 'Place the unit on a sturdy flat surface with the front blowing unobstructed into the room.',
-        tip: 'Leave space behind the intake for smooth airflow.',
+        title: 'Stand Flat',
+        visualCue: '⬆️ Steady Upright · Clear Space',
+        hint: 'Front faces room openly',
       },
       {
         num: 5,
         icon: '✨',
-        title: 'Switch On',
-        instruction: `Run on Medium/High speed to cut PM2.5 by −${dropUg} µg/m³ (down to ~${Math.round(afterPm)} µg/m³).`,
-        tip: 'Replace the filter once it turns dark grey.',
+        title: 'Run Medium/High',
+        visualCue: `✨ −${dropUg} µg/m³ → ~${Math.round(afterPm)} µg/m³`,
+        hint: 'Change filter when dark grey',
       },
     ];
   }
@@ -52,36 +52,36 @@ function getMinimalSteps(isSingleFilter, beforePm, afterPm) {
       num: 1,
       icon: '🛒',
       title: 'Gather Parts',
-      instruction: 'Prepare 1 box fan (20"), 4 MERV-13/HEPA filters, 1 square cardboard base, and duct tape.',
-      tip: 'Performs like a ₹15,000 purifier for around ₹1,500.',
+      visualCue: '💨 Fan + 🧹 4 Filters + 🟫 Cardboard + 🧻 Tape',
+      hint: 'High-CADR cube build',
     },
     {
       num: 2,
       icon: '➡️',
       title: 'Arrows Inward',
-      instruction: 'Point the airflow arrow on all 4 filter edges INWARD toward the center of the cube.',
-      tip: 'All four sides pull polluted room air into the box.',
+      visualCue: 'All 4 Filters [➔ INWARD ⬅]',
+      hint: 'Arrows point inside the cube',
     },
     {
       num: 3,
       icon: '📦',
-      title: 'Tape 4 Corners',
-      instruction: 'Stand the 4 filters into a square ring and tape every vertical corner seam airtight.',
-      tip: 'Sealed corners stop polluted air from bypassing filters.',
+      title: 'Tape Cube Corners',
+      visualCue: '🟨 4 Walls + 🧻 Airtight Seams',
+      hint: 'Forces all air through filters',
     },
     {
       num: 4,
       icon: '🟫',
       title: 'Seal Bottom',
-      instruction: 'Tape the square cardboard sheet flat across the bottom of the filter cube.',
-      tip: 'Keeps floor dust out and completes the chamber.',
+      visualCue: '🟫 Cardboard Base Sealed',
+      hint: 'Blocks floor dust leakage',
     },
     {
       num: 5,
       icon: '🌬️',
-      title: 'Fan Top & Run',
-      instruction: `Set the fan on top blowing UP ⬆️, seal the rim, and run! Cuts PM2.5 by −${dropUg} µg/m³ (to ~${Math.round(afterPm)}).`,
-      tip: 'Swap filters every 2–4 months depending on smog.',
+      title: 'Fan Blows UP ⬆️',
+      visualCue: `💨 Fan Top ⬆️ · −${dropUg} µg/m³ (~${Math.round(afterPm)})`,
+      hint: 'Swap filters every 2–4 months',
     },
   ];
 }
@@ -92,9 +92,9 @@ function DiyPurifierGuide({
   sim,
   diySimulation,
   diyRec,
-  purifierRec,
   isUrgent,
   roomVolumeM3,
+  aiGuidance,
 }) {
   const detectedVolM3 = roomVolumeM3 ?? sim?.room_volume_m3 ?? 42.5;
   const autoNeedCadr = Math.max(sim?.cadr_needed_for_safe || 0, Math.round(detectedVolM3 * 5));
@@ -131,7 +131,6 @@ function DiyPurifierGuide({
         ) / 10,
       );
 
-  const estCost = (isSingle ? 800 : (detectedVolM3 > 75 ? 2200 : 1500)) * autoUnits;
   const steps = getMinimalSteps(isSingle, beforePm, afterPm);
   const currentStep = steps[step] || steps[0];
   const visualStep = STEP_VISUAL_CLASS[step] ?? 0;
@@ -146,7 +145,7 @@ function DiyPurifierGuide({
         }
         return prev + 1;
       });
-    }, 3000);
+    }, 2800);
     return () => clearInterval(id);
   }, [autoPlay, steps.length]);
 
@@ -180,18 +179,17 @@ function DiyPurifierGuide({
   };
 
   const filterQty = isSingle ? autoUnits : (detectedVolM3 > 75 ? 5 : 4) * autoUnits;
+  const aiParts = Array.isArray(aiGuidance?.diy_parts) ? aiGuidance.diy_parts : null;
 
   return (
-    <section className={`diy3d-wrap ${isUrgent ? 'diy3d-wrap--urgent' : 'diy3d-wrap--optional'}`} aria-label="DIY Purifier Guide">
-      {/* ── Clean Compact Header ── */}
+    <section className={`diy3d-wrap ${isUrgent ? 'diy3d-wrap--urgent' : 'diy3d-wrap--optional'}`} aria-label="3D DIY Purifier Builder">
+      {/* ── Minimal Visual Header ── */}
       <div className="diy3d-header">
         <div className="diy3d-header-left">
-          <h4 className="diy3d-title">🛠️ DIY Purifier Guide</h4>
-          <p className="diy3d-subtitle">
-            {purifierRec?.diy_box_sufficient
-              ? `1× ${isSingle ? '1-Filter Fan' : '4-Filter Cube'} (${activeCadr} m³/h · ~₹${estCost}) lowers indoor air to ~${Math.round(afterPm)} µg/m³.`
-              : `Recommended: ${autoUnits}× ${isSingle ? '1-Filter Fan' : '4-Filter Cube'} (${activeCadr} m³/h · ~₹${estCost}) → ~${Math.round(afterPm)} µg/m³.`}
-          </p>
+          <h4 className="diy3d-title">🛠️ DIY Purifier 3D Builder</h4>
+          <span className="diy3d-mini-stat">
+            {autoUnits}× {isSingle ? '1-Filter Fan' : '4-Filter Cube'} · <strong>{activeCadr} m³/h</strong>
+          </span>
         </div>
 
         <div className="diy3d-mode-switch" role="group" aria-label="DIY Build Style">
@@ -212,9 +210,8 @@ function DiyPurifierGuide({
         </div>
       </div>
 
-      {/* ── Main Interactive Studio: 3D Preview + Clean Step Guide ── */}
+      {/* ── Main 3D Model + Visual Step Stickers ── */}
       <div className="diy3d-studio">
-        {/* Clean 3D Stage */}
         <div className="diy3d-viewport-col">
           <div
             className="diy3d-stage"
@@ -224,7 +221,8 @@ function DiyPurifierGuide({
             onPointerCancel={handlePointerUp}
           >
             <div className="diy3d-stage-pill">
-              {currentStep.icon} Step {currentStep.num}/{steps.length} · {currentStep.title}
+              <span className="diy3d-step-bounce">{currentStep.icon}</span>
+              <span>Step {currentStep.num}/{steps.length} · {currentStep.title}</span>
             </div>
 
             <div className="diy3d-cam-overlay" onPointerDown={(e) => e.stopPropagation()}>
@@ -332,13 +330,13 @@ function DiyPurifierGuide({
 
             {visualStep === 6 && (
               <div className="diy3d-clean-badge">
-                ✨ Clean Air · ~{Math.round(afterPm)} µg/m³
+                ✨ Clean · ~{Math.round(afterPm)} µg/m³
               </div>
             )}
           </div>
         </div>
 
-        {/* Clean Step Guide & Unified Controls */}
+        {/* Visual Sticker Step Cards */}
         <div className="diy3d-steps-col">
           <div className="diy3d-step-top">
             <div className="diy3d-stepper" role="tablist" aria-label="Assembly steps">
@@ -367,10 +365,16 @@ function DiyPurifierGuide({
           </div>
 
           <div className="diy3d-focus-card">
-            <h5 className="diy3d-focus-title">{currentStep.icon} Step {currentStep.num}: {currentStep.title}</h5>
-            <p className="diy3d-focus-text">{currentStep.instruction}</p>
+            <div className="diy3d-focus-visual">
+              <span className="diy3d-focus-big-icon">{currentStep.icon}</span>
+              <div>
+                <h5 className="diy3d-focus-title">Step {currentStep.num}: {currentStep.title}</h5>
+                <div className="diy3d-cue-chip">{currentStep.visualCue}</div>
+              </div>
+            </div>
+
             <div className="diy3d-focus-why">
-              💡 {currentStep.tip}
+              💡 {currentStep.hint}
             </div>
 
             <div className="diy3d-card-nav">
@@ -395,17 +399,63 @@ function DiyPurifierGuide({
               </button>
             </div>
           </div>
+        </div>
+      </div>
 
-          <div className="diy3d-items-bar">
-            <span className="diy3d-items-label">Needed:</span>
-            <div className="diy3d-items-chips">
-              <span className="diy3d-item-chip">💨 {autoUnits}× Box Fan</span>
-              <span className="diy3d-item-chip">🧹 {filterQty}× HEPA Filter</span>
-              {!isSingle && <span className="diy3d-item-chip">📦 {autoUnits}× Cardboard</span>}
-              <span className="diy3d-item-chip">🧻 Duct Tape</span>
-            </div>
+      {/* ── Unified Needed Parts + Regional Prices + Online Store Buy Links ── */}
+      <div className="diy3d-parts-unified">
+        <div className="diy3d-parts-head">
+          <span className="diy3d-parts-title">
+            🧰 Needed Parts {aiGuidance?.location_detected ? `· 📍 ${aiGuidance.location_detected}` : ''}
+          </span>
+          <div className="diy3d-parts-badges">
+            {aiGuidance?.total_diy_estimate && (
+              <span className="diy3d-parts-total">Est: {aiGuidance.total_diy_estimate}</span>
+            )}
+            {aiGuidance?.ai_powered && (
+              <span className="diy3d-parts-ai">✨ Gemini AI Prices</span>
+            )}
           </div>
         </div>
+
+        {aiParts && aiParts.length > 0 ? (
+          <div className="diy3d-parts-grid">
+            {aiParts.map((part, idx) => {
+              const icon = part.part_type === 'fan' ? '💨' : part.part_type === 'filter' ? '🧹' : '🧻';
+              return (
+                <div key={idx} className="diy3d-part-tile">
+                  <div className="diy3d-part-top">
+                    <span className="diy3d-part-name">{icon} {part.title}</span>
+                    <span className="diy3d-part-price">{part.estimated_price}</span>
+                  </div>
+                  <div className="diy3d-part-links">
+                    {(part.platform_links || []).map((link, lIdx) => (
+                      <a
+                        key={lIdx}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="diy3d-store-btn"
+                        title={`Buy ${part.title} on ${link.platform_name}`}
+                      >
+                        <span>{link.platform_name}</span>
+                        {link.estimated_price && <small>{link.estimated_price}</small>}
+                        <span>↗</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="diy3d-items-chips">
+            <span className="diy3d-item-chip">💨 {autoUnits}× Box Fan</span>
+            <span className="diy3d-item-chip">🧹 {filterQty}× HEPA Filter</span>
+            {!isSingle && <span className="diy3d-item-chip">📦 {autoUnits}× Cardboard</span>}
+            <span className="diy3d-item-chip">🧻 Duct Tape</span>
+          </div>
+        )}
       </div>
     </section>
   );

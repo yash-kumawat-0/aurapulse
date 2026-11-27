@@ -83,7 +83,7 @@ export function AqiProvider({ children }) {
   return (
     <AqiContext.Provider
       value={{
-        currentAqi, diurnalData, indoorData, commuteData, adviceData,
+        currentAqi, diurnalData, indoorData, commuteData, setCommuteData, adviceData,
         loading, error,
         loadAqiData, loadIndoorSimulation, loadCommuteComparison, loadAdvice,
       }}

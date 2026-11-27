@@ -1,5 +1,5 @@
 // ============================================
-// Advice Controller — Full Telemetry + Dynamic Gemini AI
+// Advice Controller — Fresh User Telemetry -> Gemini AI
 // ============================================
 import { getCurrentConditions, getForecast } from '../services/googleAirQualityService.js';
 import { analyzeDiurnalPattern } from '../engine/diurnalOptimizer.js';
@@ -9,7 +9,6 @@ import { createApiError } from '../middleware/errorHandler.js';
 
 /**
  * POST /api/v1/advice/generate
- * Generates a comprehensive personalized family action plan.
  */
 export async function generateAdvice(req, res, next) {
   try {
@@ -46,6 +45,8 @@ export async function generateAdvice(req, res, next) {
       windowSealType: homeParams.window_seal_type || 'standard_aluminum',
       purifierCADR: homeParams.purifier_cadr || 0,
       indoorSource: homeParams.indoor_source || 'none',
+      customWindowDesc: homeParams.custom_window_desc,
+      customSourceDesc: homeParams.custom_source_desc,
     });
 
     const adviceResult = await generateFamilyAdvice({
@@ -55,8 +56,8 @@ export async function generateAdvice(req, res, next) {
       indoorSimulation,
       commuteComparison: commute_comparison,
       familyMembers: family_members,
+      homeProfile: homeParams,
       language: language || 'English',
-      overrideKey: req.get('X-Gemini-Api-Key'),
     });
 
     res.json({
@@ -77,14 +78,7 @@ export async function generateAdvice(req, res, next) {
           morning_trap_warning: diurnalAnalysis.morning_trap_warning,
         },
         model: adviceResult.model,
-        ai_audit: {
-          ai_powered: adviceResult.ai_powered,
-          model: adviceResult.model,
-          key_slot: adviceResult.key_slot,
-          fallback_reason: adviceResult.fallback_reason || null,
-          prompt_preview: adviceResult.prompt_preview,
-          input_context: adviceResult.input_context,
-        },
+        ai_powered: adviceResult.ai_powered,
       },
     });
   } catch (err) {

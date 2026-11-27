@@ -1,9 +1,10 @@
 // ============================================
-// Google Gemini AI Client Config & Multi-Key Failover
+// Google Gemini AI Client Config & Env Key Failover
+// Uses GEMINI_API_KEYS (pool) + GEMINI_API_KEY in backend/.env
 // ============================================
 import { GoogleGenAI } from '@google/genai';
 
-// Proven fast schema-compatible models prioritized first for low serverless cold-start latency
+// Fast schema-compatible Flash models prioritized first
 export const DEFAULT_GEMINI_MODELS = [
   'gemini-flash-lite-latest',
   'gemini-3.5-flash',
@@ -17,9 +18,8 @@ export const DEFAULT_GEMINI_MODELS = [
 
 export const GEMINI_MODEL = DEFAULT_GEMINI_MODELS[0];
 
-// Track cooldowns in-memory so exhausted keys / throttled models skip fast
-const exhaustedKeysUntil = new Map(); // keyFingerprint -> timestamp
-const degradedModelsUntil = new Map(); // modelName -> timestamp
+const exhaustedKeysUntil = new Map();
+const degradedModelsUntil = new Map();
 let lastHealthyModel = null;
 
 function maskKeyFingerprint(key) {
@@ -28,12 +28,10 @@ function maskKeyFingerprint(key) {
 }
 
 /**
- * Resolves all candidate API keys in priority order:
- *   1. Optional per-request runtime key (from UI key switcher / X-Gemini-Api-Key)
- *   2. GEMINI_API_KEYS (comma/newline separated pool)
- *   3. GEMINI_API_KEY
+ * Resolves all API keys configured in GEMINI_API_KEYS (comma/newline separated)
+ * and GEMINI_API_KEY cleanly in order without duplicates.
  */
-export function resolveApiKeys(overrideKey) {
+export function resolveApiKeys() {
   const pool = [];
   const pushKey = (raw, source) => {
     const clean = (raw || '').trim();
@@ -42,13 +40,11 @@ export function resolveApiKeys(overrideKey) {
       pool.push({
         key: clean,
         source,
-        slot: source === 'user_override' ? 'override' : `env_${pool.length + 1}`,
+        slot: `env_${pool.length + 1}`,
         fingerprint: maskKeyFingerprint(clean),
       });
     }
   };
-
-  if (overrideKey) pushKey(overrideKey, 'user_override');
 
   const multiEnv = process.env.GEMINI_API_KEYS || '';
   multiEnv
@@ -119,7 +115,7 @@ function stripJsonFence(text) {
   return (fenced ? fenced[1] : raw).trim();
 }
 
-function withTimeout(promise, ms = 12000) {
+function withTimeout(promise, ms = 11000) {
   let timer;
   const timeoutPromise = new Promise((_, reject) => {
     timer = setTimeout(() => {
@@ -132,25 +128,22 @@ function withTimeout(promise, ms = 12000) {
 }
 
 /**
- * Executes a structured Gemini call with automatic key rotation & model failover.
- * Never throws; returns `{ ok: false, ... }` when all keys/models fail or exhaust.
+ * Executes a structured Gemini call with automatic env key rotation & model failover.
  */
 export async function generateWithFailover({
   contents,
   systemInstruction,
   responseSchema,
-  overrideKey,
-  temperature = 0.25,
+  temperature = 0.35,
   timeoutMs = 11000,
 }) {
-  const allKeys = resolveApiKeys(overrideKey);
+  const allKeys = resolveApiKeys();
   if (allKeys.length === 0) {
     return {
       ok: false,
       reason: 'no_api_key_configured',
       attempts: 0,
       model: null,
-      key_slot: null,
     };
   }
 
@@ -189,23 +182,19 @@ export async function generateWithFailover({
         return {
           ok: true,
           data: parsed,
-          rawText,
           model: modelName,
-          key_slot: keyEntry.slot,
-          key_source: keyEntry.source,
           attempts,
         };
       } catch (err) {
         lastErrorMsg = err?.message || String(err);
 
         if (isKeyLevelError(err)) {
-          // Put exhausted/invalid key on cooldown and switch straight to next backup key
           exhaustedKeysUntil.set(keyEntry.fingerprint, Date.now() + 5 * 60 * 1000);
           break;
         }
 
         if (isModelLevelError(err)) {
-          const ttl = (err?.status === 404) ? 60 * 60 * 1000 : 2 * 60 * 1000;
+          const ttl = err?.status === 404 ? 60 * 60 * 1000 : 2 * 60 * 1000;
           degradedModelsUntil.set(modelName, Date.now() + ttl);
           continue;
         }
@@ -218,15 +207,11 @@ export async function generateWithFailover({
     reason: lastErrorMsg,
     attempts,
     model: null,
-    key_slot: null,
   };
 }
 
-/**
- * Returns non-secret AI runtime health metrics for /api/health and UI status badge.
- */
-export function getAiStatus(overrideKey) {
-  const keys = resolveApiKeys(overrideKey);
+export function getAiStatus() {
+  const keys = resolveApiKeys();
   const now = Date.now();
   const healthyKeys = keys.filter((k) => (exhaustedKeysUntil.get(k.fingerprint) || 0) <= now);
   const healthyModels = getModelOrder();
@@ -236,25 +221,18 @@ export function getAiStatus(overrideKey) {
     key_count: keys.length,
     healthy_key_count: healthyKeys.length,
     preferred_model: healthyModels[0] || DEFAULT_GEMINI_MODELS[0],
-    fallback_models_count: healthyModels.length,
   };
 }
 
-/**
- * Legacy helper exported for backwards compatibility.
- */
 const firstEnvKey = resolveApiKeys()[0]?.key;
 export const genAI = firstEnvKey ? new GoogleGenAI({ apiKey: firstEnvKey }) : null;
 
-/**
- * The strict JSON response schema for Family Action Plan generation.
- */
 export const ADVICE_RESPONSE_SCHEMA = {
   type: 'object',
   properties: {
     overall_summary: {
       type: 'string',
-      description: 'A 2-3 sentence plain-language summary of today\'s air quality situation for this location.',
+      description: 'Short plain headline (1 sentence max, under 16 words).',
     },
     family_advice: {
       type: 'array',
@@ -265,12 +243,12 @@ export const ADVICE_RESPONSE_SCHEMA = {
           risk_level: { type: 'string', enum: ['LOW', 'MODERATE', 'HIGH', 'SEVERE'] },
           primary_action: {
             type: 'string',
-            description: 'The single most important thing this person should do today.',
+            description: 'Short direct visual headline (under 10 words).',
           },
           detailed_tips: {
             type: 'array',
             items: { type: 'string' },
-            description: 'Two to three additional specific, actionable tips.',
+            description: '2-3 ultra-concise scannable chips (under 8 words each).',
           },
         },
         required: ['member_name', 'risk_level', 'primary_action', 'detailed_tips'],
@@ -278,11 +256,11 @@ export const ADVICE_RESPONSE_SCHEMA = {
     },
     ventilation_advice: {
       type: 'string',
-      description: 'When to open windows today and for how long, based on the calculated clean window.',
+      description: 'Short window timing chip (under 10 words).',
     },
     commute_advice: {
       type: 'string',
-      description: 'Which commute option is safer and why, explained simply.',
+      description: 'Short travel tip chip (under 10 words).',
     },
   },
   required: ['overall_summary', 'family_advice', 'ventilation_advice', 'commute_advice'],

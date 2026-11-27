@@ -28,14 +28,84 @@
   font-family: var(--font-heading);
 }
 
-.advice-ready-badge {
-  font-size: 0.78rem;
+.advice-ready-badge, .advice-ai-tag {
+  font-size: 0.76rem;
   font-weight: 700;
   color: #15803D;
   background: #DCFCE7;
   padding: 3px 10px;
   border-radius: var(--radius-full);
-  text-transform: uppercase;
+}
+.advice-ai-tag--live {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+}
+
+.advice-float-icon {
+  display: inline-block;
+  animation: advFloat 2.6s ease-in-out infinite;
+}
+@keyframes advFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+}
+
+.advice-sticker-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.advice-sticker {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #F8FAFC;
+  border: 1px solid #CBD5E1;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.advice-sticker--good {
+  background: #ECFDF5;
+  border-color: #86EFAC;
+  color: #065F46;
+}
+
+.advice-chip-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.advice-action-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.advice-chip-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: #FFFFFF;
+  font-size: 0.75rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .advice-gen-btn {

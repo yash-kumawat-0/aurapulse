@@ -24,6 +24,7 @@ export const WINDOW_SEAL_PRESETS = {
   leaky_wood: { ach: 2.5, penetration: 0.90, label: 'Old Wooden (Leaky)' },
   standard_aluminum: { ach: 1.5, penetration: 0.85, label: 'Standard Aluminum Sliding' },
   sealed_upvc: { ach: 0.5, penetration: 0.70, label: 'Modern UPVC/Sealed Glass' },
+  other: { ach: 1.8, penetration: 0.85, label: 'Custom Window Setup' },
 };
 
 /**
@@ -35,7 +36,30 @@ export const INDOOR_SOURCES = {
   mosquito_coil: 2000,   // One burning coil
   cooking_frying: 1200,  // Frying/tempering in oil
   smoking_cigarette: 1500,
+  other: 700,
 };
+
+function estimateCustomWindowSeal(desc) {
+  const txt = String(desc || '').toLowerCase();
+  if (!txt.trim()) return WINDOW_SEAL_PRESETS.other;
+  if (/open|gap|crack|broken|exhaust|balcony|no glass/.test(txt)) {
+    return { ach: 2.6, penetration: 0.92, label: desc.trim() };
+  }
+  if (/seal|ac|closed|double|airtight|tape/.test(txt)) {
+    return { ach: 0.7, penetration: 0.74, label: desc.trim() };
+  }
+  return { ach: 1.7, penetration: 0.85, label: desc.trim() };
+}
+
+function estimateCustomSourceRate(desc) {
+  const txt = String(desc || '').toLowerCase();
+  if (!txt.trim()) return INDOOR_SOURCES.other;
+  if (/wood|stove|chulha|coal|heavy smoke|cigar/.test(txt)) return 1800;
+  if (/paint|renovation|drill|construction|cement|dust/.test(txt)) return 1100;
+  if (/candle|diya|agarbatti|oil|fry/.test(txt)) return 650;
+  if (/clean|none|pet/.test(txt)) return 300;
+  return 750;
+}
 
 /**
  * Natural surface deposition rate for PM2.5 particles (per hour).
@@ -65,18 +89,24 @@ export function calculateIndoorPM25({
   windowSealType = 'standard_aluminum',
   purifierCADR = 0,
   indoorSource = 'none',
+  customWindowDesc = '',
+  customSourceDesc = '',
 }) {
   // Convert room dimensions to metric (m³)
   const roomAreaM2 = roomAreaSqft * 0.0929;
   const ceilingHeightM = ceilingHeightFt * 0.3048;
   const volumeM3 = roomAreaM2 * ceilingHeightM;
 
-  // Get seal parameters
-  const seal = WINDOW_SEAL_PRESETS[windowSealType] || WINDOW_SEAL_PRESETS.standard_aluminum;
+  // Get seal parameters (supports custom 'other' input dynamically)
+  const seal = windowSealType === 'other'
+    ? estimateCustomWindowSeal(customWindowDesc)
+    : (WINDOW_SEAL_PRESETS[windowSealType] || WINDOW_SEAL_PRESETS.standard_aluminum);
   const P = seal.penetration;
   const a = seal.ach;
   const k = DEFAULT_DEPOSITION_RATE;
-  const S = INDOOR_SOURCES[indoorSource] || 0;
+  const S = indoorSource === 'other'
+    ? estimateCustomSourceRate(customSourceDesc)
+    : (INDOOR_SOURCES[indoorSource] || 0);
 
   // Steady-state indoor PM2.5
   const numerator = (P * a * outdoorPM25) + (S / volumeM3);

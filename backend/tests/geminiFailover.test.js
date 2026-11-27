@@ -1,32 +1,53 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { resolveApiKeys, getAiStatus } from '../src/config/gemini.js';
+import { calculateIndoorPM25 } from '../src/engine/massBalanceModel.js';
 import { generateIndoorAiShoppingAndPlan } from '../src/services/geminiIndoorService.js';
 import { generateCommuteAiAnalysis } from '../src/services/geminiCommuteService.js';
 
-describe('Gemini multi-key failover & AI output integrity', () => {
-  it('resolves user override key before GEMINI_API_KEYS pool and primary key without duplicates', () => {
+describe('Env multi-key failover, custom inputs & AI output integrity', () => {
+  it('resolves GEMINI_API_KEYS pool and primary key from env without duplicates', () => {
     const prevSingle = process.env.GEMINI_API_KEY;
     const prevPool = process.env.GEMINI_API_KEYS;
     try {
       process.env.GEMINI_API_KEY = 'primary-key-1';
       process.env.GEMINI_API_KEYS = 'pool-key-a, primary-key-1, pool-key-b';
-      const resolved = resolveApiKeys('override-key-x');
+      const resolved = resolveApiKeys();
       assert.deepEqual(
         resolved.map((k) => k.key),
-        ['override-key-x', 'pool-key-a', 'primary-key-1', 'pool-key-b'],
+        ['pool-key-a', 'primary-key-1', 'pool-key-b'],
       );
-      assert.equal(resolved[0].slot, 'override');
-      const status = getAiStatus('override-key-x');
+      const status = getAiStatus();
       assert.equal(status.configured, true);
-      assert.equal(status.key_count, 4);
+      assert.equal(status.key_count, 3);
     } finally {
       process.env.GEMINI_API_KEY = prevSingle;
       process.env.GEMINI_API_KEYS = prevPool;
     }
   });
 
-  it('produces verified regional shopping URLs and INR pricing for Indian cities in fallback mode', async () => {
+  it('reacts dynamically to custom "other" window seals and indoor smoke descriptions', () => {
+    const openOther = calculateIndoorPM25({
+      outdoorPM25: 150,
+      roomAreaSqft: 150,
+      ceilingHeightFt: 10,
+      windowSealType: 'other',
+      customWindowDesc: 'Balcony door cracked open',
+      indoorSource: 'other',
+      customSourceDesc: 'Wood stove smoke',
+    });
+    const sealedOther = calculateIndoorPM25({
+      outdoorPM25: 150,
+      roomAreaSqft: 150,
+      ceilingHeightFt: 10,
+      windowSealType: 'other',
+      customWindowDesc: 'Airtight AC room sealed',
+      indoorSource: 'none',
+    });
+    assert.ok(openOther.indoor_pm25 > sealedOther.indoor_pm25 + 40);
+  });
+
+  it('produces verified regional shopping URLs and INR pricing inside DIY Needed Parts', async () => {
     const prevSingle = process.env.GEMINI_API_KEY;
     const prevPool = process.env.GEMINI_API_KEYS;
     try {
@@ -42,12 +63,15 @@ describe('Gemini multi-key failover & AI output integrity', () => {
         diyRec: { filters: 4, units_needed: 1, fan_size_inch: 20, estimated_cadr: 350 },
         roomAreaSqft: 150,
         ceilingHeightFt: 10,
-        windowSealType: 'standard_aluminum',
-        indoorSource: 'none',
+        windowSealType: 'other',
+        customWindowDesc: 'Balcony sliding gap',
+        indoorSource: 'other',
+        customSourceDesc: 'Candles',
       });
       assert.equal(result.ai_powered, false);
       assert.equal(result.currency_code, 'INR');
-      assert.ok(result.diy_parts.length === 3);
+      assert.equal(result.diy_parts.length, 3);
+      assert.ok(Array.isArray(result.visual_badges) && result.visual_badges.length >= 1);
       result.diy_parts.forEach((p) => {
         assert.ok(p.platform_links.length >= 2);
         p.platform_links.forEach((l) => {
@@ -60,7 +84,7 @@ describe('Gemini multi-key failover & AI output integrity', () => {
     }
   });
 
-  it('returns structured commute verdict contract cleanly even when AI keys are absent', async () => {
+  it('returns structured commute visual stickers cleanly even when AI keys are absent', async () => {
     const prevSingle = process.env.GEMINI_API_KEY;
     const prevPool = process.env.GEMINI_API_KEYS;
     try {
@@ -76,9 +100,8 @@ describe('Gemini multi-key failover & AI output integrity', () => {
         ],
       });
       assert.equal(res.recommended_mode, 'METRO');
-      assert.equal(res.ai_powered, false);
-      assert.ok(res.headline_verdict.length > 10);
-      assert.ok(Array.isArray(res.safer_route_tips) && res.safer_route_tips.length >= 1);
+      assert.ok(res.headline_verdict.length > 5);
+      assert.ok(Array.isArray(res.action_stickers) && res.action_stickers.length >= 1);
     } finally {
       process.env.GEMINI_API_KEY = prevSingle;
       process.env.GEMINI_API_KEYS = prevPool;

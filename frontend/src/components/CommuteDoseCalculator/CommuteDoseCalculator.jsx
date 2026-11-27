@@ -24,7 +24,6 @@ import {
   generateViewportAqiGrid,
 } from '../../utils/aqiRouteColorizer.js';
 import { fetchMultiCommuteComparison } from '../../services/api.js';
-import AiAuditBadge from '../AiAuditBadge/AiAuditBadge.jsx';
 import './CommuteDoseCalculator.css';
 
 // Leaflet icon fix
@@ -382,7 +381,7 @@ function TransitNetworkLayers({
 // ========== MAIN COMPONENT ==========
 function CommuteDoseCalculator() {
   const { location, language } = useUser();
-  const { currentAqi } = useAqi();
+  const { currentAqi, setCommuteData } = useAqi();
 
   const [origin, setOrigin] = useState(null);
   const [destination, setDestination] = useState(null);
@@ -486,6 +485,7 @@ function CommuteDoseCalculator() {
         (result.data.routes || []).forEach((d) => { dmap[d.mode] = d; });
         setDoseByMode(dmap);
         setAiAnalysis(result.data.ai_commute_analysis || null);
+        setCommuteData?.(result.data);
         if (result.data.safest_mode) { setSafestMode(result.data.safest_mode); setSelectedMode(result.data.safest_mode); }
       } catch {
         const dmap = {};
@@ -584,48 +584,38 @@ function CommuteDoseCalculator() {
         {error && <div className="cdc-status cdc-status--err">⚠️ {error}</div>}
       </div>
 
-      {/* ── AI Safest Recommendation & Exposure Verdict ── */}
+      {/* ── Visual Animated Safe Recommendation Strip ── */}
       {safestMode && allModes.length > 1 && (
         <div className="cdc-recommend-wrap">
           <div className="cdc-recommend">
-            <span className="cdc-recommend-shield">🛡️</span>
+            <span className="cdc-recommend-shield cdc-shield-pulse">🛡️</span>
             <div className="cdc-recommend-main">
-              <div>
-                <strong>Safest Choice: {MODE_CONFIG[safestMode]?.icon} {MODE_CONFIG[safestMode]?.label}</strong>
-                {doseByMode[safestMode] && <span className="cdc-recommend-dose"> — {doseByMode[safestMode].dose_ug} µg inhaled</span>}
+              <div className="cdc-recommend-top">
+                <strong>Best: {MODE_CONFIG[safestMode]?.icon} {MODE_CONFIG[safestMode]?.label}</strong>
+                {doseByMode[safestMode] && (
+                  <span className="cdc-recommend-dose">{doseByMode[safestMode].dose_ug} µg</span>
+                )}
+                {aiAnalysis?.reduction_vs_worst_pct > 0 && (
+                  <span className="cdc-save-badge">−{aiAnalysis.reduction_vs_worst_pct}% smog</span>
+                )}
+                {aiAnalysis?.ai_powered && (
+                  <span className="cdc-ai-pill">✨ Gemini AI</span>
+                )}
               </div>
+
               {aiAnalysis?.headline_verdict && (
-                <p className="cdc-ai-verdict">{aiAnalysis.headline_verdict}</p>
+                <div className="cdc-ai-verdict">{aiAnalysis.headline_verdict}</div>
               )}
-              {aiAnalysis?.total_pollution_summary && (
-                <p className="cdc-ai-summary">{aiAnalysis.total_pollution_summary}</p>
-              )}
-              {Array.isArray(aiAnalysis?.safer_route_tips) && aiAnalysis.safer_route_tips.length > 0 && (
+
+              {Array.isArray(aiAnalysis?.action_stickers) && aiAnalysis.action_stickers.length > 0 && (
                 <div className="cdc-ai-tips">
-                  {aiAnalysis.safer_route_tips.map((tip, idx) => (
-                    <span key={idx} className="cdc-ai-tip-chip">💡 {tip}</span>
+                  {aiAnalysis.action_stickers.map((st, idx) => (
+                    <span key={idx} className="cdc-ai-tip-chip">{st.icon} {st.label}</span>
                   ))}
                 </div>
               )}
             </div>
           </div>
-
-          {aiAnalysis && (
-            <AiAuditBadge
-              aiPowered={aiAnalysis.ai_powered}
-              model={aiAnalysis.model}
-              keySlot={aiAnalysis.key_slot}
-              promptPreview={aiAnalysis.prompt_preview}
-              inputContext={aiAnalysis.input_context}
-              outputData={{
-                recommended_mode: aiAnalysis.recommended_mode,
-                ai_estimated_dose_ug: aiAnalysis.ai_estimated_dose_ug,
-                headline_verdict: aiAnalysis.headline_verdict,
-                safer_route_tips: aiAnalysis.safer_route_tips,
-              }}
-              fallbackReason={aiAnalysis.fallback_reason}
-            />
-          )}
         </div>
       )}
 

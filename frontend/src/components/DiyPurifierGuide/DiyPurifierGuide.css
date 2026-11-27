@@ -30,6 +30,10 @@
 .diy3d-header-left {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .diy3d-title {
@@ -39,11 +43,23 @@
   margin: 0;
 }
 
-.diy3d-subtitle {
-  font-size: 0.9rem;
+.diy3d-mini-stat {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--bg-accent-soft);
+  border: 1px solid var(--border-accent-soft);
+  font-size: 0.8rem;
   color: var(--text-secondary);
-  margin: 3px 0 0 0;
-  line-height: 1.45;
+}
+
+.diy3d-step-bounce {
+  display: inline-block;
+  margin-right: 5px;
+  animation: diyBounce 1.8s ease-in-out infinite;
+}
+@keyframes diyBounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
 }
 
 .diy3d-mode-switch {
@@ -448,27 +464,52 @@
   border-left: 4px solid #EA580C;
 }
 
+.diy3d-focus-visual {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.diy3d-focus-big-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #FFEDD5;
+  border: 1px solid #FDBA74;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  animation: diyBounce 2s ease-in-out infinite;
+}
+
 .diy3d-focus-title {
   font-size: 1.02rem;
   font-weight: 800;
   color: var(--text-primary);
-  margin: 0;
+  margin: 0 0 4px 0;
 }
 
-.diy3d-focus-text {
-  font-size: 0.95rem;
-  line-height: 1.5;
-  color: var(--text-primary);
-  margin: 0;
+.diy3d-cue-chip {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  border: 1.5px solid #FED7AA;
+  color: #9A3412;
+  font-size: 0.86rem;
+  font-weight: 800;
 }
 
 .diy3d-focus-why {
-  padding: 8px 11px;
+  padding: 7px 11px;
   background: #FFFBEB;
   border-radius: 10px;
   border: 1px solid #FDE68A;
-  font-size: 0.84rem;
+  font-size: 0.82rem;
   color: #78350F;
+  font-weight: 600;
 }
 
 .diy3d-card-nav {
@@ -493,21 +534,118 @@
 .diy3d-nav-btn--next { background: #EA580C; color: #FFFFFF; border-color: #EA580C; }
 .diy3d-step-counter { font-size: 0.84rem; color: var(--text-secondary); }
 
-.diy3d-items-bar {
+/* ── Unified Needed Parts & Store Buy Links Bar ── */
+.diy3d-parts-unified {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 13px 14px;
+  background: #F8FAFC;
+  border-radius: 13px;
+  border: 1px solid #E2E8F0;
+}
+
+.diy3d-parts-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.diy3d-parts-title {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.diy3d-parts-badges {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px 8px;
-  padding: 10px 12px;
-  background: var(--bg-secondary);
-  border-radius: 12px;
-  border: 1px solid var(--border-light);
+  gap: 6px;
 }
 
-.diy3d-items-label {
-  font-size: 0.8rem;
+.diy3d-parts-total {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #ECFDF5;
+  border: 1px solid #86EFAC;
+  color: #065F46;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.diy3d-parts-ai {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  color: #1D4ED8;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.diy3d-parts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.diy3d-part-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 10px 12px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 11px;
+}
+
+.diy3d-part-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.diy3d-part-name {
+  font-size: 0.84rem;
   font-weight: 700;
-  color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+.diy3d-part-price {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #059669;
+  white-space: nowrap;
+}
+
+.diy3d-part-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.diy3d-store-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 9px;
+  min-height: 30px;
+  border-radius: 999px;
+  background: #F1F6FC;
+  border: 1px solid #BFDBFE;
+  color: #1D4ED8;
+  font-size: 0.74rem;
+  font-weight: 700;
+  transition: all 0.15s;
+}
+
+.diy3d-store-btn:hover {
+  background: #DBEAFE;
+  border-color: #2563EB;
 }
 
 .diy3d-items-chips {
@@ -529,6 +667,7 @@
 /* ── Responsive ── */
 @media (max-width: 900px) {
   .diy3d-studio { grid-template-columns: 1fr; gap: 14px; }
+  .diy3d-parts-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 640px) {

@@ -67,28 +67,58 @@
   flex-direction: column;
   gap: 8px;
   padding: 12px 16px;
-  background: #ECFDF5;
+  background: linear-gradient(135deg, #ECFDF5 0%, #EFF6FF 100%);
   border: 1.5px solid #86EFAC;
   border-radius: var(--radius-md);
 }
 .cdc-recommend {
-  display: flex; align-items: flex-start; gap: var(--space-sm);
+  display: flex; align-items: center; gap: 12px;
   font-size: 0.95rem; color: #065F46;
 }
-.cdc-recommend-main { display: flex; flex-direction: column; gap: 4px; flex: 1; }
-.cdc-recommend-shield { font-size: 1.25rem; flex-shrink: 0; }
-.cdc-recommend-dose { font-weight: 600; color: #047857; }
-.cdc-ai-verdict { margin: 2px 0 0 0; font-size: 0.9rem; font-weight: 600; color: #064E3B; line-height: 1.45; }
-.cdc-ai-summary { margin: 0; font-size: 0.85rem; color: #047857; line-height: 1.45; }
-.cdc-ai-tips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.cdc-recommend-main { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.cdc-recommend-top { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.cdc-recommend-shield { font-size: 1.55rem; flex-shrink: 0; }
+.cdc-shield-pulse { animation: cdcPulseShield 2.4s ease-in-out infinite; }
+@keyframes cdcPulseShield {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+.cdc-recommend-dose {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  border: 1px solid #86EFAC;
+  font-weight: 800;
+  color: #047857;
+  font-size: 0.85rem;
+}
+.cdc-save-badge {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: #15803D;
+  color: #FFFFFF;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.cdc-ai-pill {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  color: #1D4ED8;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+.cdc-ai-verdict { font-size: 0.88rem; font-weight: 600; color: #064E3B; }
+.cdc-ai-tips { display: flex; flex-wrap: wrap; gap: 6px; }
 .cdc-ai-tip-chip {
   padding: 4px 10px;
   border-radius: 999px;
   background: #FFFFFF;
   border: 1px solid #A7F3D0;
   color: #065F46;
-  font-size: 0.78rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
 /* ════════════════════════════════════════════

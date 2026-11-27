@@ -1,5 +1,5 @@
 // ============================================
-// Indoor Air Controller (Physics + AI Location Pricing)
+// Indoor Air Controller (Dynamic Inputs + AI Prices/Links)
 // ============================================
 import { calculateIndoorPM25, recommendPurifierSize } from '../engine/massBalanceModel.js';
 import { recommendDIYPurifier } from '../engine/purifierSizer.js';
@@ -8,8 +8,6 @@ import { createApiError } from '../middleware/errorHandler.js';
 
 /**
  * POST /api/v1/indoor/simulate
- * Simulates indoor air quality and (unless skip_ai=true) fetches
- * Gemini AI local prices & verified online purchase links.
  */
 export async function simulateIndoorAir(req, res, next) {
   try {
@@ -18,8 +16,10 @@ export async function simulateIndoorAir(req, res, next) {
       room_area_sqft,
       ceiling_height_ft,
       window_seal_type,
+      custom_window_desc,
       purifier_cadr,
       indoor_source,
+      custom_source_desc,
       location_label,
       lat,
       lng,
@@ -44,6 +44,8 @@ export async function simulateIndoorAir(req, res, next) {
       windowSealType: seal,
       purifierCADR: parseFloat(purifier_cadr) || 0,
       indoorSource: src,
+      customWindowDesc: custom_window_desc,
+      customSourceDesc: custom_source_desc,
     });
 
     const purifierRec = recommendPurifierSize(area, height);
@@ -62,6 +64,8 @@ export async function simulateIndoorAir(req, res, next) {
       windowSealType: seal,
       purifierCADR: diyTotalCadr,
       indoorSource: src,
+      customWindowDesc: custom_window_desc,
+      customSourceDesc: custom_source_desc,
     });
 
     const sourceFreeSimulation = calculateIndoorPM25({
@@ -71,6 +75,7 @@ export async function simulateIndoorAir(req, res, next) {
       windowSealType: seal,
       purifierCADR: parseFloat(purifier_cadr) || 0,
       indoorSource: 'none',
+      customWindowDesc: custom_window_desc,
     });
 
     const aiIndoorGuidance = !skip_ai
@@ -85,9 +90,10 @@ export async function simulateIndoorAir(req, res, next) {
           roomAreaSqft: area,
           ceilingHeightFt: height,
           windowSealType: seal,
+          customWindowDesc: custom_window_desc,
           indoorSource: src,
+          customSourceDesc: custom_source_desc,
           language: language || 'English',
-          overrideKey: req.get('X-Gemini-Api-Key'),
         })
       : null;
 

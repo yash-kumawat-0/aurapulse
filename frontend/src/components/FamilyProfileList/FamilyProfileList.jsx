@@ -1,6 +1,6 @@
 // ============================================
 // FamilyProfileList — Clickable Member Cards
-// Clicking a member opens/focuses their personal plan.
+// Includes custom "Other" health issue field
 // ============================================
 import { useState } from 'react';
 import { useUser } from '../../context/UserContext.jsx';
@@ -13,6 +13,7 @@ const CONDITIONS = [
   { value: 'HEART_CONDITION', label: 'Heart', emoji: '❤️', color: '#E91E63', bg: '#FCE4EC' },
   { value: 'PREGNANT', label: 'Pregnant', emoji: '🤰', color: '#9C27B0', bg: '#F3E5F5' },
   { value: 'INFANT', label: 'Infant', emoji: '👶', color: '#2196F3', bg: '#E3F2FD' },
+  { value: 'OTHER', label: 'Other', emoji: '📝', color: '#0284C7', bg: '#E0F2FE' },
 ];
 
 function getAgeGroup(age) {
@@ -35,14 +36,22 @@ function FamilyProfileList() {
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [condition, setCondition] = useState('NONE');
+  const [customIssue, setCustomIssue] = useState('');
 
   const handleAdd = (e) => {
     e.preventDefault();
     if (!name.trim() || !age) return;
-    addFamilyMember({ name: name.trim(), age: parseInt(age, 10), health_condition: condition });
+    if (condition === 'OTHER' && !customIssue.trim()) return;
+    addFamilyMember({
+      name: name.trim(),
+      age: parseInt(age, 10),
+      health_condition: condition,
+      custom_issue: condition === 'OTHER' ? customIssue.trim() : '',
+    });
     setName('');
     setAge('');
     setCondition('NONE');
+    setCustomIssue('');
     setAdding(false);
   };
 
@@ -53,7 +62,7 @@ function FamilyProfileList() {
       <div className="family-header">
         <div className="family-header-left">
           <h3 className="family-title">👨‍👩‍👧 Family Members</h3>
-          <span className="family-count">{familyMembers.length} member{familyMembers.length !== 1 ? 's' : ''} · click any person for their plan</span>
+          <span className="family-count">{familyMembers.length} member{familyMembers.length !== 1 ? 's' : ''} · tap for plan</span>
         </div>
         <button className="family-add-toggle" onClick={() => setAdding(!adding)}>
           {adding ? '✕ Cancel' : '+ Add Member'}
@@ -66,29 +75,60 @@ function FamilyProfileList() {
           <div className="family-form-row">
             <div className="family-form-field">
               <label className="family-form-label">Name</label>
-              <input type="text" placeholder="e.g. Priya" value={name}
-                onChange={(e) => setName(e.target.value)} required />
+              <input
+                type="text"
+                placeholder="e.g. Priya"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
             </div>
             <div className="family-form-field family-form-field--small">
               <label className="family-form-label">Age</label>
-              <input type="number" placeholder="25" min="0" max="120" value={age}
-                onChange={(e) => setAge(e.target.value)} required />
+              <input
+                type="number"
+                placeholder="25"
+                min="0"
+                max="120"
+                value={age}
+                onChange={(e) => setAge(e.target.value)}
+                required
+              />
             </div>
           </div>
+
           <div className="family-form-field">
             <label className="family-form-label">Health Condition</label>
             <div className="family-cond-grid">
               {CONDITIONS.map((c) => (
-                <button key={c.value} type="button"
+                <button
+                  key={c.value}
+                  type="button"
                   className={`family-cond-btn ${condition === c.value ? 'family-cond-btn--on' : ''}`}
                   style={condition === c.value ? { borderColor: c.color, background: c.bg } : {}}
-                  onClick={() => setCondition(c.value)}>
+                  onClick={() => setCondition(c.value)}
+                >
                   <span>{c.emoji}</span>
                   <span className="family-cond-name">{c.label}</span>
                 </button>
               ))}
             </div>
           </div>
+
+          {condition === 'OTHER' && (
+            <div className="family-form-field">
+              <label className="family-form-label">Specify Other Health Issue</label>
+              <input
+                type="text"
+                placeholder="e.g. Dust allergy, Sinusitis, Bronchitis, Migraine..."
+                value={customIssue}
+                onChange={(e) => setCustomIssue(e.target.value)}
+                required
+                autoFocus
+              />
+            </div>
+          )}
+
           <button type="submit" className="family-form-submit">+ Add to Family</button>
         </form>
       )}
@@ -100,6 +140,10 @@ function FamilyProfileList() {
           const ageGroup = getAgeGroup(m.age);
           const isVulnerable = m.health_condition !== 'NONE' || m.age < 6 || m.age > 65;
           const isSelected = selectedMemberId === m.id;
+          const badgeLabel = m.health_condition === 'OTHER' && m.custom_issue
+            ? m.custom_issue
+            : cond.label;
+
           return (
             <div
               key={m.id}
@@ -123,10 +167,10 @@ function FamilyProfileList() {
               </div>
               <div className="family-member-info">
                 <span className="family-member-name">{m.name}</span>
-                <span className="family-member-age">{m.age} years · {ageGroup.label}</span>
+                <span className="family-member-age">{m.age} yrs · {ageGroup.label}</span>
               </div>
               <div className="family-member-cond" style={{ background: cond.bg, color: cond.color }}>
-                {cond.emoji} {cond.label}
+                {cond.emoji} {badgeLabel}
               </div>
               {isSelected ? (
                 <span className="family-member-selected">✓ Viewing Plan</span>
@@ -141,7 +185,7 @@ function FamilyProfileList() {
       {familyMembers.length === 0 && (
         <div className="family-empty">
           <span className="family-empty-icon">👨‍👩‍👧‍👦</span>
-          <p>Add family members to get personalized air quality advice</p>
+          <p>Add family members for personalized plans</p>
         </div>
       )}
     </div>

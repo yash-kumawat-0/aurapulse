@@ -306,7 +306,7 @@ export async function multiCompare(req, res, next) {
       results[0].is_safest = true;
     }
 
-    // Attach crisp automated safe path suggestion + Gemini AI route analysis
+    // Attach crisp automated safe path suggestion + dynamic Gemini AI route analysis
     const safestRoute = results[0] || null;
     const aiCommuteAnalysis = !skip_ai
       ? await generateCommuteAiAnalysis({
@@ -315,7 +315,6 @@ export async function multiCompare(req, res, next) {
           originAqi,
           routes: results,
           language: language || 'English',
-          overrideKey: req.get('X-Gemini-Api-Key'),
         })
       : null;
 

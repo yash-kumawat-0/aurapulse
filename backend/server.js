@@ -38,7 +38,7 @@ app.use(
 
     const commonOptions = {
       credentials: true,
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Gemini-Api-Key'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
     };
 
     // Allow curl, healthchecks, and same-navigation requests with no Origin header
@@ -69,11 +69,11 @@ app.use(
 app.use(express.json());
 
 // --- Health Check ---
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
     service: 'aurapulse-api',
-    ai: getAiStatus(req.get('X-Gemini-Api-Key')),
+    ai: getAiStatus(),
     timestamp: new Date().toISOString(),
   });
 });
